@@ -6,6 +6,46 @@ library(mice)
 
 set.seed(123)
 
+#_______________________________________________________________________________
+
+
+process_signal <- function(signal) {
+  response_signal <- signal[50:80]
+  peak_signal <- signal[56:68]
+  stable_signal <- signal[80:110]
+  min_response_signal <- min(response_signal)
+  
+  if (!(min_response_signal %in% peak_signal) ||
+      !(min_response_signal >= -.2 &&
+        min_response_signal <= .5) ||
+      var(stable_signal) > .002 ||
+      !(max(signal) < 1.2) ||
+      !(min(signal) > -.2)) {
+    return(FALSE)
+  }
+  
+  score <- 10
+  
+  max_peak_signal <- max(signal[68:80])
+  peak_stable_distance <- abs(max_peak_signal - tail(stable_signal, 1))
+  score <- score - (peak_stable_distance*100)
+  
+  stable_peak <- max(signal[68:80]) - tail(stable_signal, 1)
+  drop_peak <- max(signal[68:80]) - min(peak_signal)
+  
+  if(stable_peak > drop_peak*.45) {
+    score <- score - drop_peak*10
+  }
+  
+  if(min(stable_signal) < min_response_signal) {
+    score <- score - (min_response_signal - min(stable_signal))*10
+  }
+  
+  return(score)
+}
+
+#_____________________________________________________________________________
+
 
 # Leer el archivo y almacenar los datos en un objeto llamado "data"
 setwd("C:/Users/benja/Documents/USACH/Memoria/pso-svr-car")
@@ -84,10 +124,76 @@ svm_model <-
   )
 
 # Predecir las etiquetas de clase de los datos de prueba
-predicted_labels <- predict(svm_model, newdata = validation_data)
+predicted_labels_1 <- predict(svm_model, newdata = validation_data)
 
 # Calcular la precisión del modelo utilizando el coeficiente de correlación
-correlation <- cor(predicted_labels, cbfvL_norm_2)
+correlation_1 <- cor(predicted_labels_1, cbfvL_norm_2)
 
-lines(time_2, cbfvL_norm_2)
-lines(time_2, predicted_labels)
+ecmna_1 <- 1 - correlation_1^2
+
+var_coef_1 <- (sd(predicted_labels_1)/mean(predicted_labels_1)) * 100
+
+#______________________________________________________________________________
+
+# Agregar un retardo de un segundo a la variable de salida
+training_data <- 
+  data.frame(mabp_norm_1 = mabp_norm_1, cbfvL_norm_1 = cbfvL_norm_1, cbfvL_norm_1_lag = c(NA, head(training_data$cbfvL_norm_1, -1)))
+
+# Eliminar la primera fila (ya que tiene un valor nulo debido al retardo)
+training_data <- training_data[-1, ]
+
+# Entrenar el modelo con la variable de entrada original y la variable de salida con retardo
+svm_model <- svm(
+  training_data$cbfvL_norm_1 ~ training_data$mabp_norm_1 + training_data$cbfvL_norm_1_lag,
+  data = training_data,
+  kernel = "linear",
+  type = "nu-regression"
+)
+
+validation_data <- 
+  data.frame(mabp_norm_2 = mabp_norm_2, cbfvL_norm_2 = cbfvL_norm_2, cbfvL_norm_2_lag = c(NA, head(validation_data$cbfvL_norm_2, -1)))
+validation_data <- validation_data[-1, ]
+
+
+predicted_labels_1 <- predict(svm_model, newdata = validation_data)
+
+lag_cor <- cor(predicted_labels_1, validation_data$cbfvL_norm_2)
+
+
+#_____________________________________________________________________________
+
+training_data <- data.frame(mabp_norm_2 = mabp_norm_2, cbfvL_norm_2 = cbfvL_norm_2)
+
+validation_data <- data.frame(mabp_norm_1 = pressure_step_smooth, cbfvL_norm_1 = cbfvL_norm_1)
+
+svm_model <-
+  svm(
+    cbfvL_norm_2 ~ mabp_norm_2,
+    data = training_data,
+    kernel = "linear",
+    type = "nu-regression"
+  )
+
+predicted_labels_2 <- predict(svm_model, newdata = validation_data)
+
+correlation_2 <- cor(predicted_labels_2, cbfvL_norm_1)
+
+ecmna_2 <- 1 - correlation_2^2
+
+var_coef_2 <- (sd(predicted_labels_2)/mean(predicted_labels_2)) * 100
+
+if (correlation_1 > correlation_2) {
+  lines(time_2, cbfvL_norm_2)
+  lines(time_2, predicted_labels_1)
+  process_signal(predicted_labels_1)
+} else {
+  lines(time_1, cbfvL_norm_1)
+  lines(time_1, predicted_labels_2)
+  process_signal(predicted_labels_2)
+}
+
+
+#______________________________________________________________________________
+
+
+
