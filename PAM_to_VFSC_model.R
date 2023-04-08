@@ -113,9 +113,9 @@ pressure_step_smooth <-
 # )
 
 validation_data <-
-  data.frame(mabp_norm_2_1 = mabp_norm_2_1, mabp_norm_2_2 = mabp_norm_2_2,
-             mabp_norm_2_3 = mabp_norm_2_3, mabp_norm_2_4 = mabp_norm_2_4,
-             cbfvL_norm_2 = cbfvL_norm_2)
+  data.frame(mabp_norm_1_1 = mabp_norm_2_1, mabp_norm_2_1 = mabp_norm_2_2,
+             mabp_norm_3_1 = mabp_norm_2_3, mabp_norm_4_1 = mabp_norm_2_4,
+             cbfvL_norm_1 = cbfvL_norm_2)
 
 # Crear el modelo SVM regresivo
 svm_model <-
