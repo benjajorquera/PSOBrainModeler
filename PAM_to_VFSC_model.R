@@ -67,10 +67,9 @@ fecha_ref <- Sys.time()
 # Convertir el vector numérico en un vector de tiempo
 time_vec <- as.POSIXct(fecha_ref + time, origin = "1970-01-01")
 
-
-#new_data_frame <- data.frame(time_vec, mabp_norm, cbfv_L_norm)
-#new_data_frame %>%
-#  plot_time_series(time_vec, cbfv_L_norm, .interactive = TRUE)
+new_data_frame <- data.frame(time_vec, cbfv_L_norm)
+new_data_frame %>%
+  plot_time_series(time_vec, cbfv_L_norm, .interactive = TRUE)
 
 n <- length(time_vec)
 n_half <- n / 2
@@ -122,7 +121,7 @@ svm_model <-
   svm(
     cbfvL_norm_1 ~ mabp_norm_1_1 + mabp_norm_2_1 + mabp_norm_3_1 + mabp_norm_4_1,
     data = training_data,
-    kernel = "linear",
+    kernel = "radial",
     type = "nu-regression"
   )
 
