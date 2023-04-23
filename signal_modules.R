@@ -1,6 +1,10 @@
 library(data.table)
 library(mice)
 library(signal)
+library(dplyr)
+library(timetk)
+library(e1071)
+library(pso)
 
 set.seed(123)
 
@@ -105,6 +109,22 @@ process_signal <- function(signal, pressure_start) {
   return(score)
 }
 
+objetivo <- function(x) {
+  
+  cost <- x[1]
+  nu <- x[2]
+  
+  svm_model <- svm(CBFV.L_norm ~ MABP_norm,
+                   training_data,
+                   cost = cost, nu = nu, kernel="linear", type = "nu-regression")
+  
+  new_validation_data <- data.frame(CBFV.L_norm = validation_data$CBFV.L_norm,
+                                    MABP_norm = validation_data$Pressure_step)
+  
+  predictions <- predict(svm_model, new_validation_data)
+  
+  return(-cor(predictions, validation_data$CBFV.L_norm))
+}
 
 
 setwd("C:/Users/benja/Documents/USACH/Memoria/pso-svr-car")
@@ -118,8 +138,58 @@ data <- normalize_signal(data, "CBFV.L")
 
 data <- add_datetime_col(data)
 
-data <- add_pressure_step(data, 50)
+#data <- add_pressure_step(data, 50)
 
 plot(data$Datetime, data$CBFV.L_norm, type="l")
+
+
+resample_spec <- time_series_cv(data = data,
+                                initial     = "1 minute",
+                                assess      = "45 seconds",
+                                skip        = "30 seconds",
+                                cumulative  = TRUE,
+                                slice_limit = 5)
+
+resample_spec %>% tk_time_series_cv_plan()
+
+resample_spec %>%
+  plot_time_series_cv_plan(Datetime, MABP_norm, .interactive = FALSE)
+
+
+lo <- c(0.25, 0.1)
+hi <- c(4096, 0.9)
+
+resultados_pso <- list(par = c(2000, 0.5))
+
+for(i in seq(length(resample_spec$splits), 1, -1)) {
+  training_data <- data[resample_spec[[1]][[i]][["in_id"]], ]
+  validation_data <- data[resample_spec[[1]][[i]][["out_id"]], ]
+  
+  validation_data <- add_pressure_step(validation_data, 10)
+  
+  resultados_pso <- psoptim(par=resultados_pso$par, fn = objetivo, lower = lo,
+                            upper = hi, control = list(s = 5, maxit = 5))
+  
+  best_model <- svm(CBFV.L_norm ~ MABP_norm,
+                    data = training_data,
+                    cost = resultados_pso$par[1], nu = resultados_pso$par[2],
+                    kernel="linear", type = "nu-regression")
+  
+  #svm_model <- svm(CBFV.L_norm ~ MABP_norm, data = training_data,
+  #                  kernel="linear", type = "nu-regression")
+    
+  new_validation_data <- data.frame(CBFV.L_norm = validation_data$CBFV.L_norm,
+                                    MABP_norm = validation_data$Pressure_step)
+  
+  predictions <- predict(best_model, new_validation_data)
+  
+  print(cor(predictions, validation_data$CBFV.L_norm))
+  
+  lo <- c(resultados_pso$par[1]-100, resultados_pso$par[2]-0.05)
+  hi <- c(resultados_pso$par[1]+100, resultados_pso$par[2]+0.05)
+}
+
+
+
 
 
