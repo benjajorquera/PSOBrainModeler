@@ -115,11 +115,8 @@ objetivo <- function(x) {
   nu <- x[2]
   
   svm_model <- svm(CBFV.L_norm ~ MABP_norm,
-                   training_data,
-                   cost = cost, nu = nu, kernel="linear", type = "nu-regression")
-  
-  new_validation_data <- data.frame(CBFV.L_norm = validation_data$CBFV.L_norm,
-                                    MABP_norm = validation_data$Pressure_step)
+                   data = training_data,
+                   cost = cost, nu = nu, kernel="radial", type = "nu-regression")
   
   predictions <- predict(svm_model, new_validation_data)
   
@@ -144,8 +141,8 @@ plot(data$Datetime, data$CBFV.L_norm, type="l")
 
 
 resample_spec <- time_series_cv(data = data,
-                                initial     = "1 minute",
-                                assess      = "45 seconds",
+                                initial     = "30 seconds",
+                                assess      = "30 seconds",
                                 skip        = "30 seconds",
                                 cumulative  = TRUE,
                                 slice_limit = 5)
@@ -156,37 +153,63 @@ resample_spec %>%
   plot_time_series_cv_plan(Datetime, MABP_norm, .interactive = FALSE)
 
 
+training_data <- data[resample_spec[[1]][[1]][["in_id"]], ]
+validation_data <- data[resample_spec[[1]][[1]][["out_id"]], ]
+
+validation_data <- add_pressure_step(validation_data, 10)
+
+new_validation_data <- data.frame(CBFV.L_norm = validation_data$CBFV.L_norm,
+                                  MABP_norm = validation_data$Pressure_step)
+
 lo <- c(0.25, 0.1)
 hi <- c(4096, 0.9)
 
-resultados_pso <- list(par = c(2000, 0.5))
+# resultados_pso <- psoptim(par=resultados_pso$par, fn = objetivo, lower = lo,
+#                           upper = hi, control = list(maxit = 10,
+#                                                      trace = 1, REPORT=1,
+#                                                      trace.stats = TRUE, hybrid="improved"))
+# print(resultados_pso)
+# 
+# best_model <- svm(CBFV.L_norm ~ MABP_norm,
+#                   data = training_data,
+#                   cost = resultados_pso$par[1], nu = resultados_pso$par[2],
+#                   kernel="radial", type = "nu-regression")
+# 
+# predictions <- predict(best_model, new_validation_data)
+# 
+# print(resultados_pso)
+# print(cor(predictions, validation_data$CBFV.L_norm))
 
 for(i in seq(length(resample_spec$splits), 1, -1)) {
+  
+  resultados_pso <- list(par = c(2000, 0.5))
+  
   training_data <- data[resample_spec[[1]][[i]][["in_id"]], ]
   validation_data <- data[resample_spec[[1]][[i]][["out_id"]], ]
-  
+
   validation_data <- add_pressure_step(validation_data, 10)
-  
+
+  new_validation_data <- data.frame(CBFV.L_norm = validation_data$CBFV.L_norm,
+                                    MABP_norm = validation_data$Pressure_step)
+
   resultados_pso <- psoptim(par=resultados_pso$par, fn = objetivo, lower = lo,
-                            upper = hi, control = list(s = 5, maxit = 5))
-  
+                            upper = hi, control = list(maxit = 10,
+                                                       trace = 1, REPORT=1,
+                                                       trace.stats = TRUE,
+                                                       reltol = 1))
+
   best_model <- svm(CBFV.L_norm ~ MABP_norm,
                     data = training_data,
                     cost = resultados_pso$par[1], nu = resultados_pso$par[2],
-                    kernel="linear", type = "nu-regression")
-  
-  #svm_model <- svm(CBFV.L_norm ~ MABP_norm, data = training_data,
-  #                  kernel="linear", type = "nu-regression")
-    
-  new_validation_data <- data.frame(CBFV.L_norm = validation_data$CBFV.L_norm,
-                                    MABP_norm = validation_data$Pressure_step)
-  
+                    kernel="radial", type = "nu-regression")
+
   predictions <- predict(best_model, new_validation_data)
-  
+
+  print(resultados_pso)
   print(cor(predictions, validation_data$CBFV.L_norm))
-  
-  lo <- c(resultados_pso$par[1]-100, resultados_pso$par[2]-0.05)
-  hi <- c(resultados_pso$par[1]+100, resultados_pso$par[2]+0.05)
+
+  # lo <- c(resultados_pso$par[1]-(100*i), resultados_pso$par[2]-(0.01*i))
+  # hi <- c(resultados_pso$par[1]+(100*i), resultados_pso$par[2]+(0.01*i))
 }
 
 
