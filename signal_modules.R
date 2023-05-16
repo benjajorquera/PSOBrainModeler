@@ -8,15 +8,23 @@ library(pso)
 
 set.seed(123)
 
-lag_signal <- function(data_frame, lags, df_col_name) {
+lag_signal <- function(data_frame, lags, df_col_name, fill) {
   df <- data_frame
   for (i in 1:lags) {
-    col_name <- paste(df_col_name, i, sep = "-")
+    col_name <- paste(df_col_name, i, sep = "_")
+    if(fill) {
     df[[col_name]] <-
       shift(df[[df_col_name]],
             n = i * -1,
             type = "lag",
             fill = NA)
+    }
+    else {
+      df[[col_name]] <-
+        shift(df[[df_col_name]],
+              n = i * -1,
+              type = "lag")
+    }
   }
   
   df <- na.omit(df)
@@ -114,13 +122,16 @@ objetivo <- function(x) {
   cost <- x[1]
   nu <- x[2]
   
-  svm_model <- svm(CBFV.L_norm ~ MABP_norm,
+  svm_model <- svm(CBFV.L_norm + CBFV.L_norm_1 ~ MABP_norm + MABP_norm_1,
                    data = training_data,
                    cost = cost, nu = nu, kernel="radial", type = "nu-regression")
   
   predictions <- predict(svm_model, new_validation_data)
   
   return(-cor(predictions, validation_data$CBFV.L_norm))
+  # Intentar optimizar junto con el puntaje/filtro
+  # Buscar sobre error (cuadrático medio?) (intentar que vaya de 0 a 1) (normalizar)
+  # Experimentar un poco cual criterio tiene más peso
 }
 
 
@@ -129,9 +140,11 @@ data <- read.table("Sujeto1.txt", header = TRUE)
 
 data <- normalize_signal(data, "MABP")
 
-data <- lag_signal(data, 3, "MABP_norm")
+data <- lag_signal(data, 3, "MABP_norm", FALSE)
 
 data <- normalize_signal(data, "CBFV.L")
+
+data <- lag_signal(data, 3, "CBFV.L_norm", TRUE)
 
 data <- add_datetime_col(data)
 
@@ -140,9 +153,16 @@ data <- add_datetime_col(data)
 plot(data$Datetime, data$CBFV.L_norm, type="l")
 
 
+# resample_spec <- time_series_cv(data = data,
+#                                 initial     = "1.5 minutes",
+#                                 assess      = "1 minute",
+#                                 skip        = "30 seconds",
+#                                 cumulative  = FALSE,
+#                                 slice_limit = 5)
+
 resample_spec <- time_series_cv(data = data,
                                 initial     = "30 seconds",
-                                assess      = "30 seconds",
+                                assess      = "1 minute",
                                 skip        = "30 seconds",
                                 cumulative  = TRUE,
                                 slice_limit = 5)
@@ -153,32 +173,8 @@ resample_spec %>%
   plot_time_series_cv_plan(Datetime, MABP_norm, .interactive = FALSE)
 
 
-training_data <- data[resample_spec[[1]][[1]][["in_id"]], ]
-validation_data <- data[resample_spec[[1]][[1]][["out_id"]], ]
-
-validation_data <- add_pressure_step(validation_data, 10)
-
-new_validation_data <- data.frame(CBFV.L_norm = validation_data$CBFV.L_norm,
-                                  MABP_norm = validation_data$Pressure_step)
-
 lo <- c(0.25, 0.1)
 hi <- c(4096, 0.9)
-
-# resultados_pso <- psoptim(par=resultados_pso$par, fn = objetivo, lower = lo,
-#                           upper = hi, control = list(maxit = 10,
-#                                                      trace = 1, REPORT=1,
-#                                                      trace.stats = TRUE, hybrid="improved"))
-# print(resultados_pso)
-# 
-# best_model <- svm(CBFV.L_norm ~ MABP_norm,
-#                   data = training_data,
-#                   cost = resultados_pso$par[1], nu = resultados_pso$par[2],
-#                   kernel="radial", type = "nu-regression")
-# 
-# predictions <- predict(best_model, new_validation_data)
-# 
-# print(resultados_pso)
-# print(cor(predictions, validation_data$CBFV.L_norm))
 
 for(i in seq(length(resample_spec$splits), 1, -1)) {
   
@@ -190,15 +186,17 @@ for(i in seq(length(resample_spec$splits), 1, -1)) {
   validation_data <- add_pressure_step(validation_data, 10)
 
   new_validation_data <- data.frame(CBFV.L_norm = validation_data$CBFV.L_norm,
-                                    MABP_norm = validation_data$Pressure_step)
+                                    CBFV.L_norm_1 = validation_data$CBFV.L_norm,
+                                    MABP_norm = validation_data$Pressure_step,
+                                    MABP_norm_1 = validation_data$Pressure_step)
 
   resultados_pso <- psoptim(par=resultados_pso$par, fn = objetivo, lower = lo,
-                            upper = hi, control = list(maxit = 10,
+                            upper = hi, control = list(maxit = 12,
                                                        trace = 1, REPORT=1,
-                                                       trace.stats = TRUE,
                                                        reltol = 1))
+  # Resultados de recorrido hiperparámetros
 
-  best_model <- svm(CBFV.L_norm ~ MABP_norm,
+  best_model <- svm(CBFV.L_norm + CBFV.L_norm_1 ~ MABP_norm + MABP_norm_1,
                     data = training_data,
                     cost = resultados_pso$par[1], nu = resultados_pso$par[2],
                     kernel="radial", type = "nu-regression")
@@ -207,10 +205,11 @@ for(i in seq(length(resample_spec$splits), 1, -1)) {
 
   print(resultados_pso)
   print(cor(predictions, validation_data$CBFV.L_norm))
-
-  # lo <- c(resultados_pso$par[1]-(100*i), resultados_pso$par[2]-(0.01*i))
-  # hi <- c(resultados_pso$par[1]+(100*i), resultados_pso$par[2]+(0.01*i))
 }
+
+# Buscar hiperparámetros de slice 1, utilizar esos hiperparámetros en las otras slices
+# Dentro de la función de optimización
+# Como se calcula la correlación o el error cuando se hace cv con señales (promedio de errores?)
 
 
 
