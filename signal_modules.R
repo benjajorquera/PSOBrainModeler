@@ -90,7 +90,7 @@ process_signal <- function(signal, pressure_start) {
       var(stable_signal) > .002 ||
       !(max(signal) < 1.2) ||
       !(min(signal) > -.2)) {
-    return(FALSE)
+    return(0)
   }
   
   score <- 10
@@ -122,15 +122,54 @@ objetivo <- function(x) {
   cost <- x[1]
   nu <- x[2]
   
-  svm_model <- svm(CBFV.L_norm + CBFV.L_norm_1 ~ MABP_norm + MABP_norm_1,
-                   data = training_data,
-                   cost = cost, nu = nu, kernel="radial", type = "nu-regression")
+  n_splits <- length(resample_spec$splits)
+  correlations <- numeric(n_splits)
+  errors <- numeric(n_splits)
+  scores <- numeric(n_splits)
   
-  predictions <- predict(svm_model, new_validation_data)
+  for (i in seq(n_splits, 1, -1)) {
+    training_data <- data[resample_spec[[1]][[i]][["in_id"]], ]
+    validation_data <- data[resample_spec[[1]][[i]][["out_id"]], ]
+    
+    validation_data <- add_pressure_step(validation_data, 10)
+    
+    new_validation_data <- data.frame(CBFV.L_norm = validation_data$CBFV.L_norm,
+                                      CBFV.L_norm_1 = validation_data$CBFV.L_norm,
+                                      MABP_norm = validation_data$Pressure_step,
+                                      MABP_norm_1 = validation_data$Pressure_step)
+    
+    svm_model <- svm(CBFV.L_norm + CBFV.L_norm_1 ~ MABP_norm + MABP_norm_1,
+                     data = training_data,
+                     cost = cost, nu = nu, kernel = "radial", type = "nu-regression")
+    
+    predictions <- predict(svm_model, new_validation_data)
+    
+    # Correlación
+    correlations[i] <- cor(predictions, validation_data$CBFV.L_norm)
+    
+    # Error MSE
+    errors[i] <- mean((predictions - validation_data$CBFV.L_norm)^2)
+    
+    # Puntaje del filtro de señales
+    scores[i] <- process_signal(predictions, 10)
+  }
   
-  return(-cor(predictions, validation_data$CBFV.L_norm))
-  # Intentar optimizar junto con el puntaje/filtro
-  # Buscar sobre error (cuadrático medio?) (intentar que vaya de 0 a 1) (normalizar)
+  # Pesos para cada criterio
+  peso_correlacion <- 1
+  peso_error <- 1
+  peso_puntaje <- 2
+  
+  # Cálculo del puntaje total
+  puntaje_total <- peso_correlacion * mean(correlations) -
+    peso_error * mean(errors) +
+    peso_puntaje * mean(scores)
+  
+  print(puntaje_total)
+  
+  return(-puntaje_total)  # Se busca maximizar el puntaje total
+  
+  # Intentar optimizar junto con el puntaje/filtro X
+  # Buscar sobre error (cuadrático medio?) (intentar que vaya de 0 a 1) (normalizar) X/2
   # Experimentar un poco cual criterio tiene más peso
 }
 
@@ -162,10 +201,10 @@ plot(data$Datetime, data$CBFV.L_norm, type="l")
 
 resample_spec <- time_series_cv(data = data,
                                 initial     = "30 seconds",
-                                assess      = "1 minute",
+                                assess      = "1.5 minute",
                                 skip        = "30 seconds",
                                 cumulative  = TRUE,
-                                slice_limit = 5)
+                                slice_limit = 3)
 
 resample_spec %>% tk_time_series_cv_plan()
 
@@ -176,40 +215,45 @@ resample_spec %>%
 lo <- c(0.25, 0.1)
 hi <- c(4096, 0.9)
 
-for(i in seq(length(resample_spec$splits), 1, -1)) {
-  
-  resultados_pso <- list(par = c(2000, 0.5))
-  
-  training_data <- data[resample_spec[[1]][[i]][["in_id"]], ]
-  validation_data <- data[resample_spec[[1]][[i]][["out_id"]], ]
+# for(i in seq(length(resample_spec$splits), 1, -1)) {
+#   
+#   resultados_pso <- list(par = c(2000, 0.5))
+#   
+#   training_data <- data[resample_spec[[1]][[i]][["in_id"]], ]
+#   validation_data <- data[resample_spec[[1]][[i]][["out_id"]], ]
+# 
+#   validation_data <- add_pressure_step(validation_data, 10)
+# 
+#   new_validation_data <- data.frame(CBFV.L_norm = validation_data$CBFV.L_norm,
+#                                     CBFV.L_norm_1 = validation_data$CBFV.L_norm,
+#                                     MABP_norm = validation_data$Pressure_step,
+#                                     MABP_norm_1 = validation_data$Pressure_step)
+# 
+#   resultados_pso <- psoptim(par=resultados_pso$par, fn = objetivo, lower = lo,
+#                             upper = hi, control = list(maxit = 12,
+#                                                        trace = 1, REPORT=1,
+#                                                        reltol = 1))
+#   # Resultados de recorrido hiperparámetros
+# 
+#   best_model <- svm(CBFV.L_norm + CBFV.L_norm_1 ~ MABP_norm + MABP_norm_1,
+#                     data = training_data,
+#                     cost = resultados_pso$par[1], nu = resultados_pso$par[2],
+#                     kernel="radial", type = "nu-regression")
+# 
+#   predictions <- predict(best_model, new_validation_data)
+# 
+#   print(resultados_pso)
+#   print(cor(predictions, validation_data$CBFV.L_norm))
+# }
 
-  validation_data <- add_pressure_step(validation_data, 10)
+resultados_pso <- psoptim(par = c(2000, 0.5), fn = objetivo, lower = lo,
+                          upper = hi, control = list(maxit = 12,
+                                                     trace = 1, REPORT=1,
+                                                     reltol = 0.1))
 
-  new_validation_data <- data.frame(CBFV.L_norm = validation_data$CBFV.L_norm,
-                                    CBFV.L_norm_1 = validation_data$CBFV.L_norm,
-                                    MABP_norm = validation_data$Pressure_step,
-                                    MABP_norm_1 = validation_data$Pressure_step)
-
-  resultados_pso <- psoptim(par=resultados_pso$par, fn = objetivo, lower = lo,
-                            upper = hi, control = list(maxit = 12,
-                                                       trace = 1, REPORT=1,
-                                                       reltol = 1))
-  # Resultados de recorrido hiperparámetros
-
-  best_model <- svm(CBFV.L_norm + CBFV.L_norm_1 ~ MABP_norm + MABP_norm_1,
-                    data = training_data,
-                    cost = resultados_pso$par[1], nu = resultados_pso$par[2],
-                    kernel="radial", type = "nu-regression")
-
-  predictions <- predict(best_model, new_validation_data)
-
-  print(resultados_pso)
-  print(cor(predictions, validation_data$CBFV.L_norm))
-}
-
-# Buscar hiperparámetros de slice 1, utilizar esos hiperparámetros en las otras slices
-# Dentro de la función de optimización
-# Como se calcula la correlación o el error cuando se hace cv con señales (promedio de errores?)
+# Buscar hiperparámetros de slice 1, utilizar esos hiperparámetros en las otras slices X
+# Dentro de la función de optimización X
+# Como se calcula la correlación o el error cuando se hace cv con señales (promedio de errores?) X
 
 
 
