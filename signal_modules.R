@@ -187,11 +187,9 @@ data <- lag_signal(data, 3, "CBFV.L_norm", TRUE)
 
 data <- add_datetime_col(data)
 
-#data <- add_pressure_step(data, 50)
-
 plot(data$Datetime, data$CBFV.L_norm, type="l")
 
-
+### Sliding Window CV
 # resample_spec <- time_series_cv(data = data,
 #                                 initial     = "1.5 minutes",
 #                                 assess      = "1 minute",
@@ -199,6 +197,7 @@ plot(data$Datetime, data$CBFV.L_norm, type="l")
 #                                 cumulative  = FALSE,
 #                                 slice_limit = 5)
 
+### Expanding Window CV
 resample_spec <- time_series_cv(data = data,
                                 initial     = "30 seconds",
                                 assess      = "1.5 minute",
@@ -214,37 +213,6 @@ resample_spec %>%
 
 lo <- c(0.25, 0.1)
 hi <- c(4096, 0.9)
-
-# for(i in seq(length(resample_spec$splits), 1, -1)) {
-#   
-#   resultados_pso <- list(par = c(2000, 0.5))
-#   
-#   training_data <- data[resample_spec[[1]][[i]][["in_id"]], ]
-#   validation_data <- data[resample_spec[[1]][[i]][["out_id"]], ]
-# 
-#   validation_data <- add_pressure_step(validation_data, 10)
-# 
-#   new_validation_data <- data.frame(CBFV.L_norm = validation_data$CBFV.L_norm,
-#                                     CBFV.L_norm_1 = validation_data$CBFV.L_norm,
-#                                     MABP_norm = validation_data$Pressure_step,
-#                                     MABP_norm_1 = validation_data$Pressure_step)
-# 
-#   resultados_pso <- psoptim(par=resultados_pso$par, fn = objetivo, lower = lo,
-#                             upper = hi, control = list(maxit = 12,
-#                                                        trace = 1, REPORT=1,
-#                                                        reltol = 1))
-#   # Resultados de recorrido hiperparámetros
-# 
-#   best_model <- svm(CBFV.L_norm + CBFV.L_norm_1 ~ MABP_norm + MABP_norm_1,
-#                     data = training_data,
-#                     cost = resultados_pso$par[1], nu = resultados_pso$par[2],
-#                     kernel="radial", type = "nu-regression")
-# 
-#   predictions <- predict(best_model, new_validation_data)
-# 
-#   print(resultados_pso)
-#   print(cor(predictions, validation_data$CBFV.L_norm))
-# }
 
 resultados_pso <- psoptim(par = c(2000, 0.5), fn = objetivo, lower = lo,
                           upper = hi, control = list(maxit = 12,
