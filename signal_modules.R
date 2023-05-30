@@ -12,22 +12,16 @@ lag_signal <- function(data_frame, lags, df_col_name, fill) {
   df <- data_frame
   for (i in 1:lags) {
     col_name <- paste(df_col_name, i, sep = "_")
-    if(fill) {
     df[[col_name]] <-
       shift(df[[df_col_name]],
             n = i * -1,
             type = "lag",
             fill = NA)
-    }
-    else {
-      df[[col_name]] <-
-        shift(df[[df_col_name]],
-              n = i * -1,
-              type = "lag")
-    }
   }
   
-  df <- na.omit(df)
+  if (fill) {
+    df <- na.omit(df)
+  }
   
   return(df)
 }
@@ -127,7 +121,7 @@ objetivo <- function(x) {
   errors <- numeric(n_splits)
   scores <- numeric(n_splits)
   
-  for (i in seq(n_splits, 1, -1)) {
+  for (i in seq(n_splits, 1, -1)) { # sapply o lappply
     training_data <- data[resample_spec[[1]][[i]][["in_id"]], ]
     validation_data <- data[resample_spec[[1]][[i]][["out_id"]], ]
     
@@ -147,7 +141,7 @@ objetivo <- function(x) {
     # Correlación
     correlations[i] <- cor(predictions, validation_data$CBFV.L_norm)
     
-    # Error MSE
+    # Error MSE hacer que vaya entre 0 y 1, lo que sumo 1 - error
     errors[i] <- mean((predictions - validation_data$CBFV.L_norm)^2)
     
     # Puntaje del filtro de señales
@@ -160,10 +154,11 @@ objetivo <- function(x) {
   peso_puntaje <- 2
   
   # Cálculo del puntaje total
-  puntaje_total <- peso_correlacion * mean(correlations) -
+  puntaje_total <- peso_correlacion * mean(correlations) +
     peso_error * mean(errors) +
     peso_puntaje * mean(scores)
-  
+
+  print(correlations)
   print(puntaje_total)
   
   return(-puntaje_total)  # Se busca maximizar el puntaje total
