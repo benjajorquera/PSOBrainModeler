@@ -66,7 +66,230 @@ add_pressure_step <- function(df, pressure_start) {
   return(df)
 }
 
+objetivo <- function(x) {
+  cost <- x[1]
+  nu <- x[2]
+  gamma <- x[3]
+  
+  svm_model <-
+    svm(
+      CBFV.L_norm ~ MABP_norm + MABP_norm_1 + MABP_norm_2
+      + MABP_norm_3 + CBFV.L_norm_1 + CBFV.L_norm_2 + CBFV.L_norm_3,
+      data = training_data,
+      cost = cost,
+      nu = nu,
+      gamma = gamma,
+      kernel = "radial",
+      type = "nu-regression"
+    )
+  
+  predictions_pso <<- predict(svm_model, validation_data)
+  
+  # Correlación
+  correlation_pso <<- cor(predictions_pso, validation_data$CBFV.L_norm)
+  print(correlation_pso)
+  
+  return(-correlation_pso)
+}
 
+objetivo_2 <- function(x) {
+  cost <- x[1]
+  nu <- x[2]
+  gamma <- x[3]
+  
+  training_data <- data[1:(n / 2),]
+  validation_data <- data[(n / 2 + 1):n,]
+  
+  svm_model <-
+    svm(
+      CBFV.L_norm ~ MABP_norm + MABP_norm_1 + MABP_norm_2
+      + MABP_norm_3 + CBFV.L_norm_1 + CBFV.L_norm_2 + CBFV.L_norm_3,
+      data = training_data,
+      cost = cost,
+      nu = nu,
+      gamma = gamma,
+      kernel = "radial",
+      type = "nu-regression"
+    )
+  
+  predictions_pso <<- predict(svm_model, validation_data)
+  
+  # Correlación
+  correlation_pso_1 <<- cor(predictions_pso, validation_data$CBFV.L_norm)
+  
+  error_1 <<- mean((predictions_pso - validation_data$CBFV.L_norm) ^ 2)
+  
+  validation_data <- data[1:(n / 2),]
+  training_data <- data[(n / 2 + 1):n,]
+  
+  svm_model <-
+    svm(
+      CBFV.L_norm ~ MABP_norm + MABP_norm_1 + MABP_norm_2
+      + MABP_norm_3 + CBFV.L_norm_1 + CBFV.L_norm_2 + CBFV.L_norm_3,
+      data = training_data,
+      cost = cost,
+      nu = nu,
+      gamma = gamma,
+      kernel = "radial",
+      type = "nu-regression"
+    )
+  
+  predictions_pso <<- predict(svm_model, validation_data)
+  
+  # Correlación
+  correlation_pso_2 <<- cor(predictions_pso, validation_data$CBFV.L_norm)
+  
+  error_2 <<- mean((predictions_pso - validation_data$CBFV.L_norm) ^ 2)
+  
+  print(correlation_pso_1)
+  print(correlation_pso_2)
+  
+  return(-mean(correlation_pso_1, correlation_pso_2) + mean(error_1, error_2))
+}
+
+objetivo_3 <- function(x) {
+  cost <- x[1]
+  nu <- x[2]
+  gamma <- x[3]
+  
+  training_data <- data[1:250,]
+  validation_data <- data[251:450,]
+  
+  svm_model <-
+    svm(
+      CBFV.L_norm ~ MABP_norm + MABP_norm_1 + MABP_norm_2
+      + MABP_norm_3 + CBFV.L_norm_1 + CBFV.L_norm_2 + CBFV.L_norm_3,
+      data = training_data,
+      cost = cost,
+      nu = nu,
+      gamma = gamma,
+      kernel = "radial",
+      type = "nu-regression"
+    )
+  
+  predictions_pso <<- predict(svm_model, validation_data)
+  
+  # Correlación
+  correlation_pso_1 <<- cor(predictions_pso, validation_data$CBFV.L_norm)
+  
+  training_data <- data[1:300,]
+  validation_data <- data[301:500,]
+  
+  svm_model <-
+    svm(
+      CBFV.L_norm ~ MABP_norm + MABP_norm_1 + MABP_norm_2
+      + MABP_norm_3 + CBFV.L_norm_1 + CBFV.L_norm_2 + CBFV.L_norm_3,
+      data = training_data,
+      cost = cost,
+      nu = nu,
+      gamma = gamma,
+      kernel = "radial",
+      type = "nu-regression"
+    )
+  
+  predictions_pso <<- predict(svm_model, validation_data)
+  
+  # Correlación
+  correlation_pso_2 <<- cor(predictions_pso, validation_data$CBFV.L_norm)
+  
+  training_data <- data[1:350,]
+  validation_data <- data[352:596,]
+  
+  svm_model <-
+    svm(
+      CBFV.L_norm ~ MABP_norm + MABP_norm_1 + MABP_norm_2
+      + MABP_norm_3 + CBFV.L_norm_1 + CBFV.L_norm_2 + CBFV.L_norm_3,
+      data = training_data,
+      cost = cost,
+      nu = nu,
+      gamma = gamma,
+      kernel = "radial",
+      type = "nu-regression"
+    )
+  
+  predictions_pso <<- predict(svm_model, validation_data)
+  
+  # Correlación
+  correlation_pso_3 <<- cor(predictions_pso, validation_data$CBFV.L_norm)
+  
+  print(correlation_pso_1)
+  print(correlation_pso_2)
+  print(correlation_pso_3)
+  
+  return(-mean(correlation_pso_1, correlation_pso_2, correlation_pso_3))
+}
+
+objetivo_4 <- function(x) {
+  cost <- x[1]
+  nu <- x[2]
+  gamma <- x[3]
+  
+  training_data <- data[1:100,]
+  validation_data <- data[101:200,]
+  
+  svm_model <-
+    svm(
+      CBFV.L_norm ~ MABP_norm + MABP_norm_1 + MABP_norm_2
+      + MABP_norm_3 + CBFV.L_norm_1 + CBFV.L_norm_2 + CBFV.L_norm_3,
+      data = training_data,
+      cost = cost,
+      nu = nu,
+      gamma = gamma,
+      kernel = "radial",
+      type = "nu-regression"
+    )
+  
+  predictions_pso <<- predict(svm_model, validation_data)
+  
+  # Correlación
+  correlation_pso_1 <<- cor(predictions_pso, validation_data$CBFV.L_norm)
+  
+  training_data <- data[201:300,]
+  validation_data <- data[301:400,]
+  
+  svm_model <-
+    svm(
+      CBFV.L_norm ~ MABP_norm + MABP_norm_1 + MABP_norm_2
+      + MABP_norm_3 + CBFV.L_norm_1 + CBFV.L_norm_2 + CBFV.L_norm_3,
+      data = training_data,
+      cost = cost,
+      nu = nu,
+      gamma = gamma,
+      kernel = "radial",
+      type = "nu-regression"
+    )
+  
+  predictions_pso <<- predict(svm_model, validation_data)
+  
+  # Correlación
+  correlation_pso_2 <<- cor(predictions_pso, validation_data$CBFV.L_norm)
+  
+  training_data <- data[401:500,]
+  validation_data <- data[501:596,]
+  
+  svm_model <-
+    svm(
+      CBFV.L_norm ~ MABP_norm + MABP_norm_1 + MABP_norm_2
+      + MABP_norm_3 + CBFV.L_norm_1 + CBFV.L_norm_2 + CBFV.L_norm_3,
+      data = training_data,
+      cost = cost,
+      nu = nu,
+      gamma = gamma,
+      kernel = "radial",
+      type = "nu-regression"
+    )
+  
+  predictions_pso <<- predict(svm_model, validation_data)
+  
+  # Correlación
+  correlation_pso_3 <<- cor(predictions_pso, validation_data$CBFV.L_norm)
+  
+  print(correlation_pso_1)
+  print(correlation_pso_2)
+  print(correlation_pso_3)
+  
+  return(-mean(correlation_pso_1, correlation_pso_2, correlation_pso_3))
+}
 
 #MAIN##########################################################################
 
@@ -88,118 +311,150 @@ n <- nrow(data)
 training_data <- data[1:(n / 2),]
 validation_data <- data[(n / 2 + 1):n,]
 
+# Agrego el escalón de presión invertido a los datos
 training_data <- add_pressure_step(training_data, 20)
 validation_data <- add_pressure_step(validation_data, 20)
 
 # Entreno la v-SVR con las señales y 3 retardos cada una
 svm <-
   svm(
-    CBFV.L_norm + CBFV.L_norm_1 + CBFV.L_norm_2 + CBFV.L_norm_3
-    ~ MABP_norm + MABP_norm_1 + MABP_norm_2 + MABP_norm_3,
+    CBFV.L_norm
+    ~ MABP_norm + MABP_norm_1 + MABP_norm_2 + MABP_norm_3
+    + CBFV.L_norm_1 + CBFV.L_norm_2 + CBFV.L_norm_3,
     data = training_data,
     kernel = "radial",
     type = "nu-regression"
   )
 
-# Creo nuevo data frame de validación agregando el escalón de presión a
-# las columnas de presión
-
-new_validation_data <- data.frame(
-  Time = validation_data$Time,
-  CBFV.L_norm = validation_data$CBFV.L_norm,
-  CBFV.L_norm_1 = validation_data$CBFV.L_norm_1,
-  CBFV.L_norm_2 = validation_data$CBFV.L_norm_2,
-  CBFV.L_norm_3 = validation_data$CBFV.L_norm_3,
-  MABP_norm = validation_data$Pressure_step,
-  MABP_norm_1 = validation_data$Pressure_step,
-  MABP_norm_2 = validation_data$Pressure_step,
-  MABP_norm_3 = validation_data$Pressure_step
-)
-
 # Realizo las predicciones y calculo la correlación
 
-predictions <- predict(svm, newdata = new_validation_data)
+predictions <- predict(svm, validation_data)
 correlation <- cor(predictions, validation_data$CBFV.L_norm)
 
-#PLOTS#########################################################################
+# PSO
+lo <- c(0.25, 0.1, (1/(2*0.065^2)))
+hi <- c(4096, 0.9, (1/(2*1024^2)))
 
-# Grafico las variables de cada dataframe
+start <- Sys.time()
 
-plot(
-  new_validation_data$Time,
-  predictions,
-  type = "l",
-  xlab = "Tiempo",
-  ylab = "Supuesto CBFV.L"
-)
-title(main = "Predicciones")
+resultados_pso <-
+  psoptim(
+    par = c(0, 0.1, 0),
+    fn = objetivo,
+    lower = lo,
+    upper = hi,
+    control = list(
+      maxit=20,
+      trace = 1,
+      REPORT = 1
+    )
+  )
 
-plot(
-  training_data$Time,
-  training_data$MABP_norm,
-  type = "l",
-  xlab = "Tiempo",
-  ylab = "MABP Normalizado"
-)
-title(main = "Training Data")
+tiempo_pso_1_slot_1 <- Sys.time() - start
 
-plot(
-  training_data$Time,
-  training_data$CBFV.L_norm,
-  type = "l",
-  xlab = "Tiempo",
-  ylab = "CBFV.L Normalizado"
-)
-title(main = "Training Data")
+plot(validation_data$Time, validation_data$CBFV.L_norm, type="l", col="red")
+lines(validation_data$Time, predictions_pso, col="blue")
 
-plot(
-  validation_data$Time,
-  validation_data$MABP_norm,
-  type = "l",
-  xlab = "Tiempo",
-  ylab = "MABP Normalizado"
-)
-title(main = "Validation Data")
+validation_data <- data[1:(n / 2),]
+training_data <- data[(n / 2 + 1):n,]
 
-plot(
-  validation_data$Time,
-  validation_data$CBFV.L_norm,
-  type = "l",
-  xlab = "Tiempo",
-  ylab = "CBFV.L Normalizado"
-)
-title(main = "Validation Data")
+start <- Sys.time()
 
-plot(
-  new_validation_data$Time,
-  new_validation_data$MABP_norm,
-  type = "l",
-  xlab = "Tiempo",
-  ylab = "Escalón de presión"
-)
-title(main = "New validation Data")
+resultados_pso_2 <-
+  psoptim(
+    par = c(0, 0.1, 0),
+    fn = objetivo,
+    lower = lo,
+    upper = hi,
+    control = list(
+      maxit=20,
+      trace = 1,
+      REPORT = 1
+    )
+  )
 
+tiempo_pso_1_slot_2 <- Sys.time() - start
 
+plot(validation_data$Time, validation_data$CBFV.L_norm, type="l", col="red")
+lines(validation_data$Time, predictions_pso, col="blue")
 
-#GRID##########################################################################
+start <- Sys.time()
 
+resultados_pso_3 <-
+  psoptim(
+    par = c(0, 0.1, 0),
+    fn = objetivo_2,
+    lower = lo,
+    upper = hi,
+    control = list(
+      maxit=20,
+      trace = 1,
+      REPORT = 1
+    )
+  )
 
-# Esta es la búsqueda grid, demora mucho
+tiempo_pso_2_slots <- Sys.time() - start
 
-# nu <- seq(0.1, 0.9, 0.1)
-# cost <-
-#   c(0.25, 0.5, 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096)
-# sigma <- c(1 / 16, 1 / 4, 1, 4, 16, 2 ^ 6, 2 ^ 8, 2 ^ 10)
-# tuneResult <-
-#   tune(
-#     svm,
-#     CBFV.L_norm + CBFV.L_norm_1 + CBFV.L_norm_2 + CBFV.L_norm_3
-#     ~ MABP_norm + MABP_norm_1 + MABP_norm_2 + MABP_norm_3,
-#     data = training_data,
-#     ranges = list(cost = cost, nu = nu, sigma = sigma),
-#     kernel = "radial",
-#     type = "nu-regression"
-#   )
-# tunedVals <- tuneResult$best.model
-# predictYsvm <- predict(tunedVals, validation_data)
-# cor(predictYsvm, validation_data$CBFV.L_norm)
+start <- Sys.time()
+
+resultados_pso_4 <-
+  psoptim(
+    par = c(0, 0.1, 0),
+    fn = objetivo_3,
+    lower = lo,
+    upper = hi,
+    control = list(
+      maxit=20,
+      trace = 1,
+      REPORT = 1
+    )
+  )
+
+tiempo_pso_expanding_window_3_slots <- Sys.time() - start
+
+start <- Sys.time()
+
+resultados_pso_5 <-
+  psoptim(
+    par = c(0, 0.1, 0),
+    fn = objetivo_4,
+    lower = lo,
+    upper = hi,
+    control = list(
+      maxit=20,
+      trace = 1,
+      REPORT = 1
+    )
+  )
+
+tiempo_pso_sliding_window_3_slots <- Sys.time() - start
+
+print(tiempo_pso_1_slot_1)
+print(tiempo_pso_1_slot_2)
+print(tiempo_pso_2_slots)
+print(tiempo_pso_expanding_window_3_slots)
+
+print(resultados_pso$value)
+print(resultados_pso_2$value)
+print(resultados_pso_3$value)
+print(resultados_pso_4$value)
+
+# Validación con respuesta escalón de presión
+
+# new_validation_data <- data.frame(
+#   Time = validation_data$Time,
+#   CBFV.L_norm = validation_data$CBFV.L_norm,
+#   CBFV.L_norm_1 = validation_data$CBFV.L_norm_1,
+#   CBFV.L_norm_2 = validation_data$CBFV.L_norm_2,
+#   CBFV.L_norm_3 = validation_data$CBFV.L_norm_3,
+#   CBFV.L_norm_4 = validation_data$CBFV.L_norm_4,
+#   CBFV.L_norm_5 = validation_data$CBFV.L_norm_5,
+#   MABP_norm = validation_data$Pressure_step,
+#   MABP_norm_1 = validation_data$Pressure_step,
+#   MABP_norm_2 = validation_data$Pressure_step,
+#   MABP_norm_3 = validation_data$Pressure_step,
+#   MABP_norm_4 = validation_data$Pressure_step,
+#   MABP_norm_5 = validation_data$Pressure_step
+# )
+
+# predictions2 <- predict(svm, new_validation_data)

@@ -112,77 +112,96 @@ process_signal <- function(signal, pressure_start) {
 }
 
 objetivo <- function(x) {
-  
   cost <- x[1]
-  nu <- x[2]
+  nu <- x[2] 
+  sigma <- x[3]
   
   n_splits <- length(resample_spec$splits)
   correlations <- numeric(n_splits)
   errors <- numeric(n_splits)
   scores <- numeric(n_splits)
   
-  for (i in seq(n_splits, 1, -1)) { # sapply o lappply
-    training_data <- data[resample_spec[[1]][[i]][["in_id"]], ]
-    validation_data <- data[resample_spec[[1]][[i]][["out_id"]], ]
+  split_indices <- seq(n_splits, 1, -1)
+  results <- lapply(split_indices, function(i) {
+    training_data <<- data[resample_spec[[1]][[i]][["in_id"]], ]
+    validation_data <<- data[resample_spec[[1]][[i]][["out_id"]], ]
     
-    validation_data <- add_pressure_step(validation_data, 10)
+    svm_model <-
+      svm(
+        CBFV.L_norm ~ MABP_norm + MABP_norm_1 + MABP_norm_2
+        + MABP_norm_3,
+        data = training_data,
+        cost = cost,
+        nu = nu,
+        sigma = sigma,
+        kernel = "radial",
+        type = "nu-regression"
+      )
     
-    new_validation_data <- data.frame(CBFV.L_norm = validation_data$CBFV.L_norm,
-                                      CBFV.L_norm_1 = validation_data$CBFV.L_norm,
-                                      MABP_norm = validation_data$Pressure_step,
-                                      MABP_norm_1 = validation_data$Pressure_step)
-    
-    svm_model <- svm(CBFV.L_norm + CBFV.L_norm_1 ~ MABP_norm + MABP_norm_1,
-                     data = training_data,
-                     cost = cost, nu = nu, kernel = "radial", type = "nu-regression")
-    
-    predictions <- predict(svm_model, new_validation_data)
+    predictions <<- predict(svm_model, validation_data)
     
     # Correlación
-    correlations[i] <- cor(predictions, validation_data$CBFV.L_norm)
+    correlations[i] <<- cor(predictions, validation_data$CBFV.L_norm)
     
-    # Error MSE hacer que vaya entre 0 y 1, lo que sumo 1 - error
-    errors[i] <- mean((predictions - validation_data$CBFV.L_norm)^2)
+    # Error MSE
+    errors[i] <<-
+      mean((predictions - validation_data$CBFV.L_norm) ^ 2)
     
     # Puntaje del filtro de señales
-    scores[i] <- process_signal(predictions, 10)
-  }
+    validation_data <<- add_pressure_step(validation_data, 10)
+    
+    new_validation_data <-
+      data.frame(
+        CBFV.L_norm = validation_data$CBFV.L_norm,
+        CBFV.L_norm_1 = validation_data$CBFV.L_norm_1,
+        CBFV.L_norm_2 = validation_data$CBFV.L_norm_2,
+        CBFV.L_norm_3 = validation_data$CBFV.L_norm_3,
+        CBFV.L_norm_4 = validation_data$CBFV.L_norm_4,
+        CBFV.L_norm_5 = validation_data$CBFV.L_norm_5,
+        MABP_norm = validation_data$Pressure_step,
+        MABP_norm_1 = validation_data$Pressure_step,
+        MABP_norm_2 = validation_data$Pressure_step,
+        MABP_norm_3 = validation_data$Pressure_step,
+        MABP_norm_4 = validation_data$Pressure_step,
+        MABP_norm_5 = validation_data$Pressure_step
+      )
+    
+    #response_predictions <- predict(svm_model, new_validation_data)
+    
+    #scores[i] <<- process_signal(response_predictions, 10)
+  })
   
   # Pesos para cada criterio
   peso_correlacion <- 1
   peso_error <- 1
-  peso_puntaje <- 2
+  #peso_puntaje <- 2
   
   # Cálculo del puntaje total
-  puntaje_total <- peso_correlacion * mean(correlations) +
-    peso_error * mean(errors) +
-    peso_puntaje * mean(scores)
-
+  # Suma errores + (3- corr)
+  # puntaje_total <- peso_correlacion * mean(correlations) -
+  #   peso_error * mean(errors) +
+  #   peso_puntaje * mean(scores)
+  puntaje_total <- sum(errors) + (3 - sum(correlations))
+  
   print(correlations)
-  print(puntaje_total)
-  
-  return(-puntaje_total)  # Se busca maximizar el puntaje total
-  
-  # Intentar optimizar junto con el puntaje/filtro X
-  # Buscar sobre error (cuadrático medio?) (intentar que vaya de 0 a 1) (normalizar) X/2
-  # Experimentar un poco cual criterio tiene más peso
+  #print(scores)
+  return(puntaje_total)  # Se busca maximizar el puntaje total
 }
 
+# Gráfico convergencia
 
 setwd("C:/Users/benja/Documents/USACH/Memoria/pso-svr-car")
 data <- read.table("Sujeto1.txt", header = TRUE)
 
 data <- normalize_signal(data, "MABP")
-
-data <- lag_signal(data, 3, "MABP_norm", FALSE)
-
 data <- normalize_signal(data, "CBFV.L")
 
-data <- lag_signal(data, 3, "CBFV.L_norm", TRUE)
+data <- lag_signal(data, 5, "MABP_norm", FALSE)
+data <- lag_signal(data, 5, "CBFV.L_norm", TRUE)
 
 data <- add_datetime_col(data)
 
-plot(data$Datetime, data$CBFV.L_norm, type="l")
+plot(data$Datetime, data$CBFV.L_norm, type = "l")
 
 ### Sliding Window CV
 # resample_spec <- time_series_cv(data = data,
@@ -193,32 +212,33 @@ plot(data$Datetime, data$CBFV.L_norm, type="l")
 #                                 slice_limit = 5)
 
 ### Expanding Window CV
-resample_spec <- time_series_cv(data = data,
-                                initial     = "30 seconds",
-                                assess      = "1.5 minute",
-                                skip        = "30 seconds",
-                                cumulative  = TRUE,
-                                slice_limit = 3)
+resample_spec <- time_series_cv(
+  data = data,
+  initial     = "30 seconds",
+  assess      = "1.5 minute",
+  skip        = "30 seconds",
+  cumulative  = TRUE,
+  slice_limit = 3
+)
 
 resample_spec %>% tk_time_series_cv_plan()
 
 resample_spec %>%
   plot_time_series_cv_plan(Datetime, MABP_norm, .interactive = FALSE)
 
+lo <- c(0.25, 0.1, 1 / 16)
+hi <- c(4096, 0.9, 2 ^ 10)
 
-lo <- c(0.25, 0.1)
-hi <- c(4096, 0.9)
-
-resultados_pso <- psoptim(par = c(2000, 0.5), fn = objetivo, lower = lo,
-                          upper = hi, control = list(maxit = 12,
-                                                     trace = 1, REPORT=1,
-                                                     reltol = 0.1))
-
-# Buscar hiperparámetros de slice 1, utilizar esos hiperparámetros en las otras slices X
-# Dentro de la función de optimización X
-# Como se calcula la correlación o el error cuando se hace cv con señales (promedio de errores?) X
-
-
-
-
-
+resultados_pso <-
+  psoptim(
+    par = c(2000, 0.5, 8),
+    fn = objetivo,
+    lower = lo,
+    upper = hi,
+    control = list(
+      maxit = 12,
+      trace = 1,
+      REPORT = 1,
+      reltol = 0.1
+    )
+  )
