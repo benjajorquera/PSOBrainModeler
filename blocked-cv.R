@@ -5,6 +5,7 @@ library(dplyr)
 library(timetk)
 library(e1071)
 library(pso)
+library(ppso)
 #library(hydroPSO)
 
 set.seed(123)
@@ -85,7 +86,6 @@ normalize_signal <- function(df, signal_name) {
   return(df)
 }
 
-
 lag_signal <- function(data_frame, lags, df_col_name, fill) {
   df <- data_frame
   for (i in 1:lags) {
@@ -114,33 +114,47 @@ svr_model <- function(train_data, cost, nu, gamma) {
       nu = nu,
       gamma = gamma,
       kernel = "radial",
-      type = "nu-regression"
+      type = "nu-regression",
+      #cachesize = 1000,
+      tolerance = 1
     )
   return(svm_model)
 }
 
 objetivo <- function(x) {
-  cost <- x[1]
-  nu <- x[2]
+  cost <- round(x[1], digits = 1)
+  nu <- round(x[2], digits = 2)
   gamma <- x[3]
+  if (gamma >= 1)
+    gamma <- round(gamma, digits = 2)
+  else
+    gamma <- signif(gamma, digits = 2)
   
-  n <- nrow(data)
+  cat(cost, nu, gamma, "\n")
   
   cors <- numeric(5)
   errors <- numeric(5)
   
   for (i in 1:5) {
+    new_data_validation <- data_partitions[[i]]$validation[, -(3:4)]
+    new_data_validation <<- new_data_validation[,-(5)]
     svr_model_pso <- svr_model(data_partitions[[i]]$training,
                                cost, nu, gamma)
-    predictions_pso <-
-      predict(svr_model_pso, data_partitions[[i]]$validation)
+    
+    predictions_pso <<-
+      predict(svr_model_pso, new_data_validation)
     correlation_pso <- cor(predictions_pso,
                            data_partitions[[i]]$validation$CBFV.L_norm)
     cors[i] <- correlation_pso
+    errors[i] <-
+      sqrt(mean((
+        data_partitions[[i]]$validation$CBFV.L_norm - predictions_pso
+      ) ^ 2
+      ))
   }
   
-  print(cors)
-  return(-mean(cors))
+  cat(mean(cors), mean(errors), (1 - mean(cors) + mean(errors)), "\n")
+  return((1 - mean(cors) + mean(errors)))
 }
 
 setwd("C:/Users/benja/Documents/USACH/Memoria/pso-svr-car")
@@ -185,13 +199,22 @@ for (i in 1:num_blocks) {
       rbind(training_data, data[((validation_length * i) + 1):row_indices, ])
   }
   
+  validation_data <- add_pressure_step(validation_data, 30)
+  
   # Almacena los conjuntos en la lista
   data_partitions[[i]] <-
     list(training = training_data, validation = validation_data)
 }
 
+
 lo <- c(0.25, 0.1, (1 / (2 * 1024 ^ 2)))
-hi <- c(4096, 0.9, (1 / (2 * 0.065 ^ 2)))
+hi <- c(4096, 0.9, (1 / (2 * 0.0625 ^ 2)))
+
+# 512, 0.7, 0.00195 global optimo de búsqueda grid
+
+# TODO: limpiar los dataframes. filtro escalón. escapar minimo local.
+
+time <- Sys.time()
 
 resultados_pso <-
   psoptim(
@@ -200,85 +223,23 @@ resultados_pso <-
     lower = lo,
     upper = hi,
     control = list(
-      p = 15,
-      maxit = 20,
+      s = 5,
+      maxit = 100,
+      maxf = 200,
       trace = 1,
       REPORT = 1,
-      c.g = 100,
-      reltol = 1,
-      maxit.stagnate = 5
+      p = 0.5,
+      c.g = 10,
+      trace.stats = TRUE,
+      maxit.stagnate = 10,
+      reltol = 0.5,
+      hybrid = "improved",
+      type = "SPSO2011",
+      vectorize = TRUE,
+      hybrid.control = list(maxit = 1)
     )
   )
 
-
-training_data <- data[1:(row_indices/2),]
-validation_data <- data[((row_indices/2) + 1):row_indices,]
-
-validation_data <- add_pressure_step(validation_data, 50)
-
-new_validation_data <-
-  data.frame(
-    CBFV.L_norm = validation_data$CBFV.L_norm,
-    CBFV.L_norm_1 = validation_data$CBFV.L_norm_1,
-    CBFV.L_norm_2 = validation_data$CBFV.L_norm_2,
-    CBFV.L_norm_3 = validation_data$CBFV.L_norm_3,
-    CBFV.L_norm_4 = validation_data$CBFV.L_norm_4,
-    CBFV.L_norm_5 = validation_data$CBFV.L_norm_5,
-    MABP_norm = validation_data$Pressure_step,
-    MABP_norm_1 = validation_data$Pressure_step,
-    MABP_norm_2 = validation_data$Pressure_step,
-    MABP_norm_3 = validation_data$Pressure_step,
-    MABP_norm_4 = validation_data$Pressure_step,
-    MABP_norm_5 = validation_data$Pressure_step
-  )
-
-
-svr_pso <- svm(
-  CBFV.L_norm ~ MABP_norm + MABP_norm_1 + MABP_norm_2
-  + MABP_norm_3 + CBFV.L_norm_1 + CBFV.L_norm_2 + CBFV.L_norm_3,
-  data = training_data,
-  cost = resultados_pso$par[1],
-  nu = resultados_pso$par[2],
-  gamma = resultados_pso$par[3],
-  kernel = "radial",
-  type = "nu-regression"
-)
-
-response_predictions <- predict(svr_pso, new_validation_data)
-
-plot(validation_data$Time, response_predictions, type="l")
-lines(validation_data$Time, new_validation_data$MABP_norm)
-
-
-
-# resultados_hydropso <-
-#   hydroPSO(
-#     fn = objetivo,
-#     lower = lo,
-#     upper = hi,
-#     control = list(
-#       write2disk = FALSE,
-#       maxit = 20,
-#       npart = 15,
-#       topology="random"
-#     )
-#   )
-
-# lo <- c((resultados_pso$par[1]-100), (resultados_pso$par[2]-0.05), (1 / (2 * 1024 ^ 2)))
-# hi <- c((resultados_pso$par[1]+100), (resultados_pso$par[2]+0.05),
-#         (resultados_pso$par[3] + 8))
-# 
-# 
-# resultados_pso_2 <-
-#   psoptim(
-#     par = c(resultados_pso$par[1], resultados_pso$par[2], resultados_pso$par[3]),
-#     fn = objetivo,
-#     lower = lo,
-#     upper = hi,
-#     control = list(
-#       s = 5,
-#       maxit = 20,
-#       trace = 1,
-#       REPORT = 1
-#     )
-#   )
+time <- Sys.time() - time
+print(time)
+print(resultados_pso$value)

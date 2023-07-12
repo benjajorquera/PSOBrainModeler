@@ -85,7 +85,7 @@ tuneResult <-
     ~ MABP_norm + MABP_norm_1 + MABP_norm_2 + MABP_norm_3 + CBFV.L_norm_1 +
       CBFV.L_norm_2 + CBFV.L_norm_3,
     data = training_data,
-    ranges = list(cost = cost, nu = nu, gamma = gamma),
+    ranges = list(cost = 4100, nu = 0.9, gamma = 0.0137),
     kernel = "radial",
     type = "nu-regression"
   )
