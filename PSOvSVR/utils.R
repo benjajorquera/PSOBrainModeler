@@ -29,7 +29,7 @@ lag_signal <- function(data_frame, lags, df_col_name, fill) {
     df[[col_name]] <-
       shift(df[[df_col_name]],
             n = i * -1,
-            type = "lag",
+            type = "lead",
             fill = NA)
   }
   
@@ -42,7 +42,7 @@ lag_signal <- function(data_frame, lags, df_col_name, fill) {
 
 add_pressure_step <- function(pressure_start) {
   pressure <-
-    c(rep(0, pressure_start), rep(-1, 60 - pressure_start))
+    c(rep(0, pressure_start), rep(-1, 120 - pressure_start))
   
   pressure_step <-
     butter(2, 0.2, type = "low", fs = 0.5)

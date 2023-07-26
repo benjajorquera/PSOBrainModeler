@@ -67,10 +67,14 @@ objetivo <- function(x) {
   )
   
   predictions_data <- predict(data_model, pressure_df)
-  plot(predictions_data, type="l")
   
-  cat(mean(cors), mean(errors), (1 - mean(cors) + mean(errors)), "\n")
-  return((1 - mean(cors) + mean(errors)))
+  signal_score <- process_signal(predictions_data, 20)
+  if (signal_score > 0) {
+    plot(predictions_data, type="l")
+  }
+  
+  cat(mean(cors), mean(errors), (1 - mean(cors) + mean(errors)), (signal_score*.1), "\n")
+  return((2 - mean(cors) + mean(errors) - (signal_score*.1)))
 }
 
 setwd("C:/Users/benja/Documents/USACH/Memoria/pso-svr-car/PSOvSVR/Data")
@@ -81,6 +85,7 @@ setwd("C:/Users/benja/Documents/USACH/Memoria/pso-svr-car/PSOvSVR")
 
 source("utils.R")
 source("blocked_cross_validation.R")
+source("score_signal.R")
 
 # Normalizar las señales MABP y CBFV.L
 data <- normalize_signal(data_file, "MABP")
@@ -93,7 +98,7 @@ data <- lag_signal(data, 5, "CBFV.L_norm", TRUE)
 data_partitions <- blocked_cv(data)
 
 pressure_df <- add_pressure_step(20)
-#pressure_df$CBFV.L_norm <- rep(1, 60)
+#pressure_df$CBFV.L_norm <- rep(1, 120)
 pressure_df <- lag_signal(pressure_df, 3, "MABP_norm", FALSE)
 pressure_df <- lag_signal(pressure_df, 3, "CBFV.L_norm", TRUE)
 pressure_df$CBFV.L_norm <- NULL
