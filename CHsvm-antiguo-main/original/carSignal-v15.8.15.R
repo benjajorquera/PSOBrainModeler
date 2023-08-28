@@ -51,10 +51,10 @@ require(pracma)
 #                 supposedly released. Currently at the second 0.0.
 #
 get.normalised.ABP.stimulus <- function(
-      sampling.time = 0.1,
+      sampling.time = 0.1, #10 hz
       time.until.release = 10,
       time.after.release = 20,
-      smooth.step.stimulus = FALSE,
+      smooth.step.stimulus = FALSE, # TRUE
       filter.order = 2,
       cutoff.frequency = 0.20,
       left.stabilisation.time = ifelse(smooth.step.stimulus, 30, 0),

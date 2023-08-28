@@ -42,7 +42,7 @@ lag_signal <- function(data_frame, lags, df_col_name, fill) {
 
 add_pressure_step <- function(pressure_start) {
   pressure <-
-    c(rep(0, pressure_start), rep(-1, 120 - pressure_start))
+    c(rep(0, pressure_start), rep(-1, 30 - pressure_start))
   
   pressure_step <-
     butter(2, 0.2, type = "low", fs = 0.5)
@@ -51,7 +51,6 @@ add_pressure_step <- function(pressure_start) {
     as.numeric(signal::filter(pressure_step, pressure)) + 1
   
   df <- data.frame(MABP_norm = pressure_step_smooth)
-  df$CBFV.L_norm <- pressure_step_smooth
   
   return(df)
 }

@@ -54,6 +54,8 @@ objetivo <- function(x) {
       ))
   }
   
+  #cristobal.acosta@usach.cl Acceso a cluster para correr programas CC JL
+  
   data_model <- svm(
     CBFV.L_norm ~ MABP_norm + MABP_norm_1 + MABP_norm_2
     + MABP_norm_3 + CBFV.L_norm_1 + CBFV.L_norm_2 + CBFV.L_norm_3,
@@ -65,6 +67,9 @@ objetivo <- function(x) {
     type = "nu-regression",
     tolerance = 1
   )
+  
+  ############################################################
+  
   
   predictions_data <- predict(data_model, pressure_df)
   
@@ -97,11 +102,7 @@ data <- lag_signal(data, 5, "CBFV.L_norm", TRUE)
 
 data_partitions <- blocked_cv(data)
 
-pressure_df <- add_pressure_step(20)
-#pressure_df$CBFV.L_norm <- rep(1, 120)
-pressure_df <- lag_signal(pressure_df, 3, "MABP_norm", FALSE)
-pressure_df <- lag_signal(pressure_df, 3, "CBFV.L_norm", TRUE)
-pressure_df$CBFV.L_norm <- NULL
+#pressure_df$CBFV.L_norm <- NULL
 
 lo <- c(0.25, 0.1, (1 / (2 * 1024 ^ 2)))
 hi <- c(4096, 0.9, (1 / (2 * 0.0625 ^ 2)))
@@ -112,6 +113,7 @@ hi <- c(4096, 0.9, (1 / (2 * 0.0625 ^ 2)))
 
 time <- Sys.time()
 
+# Retardos se agregan a la optimización
 resultados_pso <-
   psoptim(
     par = c(NA, NA, NA),
@@ -139,3 +141,27 @@ resultados_pso <-
 time <- Sys.time() - time
 print(time)
 print(resultados_pso$value)
+
+data_model <- svm(
+  CBFV.L_norm ~ MABP_norm + MABP_norm_1 + MABP_norm_2
+  + MABP_norm_3 + CBFV.L_norm_1 + CBFV.L_norm_2 + CBFV.L_norm_3,
+  data = data,
+  cost = 200,
+  nu = 0.4,
+  gamma = 1,
+  kernel = "radial",
+  type = "nu-regression",
+  tolerance = 1
+)
+
+
+#pressure_df$CBFV.L_norm <- rep(1, 120)
+#pressure_df <- lag_signal(pressure_df, 3, "MABP_norm", TRUE)
+#pressure_df <- lag_signal(pressure_df, 3, "CBFV.L_norm", TRUE)
+
+
+generate_CBFV_predictions(5, c(1, 0.8), 30, c("MABP_norm", "CBFV.L_norm"), 3, c("MABP_norm"), "CBFV.L_norm")
+
+process_signal(pressure_df_model$CBFV.L_norm_1)
+print(process_signal(pressure_df_model$CBFV.L_norm_1, 5))
+
