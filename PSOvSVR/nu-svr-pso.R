@@ -46,7 +46,7 @@ objetivo <- function(x) {
     predictions_pso <-
       predict(svr_model_pso, new_data_validation)
     cors[i] <- cor(predictions_pso,
-                           data_partitions[[i]]$validation$CBFV.L_norm)
+                   data_partitions[[i]]$validation$CBFV.L_norm)
     errors[i] <-
       sqrt(mean((
         data_partitions[[i]]$validation$CBFV.L_norm - predictions_pso
@@ -75,11 +75,15 @@ objetivo <- function(x) {
   
   signal_score <- process_signal(predictions_data, 20)
   if (signal_score > 0) {
-    plot(predictions_data, type="l")
+    plot(predictions_data, type = "l")
   }
   
-  cat(mean(cors), mean(errors), (1 - mean(cors) + mean(errors)), (signal_score*.1), "\n")
-  return((2 - mean(cors) + mean(errors) - (signal_score*.1)))
+  cat(mean(cors),
+      mean(errors),
+      (1 - mean(cors) + mean(errors)),
+      (signal_score * .1),
+      "\n")
+  return((2 - mean(cors) + mean(errors) - (signal_score * .1)))
 }
 
 setwd("C:/Users/benja/Documents/USACH/Memoria/pso-svr-car/PSOvSVR/Data")
@@ -159,9 +163,22 @@ data_model <- svm(
 #pressure_df <- lag_signal(pressure_df, 3, "MABP_norm", TRUE)
 #pressure_df <- lag_signal(pressure_df, 3, "CBFV.L_norm", TRUE)
 
+pressure_df <- add_pressure_step(3)
 
-generate_CBFV_predictions(5, c(1, 0.8), 30, c("MABP_norm", "CBFV.L_norm"), 3, c("MABP_norm"), "CBFV.L_norm")
+CBFV_predictions <- generate_signal_response_predictions(
+  data_model,
+  pressure_df,
+  3,
+  30,
+  c("MABP_norm", "CBFV.L_norm"),
+  3,
+  c("MABP_norm"),
+  c(1),
+  "CBFV.L_norm",
+  0.8
+)
+
+plot(CBFV_predictions$CBFV.L_norm)
 
 process_signal(pressure_df_model$CBFV.L_norm_1)
-print(process_signal(pressure_df_model$CBFV.L_norm_1, 5))
-
+print(process_signal(CBFV_predictions$CBFV.L_norm, 3))
