@@ -1,40 +1,39 @@
-blocked_cv <- function(data)
-{
-  # Especifica el número de bloques y el tamaño de la validación
-  num_blocks <- 5
-  validation_size <- 0.2
-  
-  # Calcula el tamaño de la validación
+#' Generate data partitions for blocked cross-validation.
+#'
+#' This function takes a dataset, the number of blocks to divide it into,
+#' and the desired validation size as input, and returns a list of data
+#' partitions for blocked cross-validation. Each partition contains a
+#' training set and a validation set.
+#'
+#' @param data The dataset to partition.
+#' @param num_blocks The number of blocks to divide the dataset into.
+#' @param validation_size The relative size of the validation data (between 0 and 1).
+#'
+#' @return A list of partitions, where each partition is a list containing the
+#'         training and validation sets.
+#'
+#' @examples
+#' data <- data.frame(x = 1:100, y = 101:200)
+#' partitions <- blocked_cv(data, num_blocks = 5, validation_size = 0.2)
+#'
+#' @importFrom round round
+#' @export
+blocked_cv <- function(data, num_blocks, validation_size) {
   validation_length <- round(nrow(data) * validation_size)
-  
-  # Crea una lista vacía para almacenar los conjuntos de entrenamiento y validación
-  data_partitions <- vector("list", num_blocks)
-  
-  row_indices <- nrow(data)
-  
-  # Itera sobre los bloques y crea los conjuntos de entrenamiento y validación
-  for (i in 1:num_blocks) {
-    if (i == 1) {
-      validation_data <- data[1:validation_length, ]
-      training_data <- data[(validation_length + 1):row_indices, ]
-    }
-    else if (i == num_blocks) {
-      training_data <- data[1:(((i - 1) * validation_length) + 1), ]
-      validation_data <-
-        data[(((i - 1) * validation_length) + 2):row_indices, ]
-    }
-    else {
-      training_data <- data[1:((i - 1) * validation_length), ]
-      validation_data <-
-        data[(((i - 1) * validation_length) + 1):(validation_length * i), ]
-      training_data <-
-        rbind(training_data, data[((validation_length * i) + 1):row_indices, ])
+  data_partitions <- lapply(1:num_blocks, function(block) {
+    if (block == num_blocks) {
+      start_idx <- (block - 1) * validation_length + 1
+      training_data <- data[-(start_idx:nrow(data)), ]
+      validation_data <- data[start_idx:nrow(data), ]
+    } else {
+      start_idx <- (block - 1) * validation_length + 1
+      end_idx <- block * validation_length
+      validation_data <- data[start_idx:end_idx, ]
+      training_data <- data[-(start_idx:end_idx), ]
     }
     
-    # Almacena los conjuntos en la lista
-    data_partitions[[i]] <-
-      list(training = training_data, validation = validation_data)
-  }
+    list(training = training_data, validation = validation_data)
+  })
   
   return(data_partitions)
 }

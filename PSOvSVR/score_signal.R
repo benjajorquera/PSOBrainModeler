@@ -1,21 +1,28 @@
-########################## Time Series Signal Prediction Generator #############
-# Description: This function generates predictions for a response signal using a pre-trained
-# Support Vector Regression (SVR) model.
-#
-# Inputs:
-## SVR_model (e1071 SVR model): A pre-trained SVR model used for making predictions. It should have been trained using the same variables as the column names.
-## pressure_signal_df (Dataframe): Dataframe containing the pressure signal. It should have the same size as the desired prediction size.
-## pressure_start (Numeric): The starting point of the pressure signal decrease. It should correspond to the same starting point in the pressure signal.
-## prediction_size (Numeric): The number of predictions to generate.
-## column_names (Character vector): Names of variables in the dataframe, including all variables.
-## column_lags (Numeric): The number of lags for the variables.
-## initial_column_names (Character vector): Names of variables excluding the predictive variable.
-## initial_column_values (Numeric vector): Initial values of the previous variables. This vector should have the same dimensions as the initial_column_names.
-## prediction_col_name (Character): The name of the predictive variable.
-## prediction_initial_value (Numeric): The initial value of the predictive variable.
-#
-# Outputs:
-## predicted_values (Dataframe): Dataframe containing the predicted signal.
+#' Time Series Signal Prediction Generator
+#'
+#' This function generates predictions for a response signal using a pre-trained
+#' Support Vector Regression (SVR) model.
+#'
+#' @param SVR_model The pre-trained e1071 SVR model used for making predictions.
+#' @param pressure_signal_df Dataframe containing the pressure signal, aligned with the prediction size.
+#' @param pressure_start The starting point of the pressure signal decrease.
+#' @param prediction_size The number of predictions to generate.
+#' @param column_names Character vector of variable names, including all variables.
+#' @param column_lags The number of lags for the variables.
+#' @param initial_column_names Character vector of variable names excluding the predictive variable.
+#' @param initial_column_values Numeric vector of initial values for previous variables.
+#' @param prediction_col_name The name of the predictive variable.
+#' @param prediction_initial_value The initial value of the predictive variable.
+#'
+#' @return A dataframe containing the predicted signal.
+#'
+#' @examples
+#' SVR_model <- svm(Sepal.Length ~ Sepal.Width, data = iris)
+#' prediction <- generate_predictions(SVR_model, pressure_signal_df, 10, 100,
+#'                                    c("Sepal.Width", "Sepal.Length"), 2,
+#'                                    c("Sepal.Width"), c(2),
+#'                                    "Sepal.Length", 5)
+#'
 
 generate_signal_response_predictions <- function(SVR_model,
                                                  pressure_signal_df,
@@ -83,7 +90,7 @@ generate_signal_response_predictions <- function(SVR_model,
   # Process each pressure_count
   process_pressure_count <- function(pressure_count) {
     new_pressure <-
-      data.frame(name = pressure_signal_df[pressure_count, ])
+      data.frame(name = pressure_signal_df[pressure_count,])
     names(new_pressure) <- initial_column_names[1]
     
     # Add predicted value to the new_pressure dataframe
@@ -136,40 +143,68 @@ generate_signal_response_predictions <- function(SVR_model,
 }
 
 
+#' Process a Signal
+#'
+#' This function processes a signal based on specified criteria.
+#'
+#' @param signal A numeric vector representing the signal.
+#' @param pressure_start The starting point of the pressure.
+#' @return A numeric score indicating the quality of the signal processing.
+#'
+#' @details
+#' This function applies both basic and advanced filters to evaluate the quality of a signal.
+#' The basic filter checks for specific conditions related to peaks, minimums, variance, and range.
+#' The advanced filter performs additional checks related to stabilization and drop rates.
+#'
+#' @examples
+#' signal <- c(0.2, 0.3, 0.5, 0.8, 1.0, 0.7, 0.4, 0.2, 0.1, -0.1, -0.3, -0.5,
+#'             -0.6, -0.4, -0.2, 0.1, 0.3, 0.6, 0.9, 1.1, 0.9, 0.7, 0.5, 0.3)
+#' pressure_start <- 5
+#' score <- process_signal(signal, pressure_start)
+#'
+#' @export
 process_signal <- function(signal, pressure_start) {
-  response_signal <- signal[((pressure_start+1):30)]
-  peak_signal <- signal[(pressure_start + 1):(pressure_start + 10)]
-  stable_signal <-
-    signal[(20:30)]
-  min_response_signal <- min(response_signal)
+  # Basic filter:
+  ## 1. Global minimum (peak) between 3 and 9 seconds after the drop occurs
+  ## 2. Minimum peak of the signal between -0.2 and 0.5
+  ## 3. Variance < 0.002 between seconds 15 and 30 (stabilization tail)
+  ## 4. Maximum and minimum of the entire signal between -0.2 and 1.2 (exclusive)
   
-  if (!(min_response_signal %in% peak_signal) ||
-      !(min_response_signal >= -.2 &&
-        min_response_signal <= .5) ||
-      var(stable_signal) > .002 ||
-      !(max(signal) < 1.2)) {
+  peak_signal <- signal[(pressure_start + 3):(pressure_start + 9)]
+  stable_signal <-
+    signal[(pressure_start + 15):(pressure_start + 30)]
+  
+  min_signal <- min(signal)
+  
+  if (!(min_signal %in% peak_signal) ||
+      !(min_signal >= -0.2 && min_signal <= 0.5) ||
+      var(stable_signal) > 0.002 ||
+      !(max(signal) < 1.2 && min(signal) > -0.2)) {
     return(0)
   }
   
   score <- 10
   
-  max_peak_signal <-
-    max(signal[(pressure_start + 18):(pressure_start + 30)])
+  # Advanced filter:
+  ## 1. Stabilization phase is not strictly increasing or decreasing,
+  ## penalize with the distance between the maximum value and the last value of the signal, multiplied by 100
   peak_stable_distance <-
-    abs(max_peak_signal - tail(stable_signal, 1))
+    abs(max(stable_signal) - tail(stable_signal, 1))
   score <- score - (peak_stable_distance * 100)
   
-  stable_peak <-
-    max(signal[(pressure_start + 18):(pressure_start + 30)]) - tail(stable_signal, 1)
-  drop_peak <-
-    max(signal[(pressure_start + 18):(pressure_start + 30)]) - min(peak_signal)
+  ## 2. Drop before stabilization is at most 45% of the signal's rising section.
+  ## If not met, penalize with a factor of 10.
+  stable_peak <- max(signal[15:30]) - head(peak_signal, 1)
+  drop_peak <- max(signal[15:30]) - min(peak_signal)
   
-  if (stable_peak > (drop_peak * .45)) {
+  if (stable_peak > (drop_peak * 0.45)) {
     score <- score - (drop_peak * 10)
   }
   
-  if (min(stable_signal) < min_response_signal) {
-    score <- score - ((min_response_signal - min(stable_signal)) * 10)
+  ## 3. Signal stabilization occurs at the same level as the drop peak.
+  ## Penalize based on the distance between these two points with a factor of 10.
+  if (min(stable_signal) < min_signal) {
+    score <- score - ((min_signal - min(stable_signal)) * 10)
   }
   
   return(score)

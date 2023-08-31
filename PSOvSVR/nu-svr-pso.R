@@ -97,14 +97,12 @@ source("blocked_cross_validation.R")
 source("score_signal.R")
 
 # Normalizar las señales MABP y CBFV.L
-data <- normalize_signal(data_file, "MABP")
-data <- normalize_signal(data, "CBFV.L")
+data <- normalize_signals(data_file, c("MABP", "CBFV.L"))
 
 # Agregar los retardos a esas señales
-data <- lag_signal(data, 5, "MABP_norm", FALSE)
-data <- lag_signal(data, 5, "CBFV.L_norm", TRUE)
+data <- lag_signal(data, 5, c("MABP_norm", "CBFV.L_norm"))
 
-data_partitions <- blocked_cv(data)
+data_partitions <- blocked_cv(data, 5, 0.2)
 
 #pressure_df$CBFV.L_norm <- NULL
 
@@ -163,13 +161,13 @@ data_model <- svm(
 #pressure_df <- lag_signal(pressure_df, 3, "MABP_norm", TRUE)
 #pressure_df <- lag_signal(pressure_df, 3, "CBFV.L_norm", TRUE)
 
-pressure_df <- add_pressure_step(3)
+pressure_df <- add_pressure_step(3, 40, 2, 0.2)
 
 CBFV_predictions <- generate_signal_response_predictions(
   data_model,
   pressure_df,
   3,
-  30,
+  40,
   c("MABP_norm", "CBFV.L_norm"),
   3,
   c("MABP_norm"),
