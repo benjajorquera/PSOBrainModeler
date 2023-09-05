@@ -28,13 +28,13 @@ normalize_signals <- function(df, signal_names) {
 }
 
 
-#' Add Lagged Columns to a Data Frame
+#' Add Lagged Columns to a Normalized Data Frame
 #'
 #' This function adds lagged value columns to a data frame for specified columns.
 #'
 #' @param data_frame A data frame to which lagged columns will be added.
 #' @param lags An integer specifying the number of lags to consider for adding lagged values.
-#' @param df_col_names A character vector containing the names of columns in the data frame
+#' @param df_col_names A character vector containing the names of normalized columns in the data frame
 #'                    for which lagged columns will be added.
 #'
 #' @return A new data frame with lagged columns added. Rows with resulting NA values from lags
@@ -49,11 +49,12 @@ normalize_signals <- function(df, signal_names) {
 #' @importFrom stats lag
 #'
 #' @export
-lag_signal <- function(data_frame, lags, df_col_names) {
+lag_normalized_signal <- function(data_frame, lags, df_col_names) {
   for (col in df_col_names) {
-    col_data <- data_frame[[col]]
+    col_norm_name <- paste0(col, "_norm")
+    col_data <- data_frame[[col_norm_name]]
     for (lag in 1:lags) {
-      col_name <- paste(col, lag, sep = "_")
+      col_name <- paste(col, lag, sep = "_norm_")
       lagged_values <-
         c(rep(NA, lag), col_data[1:(length(col_data) - lag)])
       data_frame[[col_name]] <- lagged_values

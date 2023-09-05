@@ -34,48 +34,52 @@ objetivo <- function(x) {
   
   cat(cost, nu, gamma, "\n")
   
-  cors <- numeric(5)
-  errors <- numeric(5)
+  cors <- numeric(length(data_partitions))
+  errors <- numeric(length(data_partitions))
   
-  for (i in 1:5) {
+  for (df_list in 1:length(data_partitions)) {
     new_data_validation <-
-      subset(data_partitions[[i]]$validation, select = -CBFV.L_norm)
-    svr_model_pso <- svr_model(data_partitions[[i]]$training,
+      subset(data_partitions[[df_list]]$validation, select = -CBFV.L_norm)
+    #print(new_data_validation)
+    svr_model_pso <- svr_model(data_partitions[[df_list]]$training,
                                cost, nu, gamma)
     
     predictions_pso <-
       predict(svr_model_pso, new_data_validation)
-    cors[i] <- cor(predictions_pso,
-                   data_partitions[[i]]$validation$CBFV.L_norm)
-    errors[i] <-
+    cors[df_list] <- cor(predictions_pso,
+                         data_partitions[[df_list]]$validation$CBFV.L_norm)
+    errors[df_list] <-
       sqrt(mean((
-        data_partitions[[i]]$validation$CBFV.L_norm - predictions_pso
+        data_partitions[[df_list]]$validation$CBFV.L_norm - predictions_pso
       ) ^ 2
       ))
   }
   
   #cristobal.acosta@usach.cl Acceso a cluster para correr programas CC JL
   
-  data_model <- svm(
-    CBFV.L_norm ~ MABP_norm + MABP_norm_1 + MABP_norm_2
-    + MABP_norm_3 + CBFV.L_norm_1 + CBFV.L_norm_2 + CBFV.L_norm_3,
-    data = data,
-    cost = cost,
-    nu = nu,
-    gamma = gamma,
-    kernel = "radial",
-    type = "nu-regression",
-    tolerance = 1
+  ######################################################################
+  
+  data_model <- svr_model(data, cost, nu, gamma)
+  
+  CBFV_predictions <- generate_signal_response_predictions(
+    data_model,
+    pressure_df,
+    3,
+    40,
+    c("MABP_norm", "CBFV.L_norm"),
+    3,
+    c("MABP_norm"),
+    c(1),
+    "CBFV.L_norm",
+    0.8
   )
+  
+  signal_score <- process_signal(CBFV_predictions$CBFV.L_norm, 3)
   
   ############################################################
   
-  
-  predictions_data <- predict(data_model, pressure_df)
-  
-  signal_score <- process_signal(predictions_data, 20)
   if (signal_score > 0) {
-    plot(predictions_data, type = "l")
+    plot(CBFV_predictions$CBFV.L_norm, type = "l")
   }
   
   cat(mean(cors),
@@ -100,7 +104,7 @@ source("score_signal.R")
 data <- normalize_signals(data_file, c("MABP", "CBFV.L"))
 
 # Agregar los retardos a esas señales
-data <- lag_signal(data, 5, c("MABP_norm", "CBFV.L_norm"))
+data <- lag_normalized_signal(data, 5, c("MABP", "CBFV.L"))
 
 data_partitions <- blocked_cv(data, 5, 0.2)
 
@@ -108,6 +112,8 @@ data_partitions <- blocked_cv(data, 5, 0.2)
 
 lo <- c(0.25, 0.1, (1 / (2 * 1024 ^ 2)))
 hi <- c(4096, 0.9, (1 / (2 * 0.0625 ^ 2)))
+
+pressure_df <- add_pressure_step(3, 40, 2, 0.2)
 
 # 512, 0.7, 0.00195 global optimo de búsqueda grid
 
@@ -131,7 +137,7 @@ resultados_pso <-
       p = 0.5,
       c.g = 10,
       trace.stats = TRUE,
-      maxit.stagnate = 10,
+      maxit.stagnate = 30,
       reltol = 0.5,
       hybrid = "improved",
       type = "SPSO2011",
@@ -156,12 +162,6 @@ data_model <- svm(
   tolerance = 1
 )
 
-
-#pressure_df$CBFV.L_norm <- rep(1, 120)
-#pressure_df <- lag_signal(pressure_df, 3, "MABP_norm", TRUE)
-#pressure_df <- lag_signal(pressure_df, 3, "CBFV.L_norm", TRUE)
-
-pressure_df <- add_pressure_step(3, 40, 2, 0.2)
 
 CBFV_predictions <- generate_signal_response_predictions(
   data_model,

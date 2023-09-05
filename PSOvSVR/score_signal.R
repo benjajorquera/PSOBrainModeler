@@ -137,8 +137,8 @@ generate_signal_response_predictions <- function(SVR_model,
   # Using lapply to iterate over pressure_count_seq and process each pressure_count
   invisible(lapply(pressure_count_seq, process_pressure_count))
   
-  print(pressure_df_model)
-  print(predicted_values)
+  #print(pressure_df_model)
+  #print(predicted_values)
   return(predicted_values)
 }
 
