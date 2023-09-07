@@ -45,10 +45,6 @@ normalize_signals <- function(df, signal_names) {
 #' lagged_data <- lag_signal(data, 2, "A")
 #' print(lagged_data)
 #'
-#' @importFrom dplyr select
-#' @importFrom stats lag
-#'
-#' @export
 lag_normalized_signal <- function(data_frame, lags, df_col_names) {
   for (col in df_col_names) {
     col_norm_name <- paste0(col, "_norm")
@@ -80,10 +76,6 @@ lag_normalized_signal <- function(data_frame, lags, df_col_names) {
 #'                                    butter_order = 2, butter_fs = 50)
 #' plot(pressure_step)
 #'
-#' @importFrom signal filter
-#' @importFrom stats filter butter
-#'
-#' @export
 add_pressure_step <- function(pressure_start,
                               signal_end,
                               butter_order,
@@ -102,3 +94,45 @@ add_pressure_step <- function(pressure_start,
   # Return the result as a data frame
   data.frame(signal = pressure_step_smooth)
 }
+
+
+#' Generate Model Data
+#'
+#' This function generates a dataset suitable for training a time-series model by selecting columns of interest and adding lagged values.
+#'
+#' @param dataframe The input dataframe containing the data.
+#' @param col_names A character vector of column names to be included in the output dataset when 'training' is TRUE.
+#' @param predictors A character vector of column names to be included in the output dataset when 'training' is FALSE.
+#' @param lags The number of lagged values to include in the dataset.
+#' @param training A logical value indicating whether the data is for training (TRUE) or prediction (FALSE).
+#'
+#' @return A new dataframe containing the selected columns and lagged values.
+#'
+#' @examples
+#' # Generate training data with 'col_names' and 3 lags
+#' train_data <- generate_model_data(dataframe = my_data, col_names = c("feature1", "feature2"), predictors = NULL, lags = 3, training = TRUE)
+#'
+#' # Generate prediction data with 'predictors' and 2 lags
+#' prediction_data <- generate_model_data(dataframe = my_data, col_names = NULL, predictors = c("feature3", "feature4"), lags = 2, training = FALSE)
+#'
+generate_model_data <-
+  function(dataframe,
+           col_names,
+           predictors,
+           lags,
+           training) {
+    if (training) {
+      new_df <- dataframe %>% select(all_of(col_names))
+    } else {
+      new_df <- dataframe %>% select(all_of(predictors))
+    }
+    
+    lag_cols <-
+      paste(rep(col_names, each = lags), "_", rep(1:lags, times = lags), sep = "")
+    
+    lags_df <- dataframe %>% select(all_of(lag_cols))
+    
+    new_df <- cbind(new_df, lags_df)
+    
+    return(new_df)
+  }

@@ -16,13 +16,13 @@ source("svr_model.R")
 source("pso_objetive.R")
 
 # GLOBAL VARIABLES
-FILE_NAME <- "Sujeto2.txt"
+FILE_NAME <- "Sujeto1.txt"
 SIGNAL_NAMES <- c("MABP", "CBFV.L")
 SEED <- 123
 DATA_FOLDER <- "/Data"
 
 # DATA MANAGEMENT PARAMETERS
-LAG_NUMBER <- 5
+MAX_LAG_NUMBER <- 8
 BCV_FOLDS <- 5
 BCV_VALIDATION_SIZE <- 0.2
 PRESSURE_SIGNAL_START <- 3
@@ -38,15 +38,16 @@ VSVR_KERNEL <- "radial"
 VSVR_RESPONSE <- "CBFV.L_norm"
 
 # PSO CONTROL PARAMETERS
-HYPER_PARAMS_LOWER_BOUNDS <- c(0.25, 0.1, (1 / (2 * 1024 ^ 2)))
-HYPER_PARAMS_UPPER_BOUNDS <- c(4096, 0.9, (1 / (2 * 0.0625 ^ 2)))
-HYPER_PARAMS_INITIAL_VALUES <- c(NA, NA, NA)
+HYPER_PARAMS_LOWER_BOUNDS <- c(0.25, 0.1, (1 / (2 * 1024 ^ 2)), 1)
+HYPER_PARAMS_UPPER_BOUNDS <-
+  c(4096, 0.9, (1 / (2 * 0.0625 ^ 2)), MAX_LAG_NUMBER)
+HYPER_PARAMS_INITIAL_VALUES <- c(NA, NA, NA, NA)
 PSO_SWARM_SIZE <- 5
 PSO_MAX_ITERATIONS <- 100
 PSO_MAX_FUNCTION_CALLS <- 200
 PSO_AVG_INFORMED_PARTICLES <- 0.5
 PSO_GLOBAL_EXPLORATION_CONST <- 10
-PSO_MAX_IT_WITHOUT_IMPROVEMENT <- 30
+PSO_MAX_IT_WITHOUT_IMPROVEMENT <- 50
 PSO_RESTART_TOLERANCE <- 0.5
 PSO_HYBRID_TYPE <- "improved"
 PSO_TYPE <- "SPSO2011"
@@ -64,7 +65,7 @@ data_file <- read.table(FILE_NAME, header = TRUE)
 data <- normalize_signals(data_file, SIGNAL_NAMES)
 
 # Add time lags to the signals
-data <- lag_normalized_signal(data, LAG_NUMBER, SIGNAL_NAMES)
+data <- lag_normalized_signal(data, MAX_LAG_NUMBER, SIGNAL_NAMES)
 
 # Perform k-folded blocked cross-validation
 data_partitions <- blocked_cv(data, BCV_FOLDS, BCV_VALIDATION_SIZE)
@@ -84,7 +85,7 @@ time <- Sys.time()
 # Perform parameter optimization using Particle Swarm Optimization (PSO)
 resultados_pso <- psoptim(
   par = HYPER_PARAMS_INITIAL_VALUES,
-  fn = pso_objetive,
+  fn = pso_objective,
   lower = HYPER_PARAMS_LOWER_BOUNDS,
   upper = HYPER_PARAMS_UPPER_BOUNDS,
   control = list(

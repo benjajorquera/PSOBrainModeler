@@ -40,7 +40,7 @@ objetivo <- function(x) {
   for (df_list in 1:length(data_partitions)) {
     new_data_validation <-
       subset(data_partitions[[df_list]]$validation, select = -CBFV.L_norm)
-    #print(new_data_validation)
+    print(new_data_validation)
     svr_model_pso <- svr_model(data_partitions[[df_list]]$training,
                                cost, nu, gamma)
     

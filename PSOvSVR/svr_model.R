@@ -23,7 +23,6 @@
 #'                     tolerance = 0.001,
 #'                     kernel = "radial")
 #'
-#' @export
 vsvr_model <-
   function(data,
            response_var,
@@ -33,7 +32,7 @@ vsvr_model <-
            tolerance,
            kernel) {
     response_data <- data[[response_var]]
-    data <- data[, !names(data) %in% c(response_var)]
+    data <- data[,!names(data) %in% c(response_var)]
     svm_model <- svm(
       data,
       response_data,

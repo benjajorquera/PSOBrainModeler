@@ -9,8 +9,7 @@
 #'
 #' @return The optimization value for minimization.
 #'
-#' @export
-#'
+
 pso_objective <- function(params) {
   # Extract optimization parameters
   cost <- round(params[1], digits = 2)
@@ -21,8 +20,10 @@ pso_objective <- function(params) {
   else
     gamma <- signif(gamma, digits = 2)
   
+  lags <- round(params[4], digits = 0)
+  
   # Print hyperparameters
-  cat(cost, nu, gamma, "\n")
+  cat(cost, nu, gamma, lags, "\n")
   
   # Initialize vectors for correlations and errors
   cors <- numeric(BCV_FOLDS)
@@ -32,11 +33,22 @@ pso_objective <- function(params) {
   for (df_list in 1:BCV_FOLDS) {
     # Prepare data
     new_data_validation <-
-      subset(data_partitions[[df_list]]$validation, select = -CBFV.L_norm)
-    new_data_validation <-
-      new_data_validation[, !names(new_data_validation) %in% MODEL_EXCLUDED_COLUMNS]
+      generate_model_data(
+        data_partitions[[df_list]]$validation,
+        c("MABP_norm", "CBFV.L_norm"),
+        c("MABP_norm"),
+        lags,
+        FALSE
+      )
+    
     data_partitions_training <-
-      data_partitions[[df_list]]$training[, !names(data_partitions[[df_list]]$training) %in% MODEL_EXCLUDED_COLUMNS]
+      generate_model_data(
+        data_partitions[[df_list]]$training,
+        c("MABP_norm", "CBFV.L_norm"),
+        c("MABP_norm"),
+        lags,
+        TRUE
+      )
     
     # Train SVR model
     svr_model_pso <-
@@ -60,7 +72,7 @@ pso_objective <- function(params) {
     
     if (is.na(cors[df_list])) {
       print("NA CORRELATION: SVM TOLERANCE TOO HIGH")
-      return(Inf)
+      return(-1)
     }
     
     # Compute and save MSE
@@ -72,7 +84,11 @@ pso_objective <- function(params) {
   }
   
   # Train model with all data
-  data_training <- data[, !names(data) %in% MODEL_EXCLUDED_COLUMNS]
+  data_training <- generate_model_data(data,
+                                       c("MABP_norm", "CBFV.L_norm"),
+                                       c("MABP_norm"),
+                                       lags,
+                                       TRUE)
   data_model <-
     vsvr_model(data_training,
                VSVR_RESPONSE,
@@ -90,7 +106,7 @@ pso_objective <- function(params) {
       PRESSURE_SIGNAL_START,
       PRESSURE_SIGNAL_RESPONSE_SIZE,
       c("MABP_norm", "CBFV.L_norm"),
-      LAG_NUMBER,
+      lags,
       c("MABP_norm"),
       c(1),
       VSVR_RESPONSE,

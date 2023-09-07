@@ -106,17 +106,23 @@ generate_signal_response_predictions <- function(SVR_model,
         setNames(data.frame(name = tail(pressure_df_model[col_name], 1)), paste0(col_name, "_1"))
       }))
     
-    # Generate previous remaining values for each column and lag
-    new_columns <- unlist(lapply(column_names, function(col_name) {
-      lapply(2:column_lags, function(col_lag) {
-        lagged_col_name <- paste0(col_name, "_", (col_lag - 1))
-        setNames(data.frame(name = tail(pressure_df_model[lagged_col_name], 1)),
-                 paste0(col_name, "_", col_lag))
-      })
-    }), recursive = FALSE)
+    if (column_lags >= 2) {
+      # Generate previous remaining values for each column and lag
+      new_columns <-
+        unlist(lapply(column_names, function(col_name) {
+          lapply(2:column_lags, function(col_lag) {
+            lagged_col_name <- paste0(col_name, "_", (col_lag - 1))
+            setNames(data.frame(name = tail(pressure_df_model[lagged_col_name], 1)),
+                     paste0(col_name, "_", col_lag))
+          })
+        }), recursive = FALSE)
+      
+      # Append new columns with previous values to new_pressure
+      new_pressure <-
+        cbind(new_pressure, do.call(cbind, new_columns))
+      
+    }
     
-    # Append new columns with previous values to new_pressure
-    new_pressure <- cbind(new_pressure, do.call(cbind, new_columns))
     
     # Add the new row to pressure_df_model and reset row names
     pressure_df_model <<- rbind(pressure_df_model, new_pressure)
@@ -162,7 +168,6 @@ generate_signal_response_predictions <- function(SVR_model,
 #' pressure_start <- 5
 #' score <- process_signal(signal, pressure_start)
 #'
-#' @export
 process_signal <- function(signal, pressure_start) {
   # Basic filter:
   ## 1. Global minimum (peak) between 3 and 9 seconds after the drop occurs
@@ -173,10 +178,14 @@ process_signal <- function(signal, pressure_start) {
   peak_signal <- signal[(pressure_start + 3):(pressure_start + 9)]
   stable_signal <-
     signal[(pressure_start + 15):(pressure_start + 30)]
+  drop_signal <- signal[(pressure_start + 9):(pressure_start+15)]
   
   min_signal <- min(signal)
   
+  max_drop_signal <- max(drop_signal)
+  
   if (!(min_signal %in% peak_signal) ||
+      #(max_drop_signal < 0.5) ||
       !(min_signal >= -0.2 && min_signal <= 0.5) ||
       var(stable_signal) > 0.002 ||
       !(max(signal) < 1.2 && min(signal) > -0.2)) {
