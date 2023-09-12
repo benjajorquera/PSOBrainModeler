@@ -20,10 +20,11 @@ pso_objective <- function(params) {
   else
     gamma <- signif(gamma, digits = 2)
   
-  lags <- round(params[4], digits = 0)
+  mabp_lag <- round(params[4], digits = 0)
+  cbfv_lag <- round(params[5], digits = 0)
   
   # Print hyperparameters
-  cat(cost, nu, gamma, lags, "\n")
+  cat(cost, nu, gamma, mabp_lag, cbfv_lag, "\n")
   
   # Initialize vectors for correlations and errors
   cors <- numeric(BCV_FOLDS)
@@ -37,7 +38,7 @@ pso_objective <- function(params) {
         data_partitions[[df_list]]$validation,
         c("MABP_norm", "CBFV.L_norm"),
         c("MABP_norm"),
-        lags,
+        c(mabp_lag, cbfv_lag),
         FALSE
       )
     
@@ -46,7 +47,7 @@ pso_objective <- function(params) {
         data_partitions[[df_list]]$training,
         c("MABP_norm", "CBFV.L_norm"),
         c("MABP_norm"),
-        lags,
+        c(mabp_lag, cbfv_lag),
         TRUE
       )
     
@@ -65,15 +66,18 @@ pso_objective <- function(params) {
     # Make predictions
     predictions_pso <- predict(svr_model_pso, new_data_validation)
     
+    if (sd(predictions_pso) == 0) {
+      print(
+        "STANDARD DEVIATION OF 'PREDICTIONS PSO' IS ZERO: SVM TOLERANCE IS TOO HIGH FOR NUMBER OF LAGS USED"
+      )
+      print("RETURNING MAXIMUM VALUE OF OPTIMIZATION")
+      return(10)
+    }
+    
     # Compute and save correlation
     cors[df_list] <-
       cor(predictions_pso,
           data_partitions[[df_list]]$validation$CBFV.L_norm)
-    
-    if (is.na(cors[df_list])) {
-      print("NA CORRELATION: SVM TOLERANCE TOO HIGH")
-      return(-1)
-    }
     
     # Compute and save MSE
     errors[df_list] <-
@@ -87,7 +91,7 @@ pso_objective <- function(params) {
   data_training <- generate_model_data(data,
                                        c("MABP_norm", "CBFV.L_norm"),
                                        c("MABP_norm"),
-                                       lags,
+                                       c(mabp_lag, cbfv_lag),
                                        TRUE)
   data_model <-
     vsvr_model(data_training,
@@ -106,7 +110,7 @@ pso_objective <- function(params) {
       PRESSURE_SIGNAL_START,
       PRESSURE_SIGNAL_RESPONSE_SIZE,
       c("MABP_norm", "CBFV.L_norm"),
-      lags,
+      c(mabp_lag), cbfv_lag,
       c("MABP_norm"),
       c(1),
       VSVR_RESPONSE,
@@ -121,6 +125,9 @@ pso_objective <- function(params) {
   if (signal_score > 0) {
     plot(CBFV_predictions$CBFV.L_norm, type = "l")
   }
+  else {
+    return(5)
+  }
   
   # Print optimization values
   cat(mean(cors),
@@ -131,4 +138,32 @@ pso_objective <- function(params) {
   
   # Return optimization value for minimization
   return(2 - mean(cors) + mean(errors) - (signal_score * 0.1))
+}
+
+pso_optim <- function() {
+  return(
+    psoptim(
+      par = HYPER_PARAMS_INITIAL_VALUES,
+      fn = pso_objective,
+      lower = HYPER_PARAMS_LOWER_BOUNDS,
+      upper = HYPER_PARAMS_UPPER_BOUNDS,
+      control = list(
+        s = PSO_SWARM_SIZE,
+        maxit = PSO_MAX_ITERATIONS,
+        maxf = PSO_MAX_FUNCTION_CALLS,
+        trace = 1,
+        REPORT = 1,
+        p = PSO_AVG_INFORMED_PARTICLES,
+        c.g = PSO_GLOBAL_EXPLORATION_CONST,
+        trace.stats = TRUE,
+        maxit.stagnate = PSO_MAX_IT_WITHOUT_IMPROVEMENT,
+        reltol = PSO_RESTART_TOLERANCE,
+        hybrid = PSO_HYBRID_TYPE,
+        type = PSO_TYPE,
+        vectorize = PSO_VECTORIZATION,
+        hybrid.control = PSO_HYBRID_CONTROL
+      )
+    )
+  )
+  
 }

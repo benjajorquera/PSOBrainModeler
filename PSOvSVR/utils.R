@@ -127,12 +127,15 @@ generate_model_data <-
       new_df <- dataframe %>% select(all_of(predictors))
     }
     
-    lag_cols <-
-      paste(rep(col_names, each = lags), "_", rep(1:lags, times = lags), sep = "")
-    
-    lags_df <- dataframe %>% select(all_of(lag_cols))
-    
-    new_df <- cbind(new_df, lags_df)
+    for (col_number in 1:length(col_names)) {
+      lag_cols <-
+        paste(rep(col_names[col_number], each = lags[col_number]),
+              "_",
+              rep(1:lags[col_number]))
+      lag_cols <- gsub(" ", "", lag_cols)
+      lags_df <- dataframe %>% select(all_of(lag_cols))
+      new_df <- cbind(new_df, lags_df)
+    }
     
     return(new_df)
   }

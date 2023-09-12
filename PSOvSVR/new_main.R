@@ -16,43 +16,64 @@ source("svr_model.R")
 source("pso_objetive.R")
 
 # GLOBAL VARIABLES
-FILE_NAME <- "Sujeto1.txt"
-SIGNAL_NAMES <- c("MABP", "CBFV.L")
+FILE_NAME <- "Sujeto3.txt"
 SEED <- 123
 DATA_FOLDER <- "/Data"
+MODEL_EXCLUDED_COLUMNS <-
+  c("Time", "MABP", "CBFV.L", "CBFV.R")
 
 # DATA MANAGEMENT PARAMETERS
-MAX_LAG_NUMBER <- 8
 BCV_FOLDS <- 5
 BCV_VALIDATION_SIZE <- 0.2
 PRESSURE_SIGNAL_START <- 3
 PRESSURE_SIGNAL_RESPONSE_SIZE <- 40
 BUTTER_FILTER_ORDER <- 2
 BUTTER_FILTER_FS <- 0.2
-MODEL_EXCLUDED_COLUMNS <-
-  c("Time", "MABP", "CBFV.L", "CBFV.R", "etCO2")
+MAX_LAG_NUMBER <- 8
+SIGNAL_NAMES_NORM <- c("MABP", "CBFV.L")
 
 # V-SVR PARAMETERS
 VSVR_TOLERANCE <- 1
-VSVR_KERNEL <- "radial"
 VSVR_RESPONSE <- "CBFV.L_norm"
 
 # PSO CONTROL PARAMETERS
-HYPER_PARAMS_LOWER_BOUNDS <- c(0.25, 0.1, (1 / (2 * 1024 ^ 2)), 1)
-HYPER_PARAMS_UPPER_BOUNDS <-
-  c(4096, 0.9, (1 / (2 * 0.0625 ^ 2)), MAX_LAG_NUMBER)
-HYPER_PARAMS_INITIAL_VALUES <- c(NA, NA, NA, NA)
-PSO_SWARM_SIZE <- 5
-PSO_MAX_ITERATIONS <- 100
-PSO_MAX_FUNCTION_CALLS <- 200
-PSO_AVG_INFORMED_PARTICLES <- 0.5
-PSO_GLOBAL_EXPLORATION_CONST <- 10
-PSO_MAX_IT_WITHOUT_IMPROVEMENT <- 50
-PSO_RESTART_TOLERANCE <- 0.5
+PSO_SWARM_SIZE <-
+  5 # Swarm size, if type == SPSO2011: defaults is 40, else defaults to 'floor(10+2*sqrt(length(par)))', with par vector of params
+
+PSO_MAX_ITERATIONS <- 200 # Defaults to '1000'
+
+PSO_MAX_FUNCTION_CALLS <-
+  500 # Maximum number of function evaluations, defaults to 'Inf'
+
+PSO_AVG_INFORMED_PARTICLES <-
+  0.5 # Average percentage of informants for each particle. A value of 1 implies that all particles are fully informed. Defaults to '1-(1-1/s)^k'
+
+PSO_GLOBAL_EXPLORATION_CONST <-
+  10 # Global exploration constant. Defaults to '5+log(2)'
+
+PSO_MAX_IT_WITHOUT_IMPROVEMENT <-
+  100 # Maximum number of iterations without improvement. Defaults to 'Inf'
+
+PSO_RESTART_TOLERANCE <-
+  0.5 # Tolerance for restarting: restarts if max( distance(best_particle, all_other_particles)) < reltol*d
+
 PSO_HYBRID_TYPE <- "improved"
+#' If true, each normal PSO position update is followed by an L-BFGS-B search with the provided position as initial guess.
+#' This makes the implementation a hybrid approach. Defaults to FALSE which disables BFGS for the local search.
+#' Note that no attempt is done to control the maximal number of function evaluations within the local search step (this can be done separately through hybrid.control)
+#' but the number of function evaluations used by the local search method counts towards the limit provided by maxf AFTER the local search returns.
+#' To support a broader class of hybrid approaches a character vector can also be supplied with “off” being equivalent to false,
+#' “on” equivalent to true, and “improved” implying that the local search will only be performed when the swarm finds an improvement.
+
 PSO_TYPE <- "SPSO2011"
-PSO_VECTORIZATION <- TRUE
-PSO_HYBRID_CONTROL <- list(maxit = 1)
+#' Character vector which describes which reference implementation of SPSO is followed.
+#' Can take the value of “SPSO2007” or “SPSO2011”. Defaults to “SPSO2007”.
+
+PSO_VECTORIZATION <-
+  TRUE # Logical; if TRUE the particles are processed in a vectorized manner, defaults to 'FALSE'
+
+PSO_HYBRID_CONTROL <-
+  list(maxit = 1) # List with any additional control parameters to pass on to optim when using L-BFGS-B for the local search. Defaults to NULL.
 
 # Set random seed
 set.seed(SEED)
@@ -62,10 +83,10 @@ setwd(paste0(dirname(getActiveDocumentContext()$path), DATA_FOLDER))
 data_file <- read.table(FILE_NAME, header = TRUE)
 
 # Normalize the signals
-data <- normalize_signals(data_file, SIGNAL_NAMES)
+data <- normalize_signals(data_file, SIGNAL_NAMES_NORM)
 
 # Add time lags to the signals
-data <- lag_normalized_signal(data, MAX_LAG_NUMBER, SIGNAL_NAMES)
+data <- lag_normalized_signal(data, MAX_LAG_NUMBER, SIGNAL_NAMES_NORM)
 
 # Perform k-folded blocked cross-validation
 data_partitions <- blocked_cv(data, BCV_FOLDS, BCV_VALIDATION_SIZE)
@@ -79,32 +100,39 @@ pressure_df <-
     BUTTER_FILTER_FS
   )
 
+# FIR AND NFIR
+
+# Signals to be processed
+SIGNAL_NAMES <- c("MABP", "CBFV.L")
+
+# Maximum and minimum number of signals lags, respectibly
+MAX_LAG_NUMBERS <- c(8, 6)
+MIN_LAG_NUMBERS <- c(1, 1)
+
+# Add extra excluded columns
+MODEL_EXCLUDED_COLUMNS <- c(MODEL_EXCLUDED_COLUMNS, "etCO2")
+
+# v-SVR kernel, "lineal" for Lineal models and "radial" for non lineal models
+VSVR_KERNEL <- "radial"
+
+# v-SVR hyper params and signal lags to be optimized, need to have same size
+HYPER_PARAMS_LOWER_BOUNDS <-
+  c(0.25, 0.1, (1 / (2 * 1024 ^ 2)), MIN_LAG_NUMBERS[1], MIN_LAG_NUMBERS[2])
+HYPER_PARAMS_UPPER_BOUNDS <-
+  c(4096, 0.9, (1 / (2 * 0.0625 ^ 2)), MAX_LAG_NUMBERS[1], MAX_LAG_NUMBERS[2])
+HYPER_PARAMS_INITIAL_VALUES <- c(NA, NA, NA, NA, NA)
+
+if (length(HYPER_PARAMS_LOWER_BOUNDS) != length(HYPER_PARAMS_UPPER_BOUNDS) ||
+    length(HYPER_PARAMS_LOWER_BOUNDS) != length(HYPER_PARAMS_INITIAL_VALUES)) {
+  print("DIFFERENT SIZES OF PSO HYPERPARAMS CONTROL")
+  return()
+}
+
 # Measure the time taken for optimization
 time <- Sys.time()
 
 # Perform parameter optimization using Particle Swarm Optimization (PSO)
-resultados_pso <- psoptim(
-  par = HYPER_PARAMS_INITIAL_VALUES,
-  fn = pso_objective,
-  lower = HYPER_PARAMS_LOWER_BOUNDS,
-  upper = HYPER_PARAMS_UPPER_BOUNDS,
-  control = list(
-    s = PSO_SWARM_SIZE,
-    maxit = PSO_MAX_ITERATIONS,
-    maxf = PSO_MAX_FUNCTION_CALLS,
-    trace = 1,
-    REPORT = 1,
-    p = PSO_AVG_INFORMED_PARTICLES,
-    c.g = PSO_GLOBAL_EXPLORATION_CONST,
-    trace.stats = TRUE,
-    maxit.stagnate = PSO_MAX_IT_WITHOUT_IMPROVEMENT,
-    reltol = PSO_RESTART_TOLERANCE,
-    hybrid = PSO_HYBRID_TYPE,
-    type = PSO_TYPE,
-    vectorize = PSO_VECTORIZATION,
-    hybrid.control = PSO_HYBRID_CONTROL
-  )
-)
+resultados_pso <- pso_optim()
 
 # Calculate the time taken for optimization
 time <- Sys.time() - time
