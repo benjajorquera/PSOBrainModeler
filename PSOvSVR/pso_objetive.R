@@ -26,125 +26,46 @@ pso_objective <- function(params) {
   # Print hyperparameters
   cat(cost, nu, gamma, mabp_lag, cbfv_lag, "\n")
   
-  # Initialize vectors for correlations and errors
-  cors <- numeric(BCV_FOLDS)
-  errors <- numeric(BCV_FOLDS)
-  
-  # Iterate through data partitions
-  for (df_list in 1:BCV_FOLDS) {
-    # Prepare data
-    new_data_validation <-
-      generate_model_data(
-        data_partitions[[df_list]]$validation,
-        c("MABP_norm", "CBFV.L_norm"),
-        c("MABP_norm"),
-        c(mabp_lag, cbfv_lag),
-        FALSE
-      )
-    
-    data_partitions_training <-
-      generate_model_data(
-        data_partitions[[df_list]]$training,
-        c("MABP_norm", "CBFV.L_norm"),
-        c("MABP_norm"),
-        c(mabp_lag, cbfv_lag),
-        TRUE
-      )
-    
-    # Train SVR model
-    svr_model_pso <-
-      vsvr_model(
-        data_partitions_training,
-        VSVR_RESPONSE,
-        cost,
-        nu,
-        gamma,
-        VSVR_TOLERANCE,
-        VSVR_KERNEL
-      )
-    
-    # Make predictions
-    predictions_pso <- predict(svr_model_pso, new_data_validation)
-    
-    if (sd(predictions_pso) == 0) {
-      print(
-        "STANDARD DEVIATION OF 'PREDICTIONS PSO' IS ZERO: SVM TOLERANCE IS TOO HIGH FOR NUMBER OF LAGS USED"
-      )
-      print("RETURNING MAXIMUM VALUE OF OPTIMIZATION")
-      return(10)
-    }
-    
-    # Compute and save correlation
-    cors[df_list] <-
-      cor(predictions_pso,
-          data_partitions[[df_list]]$validation$CBFV.L_norm)
-    
-    # Compute and save MSE
-    errors[df_list] <-
-      sqrt(mean((
-        data_partitions[[df_list]]$validation$CBFV.L_norm - predictions_pso
-      ) ^ 2
-      ))
-  }
-  
-  # Train model with all data
-  data_training <- generate_model_data(data,
-                                       c("MABP_norm", "CBFV.L_norm"),
-                                       c("MABP_norm"),
-                                       c(mabp_lag, cbfv_lag),
-                                       TRUE)
-  data_model <-
-    vsvr_model(data_training,
-               VSVR_RESPONSE,
-               cost,
-               nu,
-               gamma,
-               VSVR_TOLERANCE,
-               VSVR_KERNEL)
-  
-  # Make response predictions
-  CBFV_predictions <-
-    generate_signal_response_predictions(
-      data_model,
-      pressure_df,
-      PRESSURE_SIGNAL_START,
-      PRESSURE_SIGNAL_RESPONSE_SIZE,
-      c("MABP_norm", "CBFV.L_norm"),
-      c(mabp_lag), cbfv_lag,
-      c("MABP_norm"),
-      c(1),
-      VSVR_RESPONSE,
-      0.8
-    )
-  
-  # Process response signal and score it
-  signal_score <-
-    process_signal(CBFV_predictions$CBFV.L_norm, PRESSURE_SIGNAL_START)
-  
-  # Plot response signal if it passes a basic filter
-  if (signal_score > 0) {
-    plot(CBFV_predictions$CBFV.L_norm, type = "l")
-  }
-  else {
-    return(5)
-  }
-  
-  # Print optimization values
-  cat(mean(cors),
-      mean(errors),
-      (1 - mean(cors) + mean(errors)),
-      (signal_score * 0.1),
-      "\n")
-  
-  # Return optimization value for minimization
-  return(2 - mean(cors) + mean(errors) - (signal_score * 0.1))
+  return(pso_training_model(cost, nu, gamma, c(mabp_lag, cbfv_lag)))
 }
 
-pso_optim <- function() {
+linear_pso_objective <- function(params) {
+  # Extract optimization parameters
+  cost <- round(params[1], digits = 2)
+  nu <- round(params[2], digits = 2)
+  
+  mabp_lag <- round(params[3], digits = 0)
+  cbfv_lag <- round(params[4], digits = 0)
+  
+  # Print hyperparameters
+  cat(cost, nu, mabp_lag, cbfv_lag, "\n")
+  
+  return(pso_training_model(cost, nu, NULL, c(mabp_lag, cbfv_lag)))
+}
+
+pso_objective_FIR <- function(params) {
+  # Extract optimization parameters
+  cost <- round(params[1], digits = 2)
+  nu <- round(params[2], digits = 2)
+  gamma <- params[3]
+  if (gamma >= 1)
+    gamma <- round(gamma, digits = 2)
+  else
+    gamma <- signif(gamma, digits = 2)
+  
+  mabp_lag <- round(params[4], digits = 0)
+  
+  # Print hyperparameters
+  cat(cost, nu, gamma, mabp_lag, "\n")
+  
+  return(pso_training_model(cost, nu, gamma, mabp_lag, NULL))
+}
+
+pso_optim <- function(fn) {
   return(
     psoptim(
       par = HYPER_PARAMS_INITIAL_VALUES,
-      fn = pso_objective,
+      fn = fn,
       lower = HYPER_PARAMS_LOWER_BOUNDS,
       upper = HYPER_PARAMS_UPPER_BOUNDS,
       control = list(
@@ -167,3 +88,117 @@ pso_optim <- function() {
   )
   
 }
+
+
+pso_training_model <-
+  function(cost, nu, gamma = NULL, LAGS) {
+    # Initialize vectors for correlations and errors
+    cors <- numeric(BCV_FOLDS)
+    errors <- numeric(BCV_FOLDS)
+    
+    # Iterate through data partitions
+    for (df_list in 1:BCV_FOLDS) {
+      # Prepare data
+      new_data_validation <-
+        generate_model_data(
+          data_partitions[[df_list]]$validation,
+          SIGNAL_NORM_NAMES,
+          PREDICTORS_NORM_NAMES,
+          LAGS,
+          FALSE
+        )
+      
+      data_partitions_training <-
+        generate_model_data(
+          data_partitions[[df_list]]$training,
+          SIGNAL_NORM_NAMES,
+          PREDICTORS_NORM_NAMES,
+          LAGS,
+          TRUE
+        )
+      
+      # Train SVR model
+      svr_model_pso <-
+        vsvr_model(data_partitions_training,
+                   VSVR_RESPONSE,
+                   cost,
+                   nu,
+                   gamma,
+                   VSVR_TOLERANCE)
+      
+      # Make predictions
+      predictions_pso <- predict(svr_model_pso, new_data_validation)
+      
+      if (sd(predictions_pso) == 0) {
+        print(
+          "STANDARD DEVIATION OF 'PREDICTIONS PSO' IS ZERO: SVM TOLERANCE IS TOO HIGH FOR NUMBER OF LAGS USED"
+        )
+        print("RETURNING MAXIMUM VALUE OF OPTIMIZATION")
+        return(10)
+      }
+      
+      # Compute and save correlation
+      cors[df_list] <-
+        cor(predictions_pso,
+            data_partitions[[df_list]]$validation$CBFV.L_norm)
+      
+      # Compute and save MSE
+      errors[df_list] <-
+        sqrt(mean((
+          data_partitions[[df_list]]$validation$CBFV.L_norm - predictions_pso
+        ) ^ 2
+        ))
+    }
+    
+    # Train model with all data
+    data_training <- generate_model_data(data,
+                                         SIGNAL_NORM_NAMES,
+                                         PREDICTORS_NORM_NAMES,
+                                         LAGS,
+                                         TRUE)
+    data_model <-
+      vsvr_model(data_training,
+                 VSVR_RESPONSE,
+                 cost,
+                 nu,
+                 gamma,
+                 VSVR_TOLERANCE)
+    
+    # Make response predictions
+    CBFV_predictions <-
+      generate_signal_response_predictions(
+        data_model,
+        pressure_df,
+        PRESSURE_SIGNAL_START,
+        PRESSURE_SIGNAL_RESPONSE_SIZE,
+        SIGNAL_NORM_NAMES,
+        c(mabp_lag),
+        cbfv_lag,
+        PREDICTORS_NORM_NAMES,
+        c(1),
+        VSVR_RESPONSE,
+        0.8
+      )
+    
+    # Process response signal and score it
+    signal_score <-
+      process_signal(CBFV_predictions$CBFV.L_norm, PRESSURE_SIGNAL_START)
+    
+    # Plot response signal if it passes a basic filter
+    if (signal_score > 0) {
+      plot(CBFV_predictions$CBFV.L_norm, type = "l")
+    }
+    else {
+      return(5)
+    }
+    
+    # Print optimization values
+    cat(mean(cors),
+        mean(errors),
+        (1 - mean(cors) + mean(errors)),
+        (signal_score * 0.1),
+        "\n")
+    
+    # Return optimization value for minimization
+    return(2 - mean(cors) + mean(errors) - (signal_score * 0.1))
+  }

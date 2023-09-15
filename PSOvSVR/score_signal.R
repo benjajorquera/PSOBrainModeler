@@ -238,6 +238,7 @@ process_signal <- function(signal, pressure_start) {
       !(min_signal >= -0.2 && min_signal <= 0.5) ||
       var(stable_signal) > 0.002 ||
       !(max(signal) < 1.2 && min(signal) > -0.2)) {
+    print("RESPONSE SIGNAL FAILED BASIC FILTER")
     return(-10)
   }
   
@@ -247,7 +248,7 @@ process_signal <- function(signal, pressure_start) {
   ## 1. Stabilization phase is not strictly increasing or decreasing,
   ## penalize with the distance between the maximum value and the last value of the signal, multiplied by 100
   peak_stable_distance <-
-    abs(max(stable_signal) - tail(stable_signal, 1))
+    abs(max(stable_signal) - min(stable_signal))
   score <- score - (peak_stable_distance * 100)
   
   ## 2. Drop before stabilization is at most 45% of the signal's rising section.

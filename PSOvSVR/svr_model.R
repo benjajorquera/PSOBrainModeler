@@ -28,20 +28,32 @@ vsvr_model <-
            response_var,
            cost,
            nu,
-           gamma,
-           tolerance,
-           kernel) {
+           gamma = NULL,
+           tolerance) {
     response_data <- data[[response_var]]
-    data <- data[,!names(data) %in% c(response_var)]
-    svm_model <- svm(
-      data,
-      response_data,
-      cost = cost,
-      nu = nu,
-      gamma = gamma,
-      kernel = kernel,
-      type = "nu-regression",
-      tolerance = tolerance
-    )
+    data <- data[, !names(data) %in% c(response_var)]
+    if (is.null(gamma)) {
+      svm_model <- svm(
+        data,
+        response_data,
+        cost = cost,
+        nu = nu,
+        kernel = "linear",
+        type = "nu-regression",
+        tolerance = tolerance
+      )
+    }
+    else {
+      svm_model <- svm(
+        data,
+        response_data,
+        cost = cost,
+        nu = nu,
+        gamma = gamma,
+        kernel = "radial",
+        type = "nu-regression",
+        tolerance = tolerance
+      )
+    }
     return(svm_model)
   }

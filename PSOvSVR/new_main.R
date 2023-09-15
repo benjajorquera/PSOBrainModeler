@@ -14,13 +14,12 @@ source("blocked_cross_validation.R")
 source("score_signal.R")
 source("svr_model.R")
 source("pso_objetive.R")
+source("lineal_pso_objective.R")
 
 # GLOBAL VARIABLES
-FILE_NAME <- "Sujeto3.txt"
+FILE_NAME <- "Sujeto1.txt"
 SEED <- 123
 DATA_FOLDER <- "/Data"
-MODEL_EXCLUDED_COLUMNS <-
-  c("Time", "MABP", "CBFV.L", "CBFV.R")
 
 # DATA MANAGEMENT PARAMETERS
 BCV_FOLDS <- 5
@@ -30,7 +29,6 @@ PRESSURE_SIGNAL_RESPONSE_SIZE <- 40
 BUTTER_FILTER_ORDER <- 2
 BUTTER_FILTER_FS <- 0.2
 MAX_LAG_NUMBER <- 8
-SIGNAL_NAMES_NORM <- c("MABP", "CBFV.L")
 
 # V-SVR PARAMETERS
 VSVR_TOLERANCE <- 1
@@ -38,7 +36,7 @@ VSVR_RESPONSE <- "CBFV.L_norm"
 
 # PSO CONTROL PARAMETERS
 PSO_SWARM_SIZE <-
-  5 # Swarm size, if type == SPSO2011: defaults is 40, else defaults to 'floor(10+2*sqrt(length(par)))', with par vector of params
+  5 # Swarm size, if type == SPSO2011: defaults is 40, else defaults to 'floor(10+2*sqrt(length(par)))', with "par" params vector
 
 PSO_MAX_ITERATIONS <- 200 # Defaults to '1000'
 
@@ -82,15 +80,6 @@ set.seed(SEED)
 setwd(paste0(dirname(getActiveDocumentContext()$path), DATA_FOLDER))
 data_file <- read.table(FILE_NAME, header = TRUE)
 
-# Normalize the signals
-data <- normalize_signals(data_file, SIGNAL_NAMES_NORM)
-
-# Add time lags to the signals
-data <- lag_normalized_signal(data, MAX_LAG_NUMBER, SIGNAL_NAMES_NORM)
-
-# Perform k-folded blocked cross-validation
-data_partitions <- blocked_cv(data, BCV_FOLDS, BCV_VALIDATION_SIZE)
-
 # Generate a data frame for the smoothed negative pressure step response with a Butterworth filter
 pressure_df <-
   add_pressure_step(
@@ -100,20 +89,25 @@ pressure_df <-
     BUTTER_FILTER_FS
   )
 
-# FIR AND NFIR
-
 # Signals to be processed
 SIGNAL_NAMES <- c("MABP", "CBFV.L")
+
+EXCLUDED_COLS <- c("Time", "CBFV.R", "etCO2")
+
+SIGNAL_NORM_NAMES <- c("MABP_norm", "CBFV.L_norm")
+
+PREDICTORS_NORM_NAMES <- c("MABP_norm")
+
+
+data <-
+  process_dataframe(data_file, EXCLUDED_COLS, MAX_LAG_NUMBER, SIGNAL_NAMES)
+
+# Perform k-folded blocked cross-validation
+data_partitions <- blocked_cv(data, BCV_FOLDS, BCV_VALIDATION_SIZE)
 
 # Maximum and minimum number of signals lags, respectibly
 MAX_LAG_NUMBERS <- c(8, 6)
 MIN_LAG_NUMBERS <- c(1, 1)
-
-# Add extra excluded columns
-MODEL_EXCLUDED_COLUMNS <- c(MODEL_EXCLUDED_COLUMNS, "etCO2")
-
-# v-SVR kernel, "lineal" for Lineal models and "radial" for non lineal models
-VSVR_KERNEL <- "radial"
 
 # v-SVR hyper params and signal lags to be optimized, need to have same size
 HYPER_PARAMS_LOWER_BOUNDS <-
@@ -132,7 +126,7 @@ if (length(HYPER_PARAMS_LOWER_BOUNDS) != length(HYPER_PARAMS_UPPER_BOUNDS) ||
 time <- Sys.time()
 
 # Perform parameter optimization using Particle Swarm Optimization (PSO)
-resultados_pso <- pso_optim()
+resultados_pso <- pso_optim(pso_objective)
 
 # Calculate the time taken for optimization
 time <- Sys.time() - time
@@ -140,3 +134,11 @@ time <- Sys.time() - time
 # Print the elapsed time and the optimized value
 cat("Elapsed time for optimization:", time, "seconds\n")
 cat("Optimized value:", resultados_pso$value, "\n")
+
+HYPER_PARAMS_LOWER_BOUNDS <-
+  c(0.25, 0.1, MIN_LAG_NUMBERS[1], MIN_LAG_NUMBERS[2])
+HYPER_PARAMS_UPPER_BOUNDS <-
+  c(4096, 0.9, MAX_LAG_NUMBERS[1], MAX_LAG_NUMBERS[2])
+HYPER_PARAMS_INITIAL_VALUES <- c(NA, NA, NA, NA)
+
+resultados_pso_lineal <- pso_optim(linear_pso_objective)

@@ -1,4 +1,4 @@
-#' Normalize Signals in a Data Frame
+#' Normalize Signals by Name in a Data Frame
 #'
 #' This function normalizes the specified signals in a data frame using min-max scaling.
 #'
@@ -11,7 +11,7 @@
 #' df <- data.frame(Time = 1:10, Signal1 = c(2, 4, 6, 8, 10, 5, 3, 7, 9, 1), Signal2 = c(10, 5, 8, 3, 6, 9, 2, 7, 4, 1))
 #' normalized_df <- normalize_signals(df, c("Signal1", "Signal2"))
 #'
-normalize_signals <- function(df, signal_names) {
+normalize_signals_by_name <- function(df, signal_names) {
   df_list <- lapply(signal_names, function(signal_name) {
     # Extract the signal to be normalized
     signal <- df[[signal_name]]
@@ -26,6 +26,32 @@ normalize_signals <- function(df, signal_names) {
   
   return(df)
 }
+
+#' Normalize All Signals in a Data Frame
+#'
+#' This function normalizes all signals (columns data) in a data frame using min-max scaling.
+#'
+#' @param df A data frame containing the signals to be normalized.
+#'
+#' @return A modified data frame with normalized signals added as new columns.
+#'
+#' @examples
+#' df <- data.frame(Time = 1:10, Signal1 = c(2, 4, 6, 8, 10, 5, 3, 7, 9, 1), Signal2 = c(10, 5, 8, 3, 6, 9, 2, 7, 4, 1))
+#' normalized_df <- normalize_signals(df)
+#'
+normalize_all_signals <- function(df) {
+  df_list <- lapply(colnames(df), function(signal) {
+    # Perform min-max normalization
+    signal_norm <-
+      (df[signal] - min(df[signal], na.rm = TRUE)) / (max(df[signal], na.rm = TRUE) - min(df[signal], na.rm = TRUE))
+    
+    # Add the normalized signal as a new column in the data frame
+    df[paste0(signal, "_norm")] <<- signal_norm
+  })
+  
+  return(df)
+}
+
 
 
 #' Add Lagged Columns to a Normalized Data Frame
@@ -45,15 +71,34 @@ normalize_signals <- function(df, signal_names) {
 #' lagged_data <- lag_signal(data, 2, "A")
 #' print(lagged_data)
 #'
-lag_normalized_signal <- function(data_frame, lags, df_col_names) {
-  for (col in df_col_names) {
-    col_norm_name <- paste0(col, "_norm")
-    col_data <- data_frame[[col_norm_name]]
+lag_normalized_signals <-
+  function(data_frame, lags, df_col_names) {
+    for (col in df_col_names) {
+      col_norm_name <- paste0(col, "_norm")
+      col_data <- data_frame[[col_norm_name]]
+      for (lag in 1:lags) {
+        col_name <- paste(col, lag, sep = "_norm_")
+        lagged_values <-
+          c(rep(NA, lag), col_data[1:(length(col_data) - lag)])
+        data_frame[[col_name]] <- lagged_values
+      }
+    }
+    
+    return(na.omit(data_frame))
+  }
+
+lag_all_signals <- function(data_frame, lags) {
+  for (col in colnames(data_frame)) {
+    col_data <- data_frame[col]
+    if (nrow(col_data) < lags) {
+      print("Number of rows less than number of lags")
+      return()
+    }
     for (lag in 1:lags) {
-      col_name <- paste(col, lag, sep = "_norm_")
+      col_name <- paste(col, lag, sep = "_")
       lagged_values <-
-        c(rep(NA, lag), col_data[1:(length(col_data) - lag)])
-      data_frame[[col_name]] <- lagged_values
+        c(rep(NA, lag), col_data[(1:(nrow(col_data) - lag)),])
+      data_frame[col_name] <- lagged_values
     }
   }
   
@@ -139,3 +184,42 @@ generate_model_data <-
     
     return(new_df)
   }
+
+
+filter_signals_dataframe <- function(df, signal_names) {
+  if (is.null(signal_names)) {
+    cat("Nombre de columnas vacío.\n")
+    return()
+  }
+  # Validar si los nombres de columnas en columnas_deseadas existen en el DataFrame
+  if (all(signal_names %in% colnames(df))) {
+    # Todos los nombres de columnas existen en el DataFrame
+    return(df[, signal_names])
+  } else {
+    # Al menos un nombre de columna no existe en el DataFrame
+    cat("Alguno de los nombres de columna no existe en el DataFrame.\n")
+  }
+}
+
+exclude_signals_dataframe <- function(df, signal_names) {
+  if (is.null(signal_names)) {
+    cat("Nombre de columnas vacío.\n")
+    return()
+  }
+  # Validar si los nombres de columnas en columnas_deseadas existen en el DataFrame
+  if (all(signal_names %in% colnames(df))) {
+    # Todos los nombres de columnas existen en el DataFrame
+    return(df[, !(names(df) %in% signal_names)])
+  } else {
+    # Al menos un nombre de columna no existe en el DataFrame
+    cat("Alguno de los nombres de columna no existe en el DataFrame.\n")
+  }
+}
+
+process_dataframe <- function(df, excluded_cols, lags, signals) {
+  new_df <- exclude_signals_dataframe(df, excluded_cols)
+  new_df <- normalize_all_signals(new_df)
+  new_df <- exclude_signals_dataframe(new_df, signals)
+  new_df <- lag_all_signals(new_df, lags)
+  return(new_df)
+}
