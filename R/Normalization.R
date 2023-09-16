@@ -6,8 +6,12 @@
 #' @return Data frame with normalized columns added.
 #'
 #' @examples
-#' df <- data.frame(Time = 1:10, Signal1 = c(2, 4, 6, 8, 10, 5, 3, 7, 9, 1), Signal2 = c(10, 5, 8, 3, 6, 9, 2, 7, 4, 1))
+#' df <- data.frame(Time = 1:10, Signal1 = c(2, 4, 6, 8, 10, 5, 3, 7, 9, 1),
+#'  Signal2 = c(10, 5, 8, 3, 6, 9, 2, 7, 4, 1))
 #' normalized_df <- normalize_signals_by_name(df, c("Signal1", "Signal2"))
+#'
+#' @importFrom dplyr mutate across all_of %>%
+#' @export
 normalize_signals_by_name <- function(df, signal_names) {
   # Validation
   if (is.null(df) || nrow(df) == 0 || ncol(df) == 0) {
@@ -24,7 +28,11 @@ normalize_signals_by_name <- function(df, signal_names) {
   
   # Normalization
   df <- df %>%
-    dplyr::mutate(across(all_of(signal_names), ~ (. - min(., na.rm = TRUE)) / (max(., na.rm = TRUE) - min(., na.rm = TRUE)), .names = "{col}_norm"))
+    dplyr::mutate(dplyr::across(
+      dplyr::all_of(signal_names),
+      ~ (. - min(., na.rm = TRUE)) / (max(., na.rm = TRUE) - min(., na.rm = TRUE)),
+      .names = "{col}_norm"
+    ))
   
   return(df)
 }
@@ -36,8 +44,12 @@ normalize_signals_by_name <- function(df, signal_names) {
 #' @return Data frame with normalized columns added.
 #'
 #' @examples
-#' df <- data.frame(Time = 1:10, Signal1 = c(2, 4, 6, 8, 10, 5, 3, 7, 9, 1), Signal2 = c(10, 5, 8, 3, 6, 9, 2, 7, 4, 1))
+#' df <- data.frame(Time = 1:10, Signal1 = c(2, 4, 6, 8, 10, 5, 3, 7, 9, 1),
+#'  Signal2 = c(10, 5, 8, 3, 6, 9, 2, 7, 4, 1))
 #' normalized_df <- normalize_all_signals(df)
+#'
+#' @importFrom dplyr mutate across everything %>%
+#' @export
 normalize_all_signals <- function(df) {
   # Validation
   if (is.null(df) || nrow(df) == 0 || ncol(df) == 0) {
@@ -45,8 +57,9 @@ normalize_all_signals <- function(df) {
   }
   
   # Normalization
-  df <- df %>%
-    dplyr::mutate(across(everything(), ~ (. - min(., na.rm = TRUE)) / (max(., na.rm = TRUE) - min(., na.rm = TRUE)), .names = "{col}_norm"))
+  df <- df %>% dplyr::mutate(dplyr::across(dplyr::everything(),
+                                           ~ (. - min(., na.rm = TRUE)) / (max(., na.rm = TRUE) - min(., na.rm = TRUE)),
+                                           .names = "{col}_norm"))
   
   return(df)
 }

@@ -1,9 +1,4 @@
-# Load Required Libraries
-library(testthat)
-library(dplyr)
-
-# Source Utility Functions
-source("Lagging.R")
+context("Test Lagging")
 
 # Define Global Variables
 base_df <-

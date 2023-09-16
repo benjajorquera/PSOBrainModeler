@@ -13,6 +13,10 @@
 #' df <- data.frame(A_norm = c(0, 0.2, 0.4, 0.6, 0.8, 1))
 #' lagged_df <- lag_normalized_signals(df, 2, c("A_norm"))
 #' print(lagged_df)
+#'
+#' @importFrom dplyr lag
+#' @importFrom stats na.omit
+#' @export
 lag_normalized_signals <- function(data_frame, lags, df_col_names) {
   # Validation
   if (is.null(data_frame) ||
@@ -44,7 +48,7 @@ lag_normalized_signals <- function(data_frame, lags, df_col_names) {
     }
   }
   
-  return(na.omit(data_frame))
+  return(stats::na.omit(data_frame))
 }
 
 #' Add Lagged Columns to All Normalized Columns in a Data Frame
@@ -61,6 +65,10 @@ lag_normalized_signals <- function(data_frame, lags, df_col_names) {
 #' df <- data.frame(A_norm = c(0, 0.2, 0.4, 0.6, 0.8, 1))
 #' lagged_df <- lag_all_signals(df, 2)
 #' print(lagged_df)
+#'
+#' @importFrom dplyr lag
+#' @importFrom stats na.omit
+#' @export
 lag_all_signals <- function(data_frame, lags) {
   # Validation
   if (is.null(data_frame) ||
@@ -82,5 +90,5 @@ lag_all_signals <- function(data_frame, lags) {
     }
   }
   
-  return(na.omit(data_frame))
+  return(stats::na.omit(data_frame))
 }

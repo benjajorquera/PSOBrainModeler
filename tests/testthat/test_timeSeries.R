@@ -1,10 +1,4 @@
-# Load Required Libraries
-library(testthat)
-library(dplyr)
-library(signal)  # For butter() and filter() functions
-
-# Source Utility Functions
-source("TimeSeries.R")
+context("Test Time Series")
 
 # Define Global Variables
 base_df <-

@@ -1,7 +1,0 @@
-
-- Models ranked by test correlation, no model discarding
-- plot-step-responses.R plots all saved models (not just best model)
-- create-abp-step.R can be used to create CSV files with ABP steps
-- Default sampling time is 0.5 s
-- Huge set of hyper parameters
-- Explicit call to gc() after each lag group

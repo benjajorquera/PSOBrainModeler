@@ -13,9 +13,11 @@
 #'
 #' @examples
 #' pressure_step <- add_pressure_step(pressure_start = 10, signal_end = 100,
-#'                                    butter_order = 2, butter_fs = 50)
+#'                                    butter_order = 2, butter_fs = 0.2)
 #' plot(pressure_step$signal)
 #'
+#' @importFrom signal butter filter
+#' @export
 add_pressure_step <-
   function(pressure_start,
            signal_end,
@@ -63,18 +65,29 @@ add_pressure_step <-
 #' @param data_cols Character vector of column names to include in the training set.
 #' @param predictor_cols Character vector of column names to include in the prediction set.
 #' @param lagged_cols Character vector specifying which columns should have lagged values.
-#' @param lag_values Integer vector specifying the number of lags for each lagged column. Should be in the same order as 'lagged_cols'.
+#' @param lag_values Integer vector specifying the number of lags for each lagged column.
+#'  Should be in the same order as 'lagged_cols'.
 #' @param is_training Boolean indicating whether the data is for training (TRUE) or prediction (FALSE).
 #'
 #' @return Dataframe containing the specified columns and their lagged values.
 #'
 #' @examples
+#' my_df <- data.frame(feature1 = c(1:10), feature2 = c(1:10), feature3 = c(1:10),
+#' feature4 = c(1:10), feature1_1 = c(2:11), feature2_1 = c(2:11),
+#' feature3_1 = c(2:11), feature4_1 = c(2:11), feature1_2 = c(3:12),
+#' feature2_2 = c(3:12), feature3_2 = c(3:12), feature4_2 = c(3:12))
 #' # Generate training set
-#' training_data <- generate_time_series_data(input_df = my_df, data_cols = c("feature1", "feature2"), predictor_cols = NULL, lagged_cols = c("feature1", "feature2"), lag_values = c(3, 3), is_training = TRUE)
+#' training_data <- generate_time_series_data(input_df = my_df, data_cols = c("feature1", "feature2"),
+#'  predictor_cols = NULL, lagged_cols = c("feature1", "feature2"), lag_values = c(2, 2),
+#'  is_training = TRUE)
 #'
 #' # Generate prediction set
-#' prediction_data <- generate_time_series_data(input_df = my_df, data_cols = NULL, predictor_cols = c("feature3", "feature4"), lagged_cols = c("feature3", "feature4"), lag_values = c(2, 2), is_training = FALSE)
-
+#' prediction_data <- generate_time_series_data(input_df = my_df, data_cols = NULL,
+#'  predictor_cols = c("feature3", "feature4"), lagged_cols = c("feature3", "feature4"),
+#'   lag_values = c(2, 2), is_training = FALSE)
+#'
+#' @importFrom dplyr select bind_cols all_of %>%
+#' @export
 generate_time_series_data <-
   function(input_df,
            data_cols,
@@ -106,7 +119,16 @@ generate_time_series_data <-
     # Add lagged columns
     for (i in seq_along(lagged_cols)) {
       lag_cols <- paste0(lagged_cols[i], "_", seq_len(lag_values[i]))
-      lag_df <- input_df %>% dplyr::select(dplyr::all_of(lag_cols))
+      if (all(lag_cols %in% names(input_df))) {
+        lag_df <- input_df %>% dplyr::select(dplyr::all_of(lag_cols))
+      } else {
+        stop(
+          paste(
+            "Error in dplyr::all_of(): Columns that you're trying to subset don't exist.",
+            paste(lag_cols, collapse = ", ")
+          )
+        )
+      }
       new_df <- dplyr::bind_cols(new_df, lag_df)
     }
     
@@ -122,15 +144,19 @@ generate_time_series_data <-
 #' @param excluded_cols A character vector specifying the columns to be excluded.
 #' @param lags An integer specifying the number of lags to add for each signal.
 #' @param signals A character vector specifying the signals to be excluded after normalization.
-#' @param lagged_signals A character vector specifying the signals to be lagged. If NULL, all signals will be lagged.
+#' @param lagged_signals A character vector specifying the signals to be lagged.
+#'  If NULL, all signals will be lagged.
 #'
 #' @return A new data frame with specified columns excluded, all columns normalized,
-#'         and lagged versions of the signals added. Rows with resulting NA values from lags are omitted.
+#'         and lagged versions of the signals added. Rows with resulting NA values
+#'          from lags are omitted.
 #'
 #' @examples
-#' df <- data.frame(Time = 1:10, A = c(2, 4, 6, 8, 10, 5, 3, 7, 9, 1), B = c(10, 5, 8, 3, 6, 9, 2, 7, 4, 1))
+#' df <- data.frame(Time = 1:10, A = c(2, 4, 6, 8, 10, 5, 3, 7, 9, 1),
+#'  B = c(10, 5, 8, 3, 6, 9, 2, 7, 4, 1))
 #' processed_df <- process_dataframe(df, excluded_cols = c("Time"), lags = 2, signals = c("A", "B"))
 #'
+#' @export
 process_dataframe <-
   function(df,
            excluded_cols,

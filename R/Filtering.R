@@ -7,7 +7,7 @@
 #' @param signal_names A character vector specifying the names of the columns to include in the output.
 #'
 #' @return A data frame containing only the specified columns. Returns NULL if any of the specified columns are not found.
-#'
+#' @export
 filter_signals_dataframe <- function(df, signal_names) {
   # Validate input arguments
   if (is.null(signal_names) || length(signal_names) == 0) {
@@ -32,7 +32,7 @@ filter_signals_dataframe <- function(df, signal_names) {
 #' @param signal_names A character vector specifying the names of the columns to exclude from the output.
 #'
 #' @return A data frame without the specified columns. Returns NULL if any of the specified columns are not found.
-#'
+#' @export
 exclude_signals_dataframe <- function(df, signal_names) {
   # Validate input arguments
   if (is.null(signal_names) || length(signal_names) == 0) {
@@ -45,5 +45,5 @@ exclude_signals_dataframe <- function(df, signal_names) {
     )
   }
   
-  return(df[, !(colnames(df) %in% signal_names), drop = FALSE])
+  return(df[,!(colnames(df) %in% signal_names), drop = FALSE])
 }

@@ -1,9 +1,4 @@
-# Load Required Libraries
-library(testthat)
-library(dplyr)
-
-# Source Utility Functions
-source("Normalization.R")
+context("Test Normalization")
 
 # Define Global Variables
 base_df <-
