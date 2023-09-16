@@ -26,7 +26,7 @@ pso_objective <- function(params) {
   # Print hyperparameters
   cat(cost, nu, gamma, mabp_lag, cbfv_lag, "\n")
   
-  return(pso_training_model(cost, nu, gamma, c(mabp_lag, cbfv_lag)))
+  return(pso_training_model(cost, nu, gamma, c(mabp_lag, cbfv_lag), cbfv_lag))
 }
 
 linear_pso_objective <- function(params) {
@@ -40,10 +40,23 @@ linear_pso_objective <- function(params) {
   # Print hyperparameters
   cat(cost, nu, mabp_lag, cbfv_lag, "\n")
   
-  return(pso_training_model(cost, nu, NULL, c(mabp_lag, cbfv_lag)))
+  return(pso_training_model(cost, nu, NULL, c(mabp_lag, cbfv_lag), cbfv_lag))
 }
 
 pso_objective_FIR <- function(params) {
+  # Extract optimization parameters
+  cost <- round(params[1], digits = 2)
+  nu <- round(params[2], digits = 2)
+  
+  mabp_lag <- round(params[3], digits = 0)
+  
+  # Print hyperparameters
+  cat(cost, nu, mabp_lag, "\n")
+  
+  return(pso_training_model(cost, nu, NULL, c(mabp_lag), NULL))
+}
+
+pso_objective_NFIR <- function(params) {
   # Extract optimization parameters
   cost <- round(params[1], digits = 2)
   nu <- round(params[2], digits = 2)
@@ -58,7 +71,21 @@ pso_objective_FIR <- function(params) {
   # Print hyperparameters
   cat(cost, nu, gamma, mabp_lag, "\n")
   
-  return(pso_training_model(cost, nu, gamma, mabp_lag, NULL))
+  return(pso_training_model(cost, nu, gamma, c(mabp_lag), NULL))
+}
+
+pso_objective_MULTI_FIR <- function(params) {
+  # Extract optimization parameters
+  cost <- round(params[1], digits = 2)
+  nu <- round(params[2], digits = 2)
+  
+  mabp_lag <- round(params[3], digits = 0)
+  etco_lag <- round(params[4], digits = 0)
+  
+  # Print hyperparameters
+  cat(cost, nu, mabp_lag, etco_lag, "\n")
+  
+  return(pso_training_model(cost, nu, NULL, c(mabp_lag, etco_lag), NULL))
 }
 
 pso_optim <- function(fn) {
@@ -91,7 +118,11 @@ pso_optim <- function(fn) {
 
 
 pso_training_model <-
-  function(cost, nu, gamma = NULL, LAGS) {
+  function(cost,
+           nu,
+           gamma = NULL,
+           COL_LAGS,
+           RESPONSE_LAGS = NULL) {
     # Initialize vectors for correlations and errors
     cors <- numeric(BCV_FOLDS)
     errors <- numeric(BCV_FOLDS)
@@ -100,20 +131,22 @@ pso_training_model <-
     for (df_list in 1:BCV_FOLDS) {
       # Prepare data
       new_data_validation <-
-        generate_model_data(
+        generate_time_series_data(
           data_partitions[[df_list]]$validation,
           SIGNAL_NORM_NAMES,
           PREDICTORS_NORM_NAMES,
-          LAGS,
+          LAGGED_COLS,
+          COL_LAGS,
           FALSE
         )
       
       data_partitions_training <-
-        generate_model_data(
+        generate_time_series_data(
           data_partitions[[df_list]]$training,
           SIGNAL_NORM_NAMES,
           PREDICTORS_NORM_NAMES,
-          LAGS,
+          LAGGED_COLS,
+          COL_LAGS,
           TRUE
         )
       
@@ -151,11 +184,12 @@ pso_training_model <-
     }
     
     # Train model with all data
-    data_training <- generate_model_data(data,
-                                         SIGNAL_NORM_NAMES,
-                                         PREDICTORS_NORM_NAMES,
-                                         LAGS,
-                                         TRUE)
+    data_training <- generate_time_series_data(data,
+                                               SIGNAL_NORM_NAMES,
+                                               PREDICTORS_NORM_NAMES,
+                                               LAGGED_COLS,
+                                               COL_LAGS,
+                                               TRUE)
     data_model <-
       vsvr_model(data_training,
                  VSVR_RESPONSE,
@@ -172,8 +206,8 @@ pso_training_model <-
         PRESSURE_SIGNAL_START,
         PRESSURE_SIGNAL_RESPONSE_SIZE,
         SIGNAL_NORM_NAMES,
-        c(mabp_lag),
-        cbfv_lag,
+        COL_LAGS,
+        RESPONSE_LAGS,
         PREDICTORS_NORM_NAMES,
         c(1),
         VSVR_RESPONSE,

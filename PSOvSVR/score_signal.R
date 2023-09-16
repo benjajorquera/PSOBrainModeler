@@ -57,16 +57,6 @@ generate_signal_response_predictions <- function(SVR_model,
     data.frame(name = rep(initial_column_values, each = pressure_start))
   names(pressure_df_model) <- initial_column_names
   
-  # Create lagged columns for each initial column
-  # lagged_cols_list <-
-  #   lapply(initial_column_names, function(col_name) {
-  #     new_col_values <-
-  #       rep(unname(initial_values[col_name]), pressure_start)
-  #     col_names <- paste0(col_name, "_", 1:length(column_lags))
-  #     data.frame(setNames(rep(list(new_col_values), length(column_lags)), col_names))
-  #   })
-  
-  
   for (col_name in 1:length(initial_column_names)) {
     new_col_values <-
       rep(unname(initial_values[col_name]), pressure_start)
@@ -88,20 +78,28 @@ generate_signal_response_predictions <- function(SVR_model,
     
   }
   
-  
   # Create lagged columns for the prediction column
-  new_prediction_col_values <-
-    rep(prediction_initial_value, pressure_start)
-  col_name <- paste0(prediction_col_name, "_", 1:predicted_column_lags)
-  lagged_prediction_col_values <-
-    data.frame(setNames(rep(
-      list(new_prediction_col_values), predicted_column_lags
-    ), col_name))
+  if (!is.null(predicted_column_lags)) {
+    new_prediction_col_values <-
+      rep(prediction_initial_value, pressure_start)
+    col_name <-
+      paste0(prediction_col_name, "_", 1:predicted_column_lags)
+    lagged_prediction_col_values <-
+      data.frame(setNames(rep(
+        list(new_prediction_col_values), predicted_column_lags
+      ), col_name))
+    
+    # Combine the lagged columns into the pressure_df_model dataframe
+    
+    pressure_df_model <- pressure_df_model %>%
+      bind_cols(lagged_cols_list) %>%
+      bind_cols(lagged_prediction_col_values)
+  }
   
-  # Combine the lagged columns into the pressure_df_model dataframe
-  pressure_df_model <- pressure_df_model %>%
-    bind_cols(lagged_cols_list) %>%
-    bind_cols(lagged_prediction_col_values)
+  else {
+    pressure_df_model <- pressure_df_model %>%
+      bind_cols(lagged_cols_list)
+  }
   
   # Initialize predictions data pressure
   predictions_data_pressure <-
@@ -118,11 +116,14 @@ generate_signal_response_predictions <- function(SVR_model,
     names(new_pressure) <- initial_column_names[1]
     
     # Add predicted value to the new_pressure dataframe
-    new_pressure <-
-      cbind(new_pressure, setNames(
-        data.frame(name = tail(predictions_data_pressure, 1)),
-        paste0(prediction_col_name, "_1")
-      ))
+    if (!is.null(predicted_column_lags)) {
+      new_pressure <-
+        cbind(new_pressure, setNames(
+          data.frame(name = tail(predictions_data_pressure, 1)),
+          paste0(prediction_col_name, "_1")
+        ))
+      
+    }
     
     # Incorporate prior observations for additional column values
     new_pressure <-
@@ -130,22 +131,6 @@ generate_signal_response_predictions <- function(SVR_model,
         setNames(data.frame(name = tail(pressure_df_model[col_name], 1)), paste0(col_name, "_1"))
       }))
     
-    # if (column_lags >= 2) {
-    #   # Generate previous remaining values for each column and lag
-    #   new_columns <-
-    #     unlist(lapply(column_names, function(col_name) {
-    #       lapply(2:column_lags, function(col_lag) {
-    #         lagged_col_name <- paste0(col_name, "_", (col_lag - 1))
-    #         setNames(data.frame(name = tail(pressure_df_model[lagged_col_name], 1)),
-    #                  paste0(col_name, "_", col_lag))
-    #       })
-    #     }), recursive = FALSE)
-    #   
-    #   # Append new columns with previous values to new_pressure
-    #   new_pressure <-
-    #     cbind(new_pressure, do.call(cbind, new_columns))
-    #   
-    # }
     
     for (col_name in 1:length(initial_column_names)) {
       if (initial_columns_lags[col_name] >= 2) {
@@ -161,7 +146,8 @@ generate_signal_response_predictions <- function(SVR_model,
       }
     }
     
-    if (predicted_column_lags >= 2) {
+    if (!is.null(predicted_column_lags) &&
+        predicted_column_lags >= 2) {
       for (col_lag in 2:predicted_column_lags) {
         lagged_col_name <-
           paste0(prediction_col_name, "_", (col_lag - 1))
@@ -227,15 +213,15 @@ process_signal <- function(signal, pressure_start) {
   peak_signal <- signal[(pressure_start + 3):(pressure_start + 9)]
   stable_signal <-
     signal[(pressure_start + 15):(pressure_start + 30)]
-  drop_signal <- signal[(pressure_start + 9):(pressure_start+15)]
+  drop_signal <- signal[(pressure_start + 9):(pressure_start + 15)]
   
   min_signal <- min(signal)
   
   max_drop_signal <- max(drop_signal)
   
   if (!(min_signal %in% peak_signal) ||
-      #(max_drop_signal < 0.5) ||
-      !(min_signal >= -0.2 && min_signal <= 0.5) ||
+      !(min_signal >= -0.2 && min_signal <= 0.5)
+      ||
       var(stable_signal) > 0.002 ||
       !(max(signal) < 1.2 && min(signal) > -0.2)) {
     print("RESPONSE SIGNAL FAILED BASIC FILTER")
