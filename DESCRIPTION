@@ -1,0 +1,21 @@
+Package: PSOBrainModeler
+Type: Package
+Title: Particle Swarm Optimization-Based Hyperparameter Tuning for Support Vector
+Regression Models in Cerebral Autoregulation Analysis
+Version: 0.1.0
+Authors@R: c(
+    person("Benjamín", "Jorquera", email = "benjamin.jorquera@usach.cl", role = c("aut", "cre")),
+    person("José Luis", "Jara", email = "jljara@usach.cl", role = "aut")
+)
+Maintainer: benjamin.jorquera@usach.cl
+Description: This package offers a comprehensive toolkit for the analysis and
+modeling of biological signal data specific to individual patients. It facilitates
+the training of Support Vector Regression (SVR) models to represent and predict
+cerebral autoregulation phenomena. Utilizing blocked k-fold cross-validation,
+the package conducts hyperparameter optimization through Particle Swarm Optimization (PSO).
+The models generated include Finite Impulse Response (FIR), Nonlinear Finite Impulse Response (NFIR),
+AutoRegressive with eXogenous inputs (ARX), and Nonlinear AutoRegressive with eXogenous inputs (NARX).
+These models can be both univariate and multivariate. Additionally, the package
+incorporates a scoring filter to evaluate the quality of the autoregulation response,
+particularly when the patient is subjected to simulated pressure changes.
+License: MIT

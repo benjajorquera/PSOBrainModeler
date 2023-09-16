@@ -1,0 +1,167 @@
+#' Generate and Add a Smoothed Pressure Step to a Signal
+#'
+#' This function creates a smoothed pressure step using a Butterworth filter
+#' and returns the result as a data frame. The output signal starts with a zero value
+#' up to `pressure_start` and then steps down to -1, smoothed using the Butterworth filter.
+#'
+#' @param pressure_start Integer indicating the index at which the pressure step starts.
+#' @param signal_end Integer indicating the index at which the pressure step ends.
+#' @param butter_order Integer representing the order of the Butterworth filter.
+#' @param butter_fs Numeric value representing the sampling frequency for the Butterworth filter.
+#'
+#' @return A data frame containing a single column, `signal`, with the smoothed pressure step.
+#'
+#' @examples
+#' pressure_step <- add_pressure_step(pressure_start = 10, signal_end = 100,
+#'                                    butter_order = 2, butter_fs = 50)
+#' plot(pressure_step$signal)
+#'
+add_pressure_step <-
+  function(pressure_start,
+           signal_end,
+           butter_order,
+           butter_fs) {
+    # Validation
+    if (!is.numeric(pressure_start) || pressure_start < 0) {
+      stop("pressure_start should be a non-negative numeric value.")
+    }
+    
+    if (!is.numeric(signal_end) || signal_end <= pressure_start) {
+      stop("signal_end should be a numeric value greater than pressure_start.")
+    }
+    
+    if (!is.numeric(butter_order) || butter_order < 1) {
+      stop("butter_order should be a positive integer.")
+    }
+    
+    if (!is.numeric(butter_fs) || butter_fs <= 0) {
+      stop("butter_fs should be a positive numeric value.")
+    }
+    
+    # Generate the pressure step
+    pressure <-
+      c(rep(0, pressure_start), rep(-1, signal_end - pressure_start))
+    
+    # Create the Butterworth filter
+    butter_filter <-
+      signal::butter(butter_order, butter_fs, type = "low")
+    
+    # Apply the filter to the pressure step
+    pressure_step_smooth <-
+      as.numeric(signal::filter(butter_filter, pressure)) + 1
+    
+    # Return the result as a data frame
+    return(data.frame(signal = pressure_step_smooth))
+  }
+
+#' Generate Time-series Model Data
+#'
+#' This function constructs a dataset tailored for training or predicting with a time-series model.
+#' It selects specified columns and incorporates their lagged values.
+#'
+#' @param input_df Dataframe containing the raw data.
+#' @param data_cols Character vector of column names to include in the training set.
+#' @param predictor_cols Character vector of column names to include in the prediction set.
+#' @param lagged_cols Character vector specifying which columns should have lagged values.
+#' @param lag_values Integer vector specifying the number of lags for each lagged column. Should be in the same order as 'lagged_cols'.
+#' @param is_training Boolean indicating whether the data is for training (TRUE) or prediction (FALSE).
+#'
+#' @return Dataframe containing the specified columns and their lagged values.
+#'
+#' @examples
+#' # Generate training set
+#' training_data <- generate_time_series_data(input_df = my_df, data_cols = c("feature1", "feature2"), predictor_cols = NULL, lagged_cols = c("feature1", "feature2"), lag_values = c(3, 3), is_training = TRUE)
+#'
+#' # Generate prediction set
+#' prediction_data <- generate_time_series_data(input_df = my_df, data_cols = NULL, predictor_cols = c("feature3", "feature4"), lagged_cols = c("feature3", "feature4"), lag_values = c(2, 2), is_training = FALSE)
+
+generate_time_series_data <-
+  function(input_df,
+           data_cols,
+           predictor_cols,
+           lagged_cols,
+           lag_values,
+           is_training) {
+    # Validation checks
+    if (is.null(input_df))
+      stop("The input dataframe cannot be NULL.")
+    if (is_training &&
+        is.null(data_cols))
+      stop("Please specify target columns for training.")
+    if (!is_training &&
+        is.null(predictor_cols))
+      stop("Please specify predictor columns for prediction.")
+    if (is.null(lagged_cols))
+      stop("Please specify lagged columns.")
+    if (length(lagged_cols) != length(lag_values))
+      stop("The lengths of 'lagged_cols' and 'lag_values' must match.")
+    
+    # Create a new dataframe based on whether it is for training or prediction
+    new_df <- if (is_training) {
+      input_df %>% dplyr::select(dplyr::all_of(data_cols))
+    } else {
+      input_df %>% dplyr::select(dplyr::all_of(predictor_cols))
+    }
+    
+    # Add lagged columns
+    for (i in seq_along(lagged_cols)) {
+      lag_cols <- paste0(lagged_cols[i], "_", seq_len(lag_values[i]))
+      lag_df <- input_df %>% dplyr::select(dplyr::all_of(lag_cols))
+      new_df <- dplyr::bind_cols(new_df, lag_df)
+    }
+    
+    return(new_df)
+  }
+
+#' Process a Data Frame to Exclude, Normalize, and Lag Signals
+#'
+#' This function processes a given data frame to exclude specified columns,
+#' normalize all columns, and add lagged versions of the signals.
+#'
+#' @param df A data frame containing the signals to be processed.
+#' @param excluded_cols A character vector specifying the columns to be excluded.
+#' @param lags An integer specifying the number of lags to add for each signal.
+#' @param signals A character vector specifying the signals to be excluded after normalization.
+#' @param lagged_signals A character vector specifying the signals to be lagged. If NULL, all signals will be lagged.
+#'
+#' @return A new data frame with specified columns excluded, all columns normalized,
+#'         and lagged versions of the signals added. Rows with resulting NA values from lags are omitted.
+#'
+#' @examples
+#' df <- data.frame(Time = 1:10, A = c(2, 4, 6, 8, 10, 5, 3, 7, 9, 1), B = c(10, 5, 8, 3, 6, 9, 2, 7, 4, 1))
+#' processed_df <- process_dataframe(df, excluded_cols = c("Time"), lags = 2, signals = c("A", "B"))
+#'
+process_dataframe <-
+  function(df,
+           excluded_cols,
+           lags,
+           signals,
+           lagged_signals = NULL) {
+    # Validate input arguments
+    if (!is.data.frame(df) || ncol(df) < 1) {
+      stop("Input 'df' should be a non-empty data frame.")
+    }
+    
+    if (!is.numeric(lags) || lags <= 0) {
+      stop("Input 'lags' should be a positive integer.")
+    }
+    
+    # Exclude specified columns
+    new_df <- exclude_signals_dataframe(df, excluded_cols)
+    
+    # Normalize all columns
+    new_df <- normalize_all_signals(new_df)
+    
+    # Exclude specified signals after normalization
+    new_df <- exclude_signals_dataframe(new_df, signals)
+    
+    # Add lagged signals
+    if (is.null(lagged_signals)) {
+      new_df <- lag_all_signals(new_df, lags)
+    }
+    else {
+      new_df <- lag_normalized_signals(new_df, lags, lagged_signals)
+    }
+    
+    return(new_df)
+  }
