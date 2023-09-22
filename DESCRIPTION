@@ -24,7 +24,9 @@ Encoding: UTF-8
 Imports: 
     dplyr,
     signal,
-    stats
+    stats,
+    e1071,
+    utils
 Suggests: 
     testthat
 
