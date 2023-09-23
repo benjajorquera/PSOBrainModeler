@@ -12,30 +12,31 @@
 #'
 #' @importFrom dplyr mutate across all_of %>%
 #' @export
-normalize_signals_by_name <- function(df, signal_names) {
-  # Validation
-  if (is.null(df) || nrow(df) == 0 || ncol(df) == 0) {
-    stop("Input data frame should not be empty or NULL.")
+normalize_signals_by_name <-
+  function(df = NULL, signal_names = NULL) {
+    # Validation
+    if (is.null(df) || nrow(df) == 0 || ncol(df) == 0) {
+      stop("Input data frame should not be empty or NULL.")
+    }
+    
+    if (is.null(signal_names) || length(signal_names) == 0) {
+      stop("Signal names should not be empty or NULL.")
+    }
+    
+    if (!all(signal_names %in% colnames(df))) {
+      stop("Some specified signal names are not in the data frame.")
+    }
+    
+    # Normalization
+    df <- df %>%
+      dplyr::mutate(dplyr::across(
+        dplyr::all_of(signal_names),
+        ~ (. - min(., na.rm = TRUE)) / (max(., na.rm = TRUE) - min(., na.rm = TRUE)),
+        .names = "{col}_norm"
+      ))
+    
+    return(df)
   }
-  
-  if (is.null(signal_names) || length(signal_names) == 0) {
-    stop("Signal names should not be empty or NULL.")
-  }
-  
-  if (!all(signal_names %in% colnames(df))) {
-    stop("Some specified signal names are not in the data frame.")
-  }
-  
-  # Normalization
-  df <- df %>%
-    dplyr::mutate(dplyr::across(
-      dplyr::all_of(signal_names),
-      ~ (. - min(., na.rm = TRUE)) / (max(., na.rm = TRUE) - min(., na.rm = TRUE)),
-      .names = "{col}_norm"
-    ))
-  
-  return(df)
-}
 
 #' Normalize All Columns in a Data Frame Using Min-Max Scaling
 #'
@@ -50,7 +51,7 @@ normalize_signals_by_name <- function(df, signal_names) {
 #'
 #' @importFrom dplyr mutate across everything %>%
 #' @export
-normalize_all_signals <- function(df) {
+normalize_all_signals <- function(df = NULL) {
   # Validation
   if (is.null(df) || nrow(df) == 0 || ncol(df) == 0) {
     stop("Input data frame should not be empty or NULL.")

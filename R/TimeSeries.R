@@ -19,10 +19,10 @@
 #' @importFrom signal butter filter
 #' @export
 add_pressure_step <-
-  function(pressure_start,
-           signal_end,
-           butter_order,
-           butter_fs) {
+  function(pressure_start = 5,
+           signal_end = 40,
+           butter_order = 2,
+           butter_fs = 0.2) {
     # Validation
     if (!is.numeric(pressure_start) || pressure_start < 0) {
       stop("pressure_start should be a non-negative numeric value.")
@@ -158,9 +158,9 @@ generate_time_series_data <-
 #'
 #' @export
 process_dataframe <-
-  function(df,
+  function(df = data.frame(),
            excluded_cols,
-           lags,
+           lags = NULL,
            signals,
            lagged_signals = NULL) {
     # Validate input arguments
@@ -172,21 +172,35 @@ process_dataframe <-
       stop("Input 'lags' should be a positive integer.")
     }
     
+    # If lagged_signals doesn't end with "_norm", add the "_norm" suffix
+    lagged_signals <-
+      ifelse(
+        !grepl("_norm$", lagged_signals),
+        paste0(lagged_signals, "_norm"),
+        lagged_signals
+      )
+    
     # Exclude specified columns
-    new_df <- exclude_signals_dataframe(df, excluded_cols)
+    new_df <-
+      exclude_signals_dataframe(df = df, signal_names = excluded_cols)
     
     # Normalize all columns
-    new_df <- normalize_all_signals(new_df)
+    new_df <-
+      normalize_signals_by_name(df = new_df, signal_names = signals)
     
     # Exclude specified signals after normalization
-    new_df <- exclude_signals_dataframe(new_df, signals)
+    new_df <-
+      exclude_signals_dataframe(df = new_df, signal_names = signals)
     
     # Add lagged signals
     if (is.null(lagged_signals)) {
-      new_df <- lag_all_signals(new_df, lags)
+      new_df <- lag_all_signals(data_frame = new_df, lags = lags)
     }
     else {
-      new_df <- lag_normalized_signals(new_df, lags, lagged_signals)
+      new_df <-
+        lag_normalized_signals(data_frame = new_df,
+                               lags = lags,
+                               df_col_names = lagged_signals)
     }
     
     return(new_df)

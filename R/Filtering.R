@@ -33,7 +33,7 @@ filter_signals_dataframe <- function(df, signal_names) {
 #'
 #' @return A data frame without the specified columns. Returns NULL if any of the specified columns are not found.
 #' @export
-exclude_signals_dataframe <- function(df, signal_names) {
+exclude_signals_dataframe <- function(df, signal_names = NULL) {
   # Validate input arguments
   if (is.null(signal_names) || length(signal_names) == 0) {
     stop("Column names are empty.")

@@ -60,8 +60,8 @@
 
 generate_signal_response_predictions <- function(data,
                                                  pressure_signal_df,
-                                                 pressure_start,
-                                                 prediction_size,
+                                                 pressure_start = 3,
+                                                 prediction_size = 40,
                                                  column_names,
                                                  initial_columns_lags,
                                                  predicted_column_lags,
@@ -107,12 +107,12 @@ generate_signal_response_predictions <- function(data,
   
   # Train model with all data
   data_training <- generate_time_series_data(
-    data,
-    column_names,
-    NULL,
-    column_names,
-    c(initial_columns_lags, predicted_column_lags),
-    TRUE
+    input_df = data,
+    data_cols = column_names,
+    predictor_cols = NULL,
+    lagged_cols = initial_column_names,
+    lag_values = c(initial_columns_lags, predicted_column_lags),
+    is_training = TRUE
   )
   
   SVR_model <-
@@ -186,7 +186,7 @@ generate_signal_response_predictions <- function(data,
   process_pressure_count <- function(pressure_count) {
     # Create new_pressure dataframe with correct column name
     new_pressure <-
-      data.frame(name = pressure_signal_df[pressure_count,],
+      data.frame(name = pressure_signal_df[pressure_count, ],
                  stringsAsFactors = FALSE)
     names(new_pressure) <- initial_column_names[1]
     
