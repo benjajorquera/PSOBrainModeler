@@ -26,7 +26,8 @@ Imports:
     signal,
     stats,
     e1071,
-    utils
+    utils,
+    pso
 Suggests: 
     testthat
 

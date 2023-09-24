@@ -4,7 +4,7 @@
 \alias{normalize_all_signals}
 \title{Normalize All Columns in a Data Frame Using Min-Max Scaling}
 \usage{
-normalize_all_signals(df)
+normalize_all_signals(df = NULL)
 }
 \arguments{
 \item{df}{Data frame containing the columns to be normalized.}

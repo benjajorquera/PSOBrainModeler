@@ -4,7 +4,7 @@
 \alias{evaluate_signal_quality}
 \title{Evaluate Signal Quality}
 \usage{
-evaluate_signal_quality(signal, pressure_start_point)
+evaluate_signal_quality(signal, pressure_start_point = 3)
 }
 \arguments{
 \item{signal}{A numeric vector representing the signal.}

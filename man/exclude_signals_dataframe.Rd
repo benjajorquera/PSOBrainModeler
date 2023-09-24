@@ -4,7 +4,7 @@
 \alias{exclude_signals_dataframe}
 \title{Exclude Columns in a Data Frame by Names}
 \usage{
-exclude_signals_dataframe(df, signal_names)
+exclude_signals_dataframe(df, signal_names = NULL)
 }
 \arguments{
 \item{df}{A data frame to filter.}

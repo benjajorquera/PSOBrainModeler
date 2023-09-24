@@ -4,7 +4,7 @@
 \alias{lag_normalized_signals}
 \title{Add Lagged Columns to a Normalized Data Frame}
 \usage{
-lag_normalized_signals(data_frame, lags, df_col_names)
+lag_normalized_signals(data_frame = NULL, lags = 0, df_col_names = NULL)
 }
 \arguments{
 \item{data_frame}{Data frame to which lagged columns will be added.}

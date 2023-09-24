@@ -4,7 +4,7 @@
 \alias{normalize_signals_by_name}
 \title{Normalize Selected Columns in a Data Frame Using Min-Max Scaling}
 \usage{
-normalize_signals_by_name(df, signal_names)
+normalize_signals_by_name(df = NULL, signal_names = NULL)
 }
 \arguments{
 \item{df}{Data frame containing the columns to be normalized.}

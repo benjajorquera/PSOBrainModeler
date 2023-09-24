@@ -4,7 +4,7 @@
 \alias{blocked_cv}
 \title{Generate Data Partitions for Blocked Cross-Validation}
 \usage{
-blocked_cv(data, num_blocks, validation_size)
+blocked_cv(data = NULL, num_blocks = 5, validation_size = 0.2)
 }
 \arguments{
 \item{data}{Dataframe. The dataset to partition.}

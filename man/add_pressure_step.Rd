@@ -4,7 +4,12 @@
 \alias{add_pressure_step}
 \title{Generate and Add a Smoothed Pressure Step to a Signal}
 \usage{
-add_pressure_step(pressure_start, signal_end, butter_order, butter_fs)
+add_pressure_step(
+  pressure_start = 5,
+  signal_end = 40,
+  butter_order = 2,
+  butter_fs = 0.2
+)
 }
 \arguments{
 \item{pressure_start}{Integer indicating the index at which the pressure step starts.}

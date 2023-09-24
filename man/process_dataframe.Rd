@@ -4,7 +4,13 @@
 \alias{process_dataframe}
 \title{Process a Data Frame to Exclude, Normalize, and Lag Signals}
 \usage{
-process_dataframe(df, excluded_cols, lags, signals, lagged_signals = NULL)
+process_dataframe(
+  df = data.frame(),
+  excluded_cols,
+  lags = NULL,
+  signals,
+  lagged_signals = NULL
+)
 }
 \arguments{
 \item{df}{A data frame containing the signals to be processed.}

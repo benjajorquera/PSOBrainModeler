@@ -9,13 +9,13 @@ cross_validate_partition(
   nu,
   gamma,
   data_partitions,
-  bcv_folds,
+  bcv_folds = 5,
   signal_norm_names,
   predictors_norm_names,
   lagged_cols,
   col_lags,
   vsvr_response,
-  vsvr_tolerance
+  vsvr_tolerance = 1
 )
 }
 \arguments{

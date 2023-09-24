@@ -7,8 +7,8 @@
 generate_signal_response_predictions(
   data,
   pressure_signal_df,
-  pressure_start,
-  prediction_size,
+  pressure_start = 3,
+  prediction_size = 40,
   column_names,
   initial_columns_lags,
   predicted_column_lags,
