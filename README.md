@@ -25,14 +25,14 @@ Features include:
 
 ## Installation
 
-\`\`\`R
+```R
 # You can provide instructions on how to install the package from its source or any repository.
 # For example, if it's on CRAN:
 # install.packages("PSOBrainModeler")
 
 # If it's on GitHub and you're using devtools:
 # devtools::install_github("YourGitHubUsername/PSOBrainModeler")
-\`\`\`
+```
 
 ---
 
