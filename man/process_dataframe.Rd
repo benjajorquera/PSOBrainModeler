@@ -36,6 +36,9 @@ normalize all columns, and add lagged versions of the signals.
 \examples{
 df <- data.frame(Time = 1:10, A = c(2, 4, 6, 8, 10, 5, 3, 7, 9, 1),
  B = c(10, 5, 8, 3, 6, 9, 2, 7, 4, 1))
-processed_df <- process_dataframe(df, excluded_cols = c("Time"), lags = 2, signals = c("A", "B"))
+processed_df <- process_dataframe(df = df,
+                                  excluded_cols = c("Time"),
+                                  lags = 2,
+                                  signals = c("A", "B"))
 
 }

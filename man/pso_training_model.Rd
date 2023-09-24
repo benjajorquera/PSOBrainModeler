@@ -4,7 +4,14 @@
 \alias{pso_training_model}
 \title{Model training function using PSO optimization}
 \usage{
-pso_training_model(cost, nu, gamma = NULL, col_lags, response_lags = NULL)
+pso_training_model(
+  cost,
+  nu,
+  gamma = NULL,
+  col_lags,
+  response_lags = NULL,
+  vsvr_response = NULL
+)
 }
 \arguments{
 \item{cost}{A numeric value for the cost parameter.}
@@ -16,6 +23,8 @@ pso_training_model(cost, nu, gamma = NULL, col_lags, response_lags = NULL)
 \item{col_lags}{Numeric vector indicating the lags for the columns.}
 
 \item{response_lags}{Numeric vector indicating the response lags (default: NULL).}
+
+\item{vsvr_response}{Name of the column representing the VSVR response. (default: NULL).}
 }
 \value{
 A numeric value that represents the optimization result for minimization.

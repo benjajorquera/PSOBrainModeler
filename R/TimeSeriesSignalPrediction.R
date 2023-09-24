@@ -48,12 +48,22 @@
 #'
 #' @examples
 #' pressure_signal_df <- data.frame(feature1_norm = rnorm(50))
-#' prediction <- generate_signal_response_predictions(data.frame(feature1_norm = rnorm(100),
-#'                             feature2_norm = rnorm(100), feature1_norm_1 = rnorm(100),
-#'                             feature2_norm_1 = rnorm(100)), pressure_signal_df, 10, 50,
-#'                                    c("feature1_norm", "feature2_norm"), c(1),
-#'                                    1, c("feature1_norm"), c(1),
-#'                                    "feature2_norm", 0.5, 1, 0.5, NULL, 1)
+#' prediction <- generate_signal_response_predictions(
+#'                     data = data.frame(feature1_norm = rnorm(100),
+#'                                       feature2_norm = rnorm(100),
+#'                                      feature1_norm_1 = rnorm(100),
+#'                                       feature2_norm_1 = rnorm(100)),
+#'                     pressure_signal_df = pressure_signal_df,
+#'                     column_names = c("feature1_norm", "feature2_norm"),
+#'                     initial_columns_lags = c(1),
+#'                     predicted_column_lags = NULL,
+#'                     initial_column_names = c("feature1_norm"),
+#'                     initial_column_values = c(1),
+#'                     prediction_col_name = "feature2_norm",
+#'                     prediction_initial_value = 0.5,
+#'                     cost = 1,
+#'                     nu = 0.5,
+#'                     tolerance = 1)
 #' @importFrom stats setNames predict
 #' @importFrom utils tail
 #' @export

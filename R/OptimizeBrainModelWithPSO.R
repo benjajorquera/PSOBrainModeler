@@ -21,6 +21,7 @@
 #' @description Utilizing blocked k-fold cross-validation, the package
 #' conducts hyperparameter optimization through PSO. Models generated
 #' include FIR, NFIR, ARX, and NARX. These models can be univariate or multivariate.
+#' @importFrom pso psoptim
 #' @export
 optimize_brain_model_with_PSO <- function(config,
                                           psoptim_config,
@@ -54,7 +55,7 @@ optimize_brain_model_with_PSO <- function(config,
   main_pso <- pso_objective_selector(model, multi)
   
   return(
-    psoptim(
+    pso::psoptim(
       par = params_initial_values,
       fn = main_pso,
       lower = params_lower_bounds,

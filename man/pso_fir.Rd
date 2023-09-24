@@ -18,7 +18,9 @@ This function takes a numeric vector of optimization parameters and returns
 the objective value for the FIR modeling using the specified parameters.
 }
 \examples{
-# Assuming appropriate context:
-pso_fir(c(0.5, 0.7, 1))
-pso_fir(c(0.5, 0.7, 1, 0.2))
+\dontrun{
+  # Assuming appropriate context:
+  pso_fir(c(0.5, 0.7, 1))
+  pso_fir(c(0.5, 0.7, 1, 0.2))
+}
 }

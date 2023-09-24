@@ -87,7 +87,7 @@ test_that("process_dataframe works correctly", {
       signals = c("y")
     )
   expect_is(result, "data.frame")
-  expect_equal(ncol(result), 5)
+  expect_equal(ncol(result), 3)
   expect_error(process_dataframe(
     df,
     excluded_cols = c("a", "b"),

@@ -9,6 +9,7 @@
 #' @param gamma A numeric value for the gamma parameter (default: NULL).
 #' @param col_lags Numeric vector indicating the lags for the columns.
 #' @param response_lags Numeric vector indicating the response lags (default: NULL).
+#' @param vsvr_response Name of the column representing the VSVR response. (default: NULL).
 #'
 #' @return A numeric value that represents the optimization result for minimization.
 #'
@@ -17,7 +18,8 @@ pso_training_model <- function(cost,
                                nu,
                                gamma = NULL,
                                col_lags,
-                               response_lags = NULL) {
+                               response_lags = NULL,
+                               vsvr_response = NULL) {
   # Cross-validation
   results <- cross_validate_partition_helper(
     cost = cost,
@@ -53,14 +55,14 @@ pso_training_model <- function(cost,
   
   # Process response signal and score it
   signal_score <-
-    evaluate_signal_quality(response_predictions[[NORM_VSVR_RESPONSE]])
+    evaluate_signal_quality(response_predictions[[vsvr_response]])
   
   # Return early if signal score is less than or equal to zero
   if (signal_score <= 0)
     return(5)
   
   # Plot response signal
-  plot(response_predictions[[NORM_VSVR_RESPONSE]], type = "l")
+  plot(response_predictions[[vsvr_response]], type = "l")
   
   # Print optimization values
   cat(

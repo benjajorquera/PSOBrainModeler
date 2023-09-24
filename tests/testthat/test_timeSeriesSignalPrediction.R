@@ -20,7 +20,7 @@ test_that("generate_signal_response_predictions works correctly", {
     50,
     c("feature1", "feature2"),
     initial_columns_lags = c(2),
-    2,
+    NULL,
     initial_column_names = c("feature1"),
     c(1),
     "feature2",

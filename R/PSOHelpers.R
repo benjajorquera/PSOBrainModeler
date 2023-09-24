@@ -55,7 +55,7 @@ extract_and_round_pso_params <-
 #' @param multi A logical indicating if multi-objective optimization is being conducted.
 #' @return A function reference to the selected objective function.
 #' @examples
-#' main_pso_objective("FIR")
+#' pso_objective_selector("FIR")
 #' @export
 pso_objective_selector <- function(model, multi = FALSE) {
   # Validations
@@ -67,13 +67,13 @@ pso_objective_selector <- function(model, multi = FALSE) {
   
   if (model %in% c("FIR", "NFIR")) {
     if (multi) {
-      return(pso_multi_fir)
+      return(pso_fir)
     } else {
       return(pso_fir)
     }
   } else if (model %in% c("ARX", "NARX")) {
     if (multi) {
-      return(pso_multi_arx)
+      return(pso_fir)
     } else {
       return(pso_arx)
     }

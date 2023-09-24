@@ -154,7 +154,10 @@ generate_time_series_data <-
 #' @examples
 #' df <- data.frame(Time = 1:10, A = c(2, 4, 6, 8, 10, 5, 3, 7, 9, 1),
 #'  B = c(10, 5, 8, 3, 6, 9, 2, 7, 4, 1))
-#' processed_df <- process_dataframe(df, excluded_cols = c("Time"), lags = 2, signals = c("A", "B"))
+#' processed_df <- process_dataframe(df = df,
+#'                                   excluded_cols = c("Time"),
+#'                                   lags = 2,
+#'                                   signals = c("A", "B"))
 #'
 #' @export
 process_dataframe <-
@@ -171,14 +174,6 @@ process_dataframe <-
     if (!is.numeric(lags) || lags <= 0) {
       stop("Input 'lags' should be a positive integer.")
     }
-    
-    # If lagged_signals doesn't end with "_norm", add the "_norm" suffix
-    lagged_signals <-
-      ifelse(
-        !grepl("_norm$", lagged_signals),
-        paste0(lagged_signals, "_norm"),
-        lagged_signals
-      )
     
     # Exclude specified columns
     new_df <-
@@ -197,6 +192,13 @@ process_dataframe <-
       new_df <- lag_all_signals(data_frame = new_df, lags = lags)
     }
     else {
+      # If lagged_signals doesn't end with "_norm", add the "_norm" suffix
+      lagged_signals <-
+        ifelse(
+          !grepl("_norm$", lagged_signals),
+          paste0(lagged_signals, "_norm"),
+          lagged_signals
+        )
       new_df <-
         lag_normalized_signals(data_frame = new_df,
                                lags = lags,

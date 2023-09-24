@@ -9,9 +9,11 @@
 #' @return A numeric value representing the objective value for the given parameters.
 #'
 #' @examples
-#' # Assuming appropriate context:
-#' pso_fir(c(0.5, 0.7, 1))
-#' pso_fir(c(0.5, 0.7, 1, 0.2))
+#' \dontrun{
+#'   # Assuming appropriate context:
+#'   pso_fir(c(0.5, 0.7, 1))
+#'   pso_fir(c(0.5, 0.7, 1, 0.2))
+#' }
 #' @export
 pso_fir <- function(params) {
   # Validation
@@ -21,7 +23,7 @@ pso_fir <- function(params) {
   
   has_gamma <- length(params) == 4
   params_list <-
-    extract_and_round_params(params, has_gamma = has_gamma, n_lags = 1)
+    extract_and_round_pso_params(params, has_gamma = has_gamma, n_lags = 1)
   
   cat(
     "Cost: ",
@@ -37,7 +39,8 @@ pso_fir <- function(params) {
     cost = params_list$cost,
     nu = params_list$nu,
     gamma = params_list$gamma,
-    col_lags = params_list$lags
+    col_lags = params_list$lags,
+    vsvr_response = get("NORM_VSVR_RESPONSE", envir = .psoBrainModelerEnv)
   )
   
   # Ensure result is numeric
@@ -59,9 +62,11 @@ pso_fir <- function(params) {
 #' @return A numeric value that represents the objective value for the given parameters.
 #'
 #' @examples
-#' # Assuming appropriate context:
-#' pso_arx(c(0.5, 0.7, 1, 2))
-#' pso_arx(c(0.5, 0.7, 0.2, 1, 2))
+#' \dontrun{
+#'   # Assuming appropriate context:
+#'   pso_arx(c(0.5, 0.7, 1, 2))
+#'   pso_arx(c(0.5, 0.7, 0.2, 1, 2))
+#' }
 #' @export
 pso_arx <- function(params) {
   # Validation

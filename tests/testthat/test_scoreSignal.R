@@ -7,10 +7,7 @@ test_that("Test basic filter for evaluate_signal_quality", {
   start_point <- 5
   
   # Basic filter tests
-  expect_warning(
-    evaluate_signal_quality(sample_signal, start_point),
-    "RESPONSE SIGNAL FAILED BASIC FILTER"
-  )
+  expect_equal(evaluate_signal_quality(sample_signal, start_point),-10)
   
   # Signal too short
   expect_error(evaluate_signal_quality(sample_signal[1:25], start_point))

@@ -18,7 +18,9 @@ This function takes a numeric vector of optimization parameters and returns
 the objective value for ARX modeling using the specified parameters.
 }
 \examples{
-# Assuming appropriate context:
-pso_arx(c(0.5, 0.7, 1, 2))
-pso_arx(c(0.5, 0.7, 0.2, 1, 2))
+\dontrun{
+  # Assuming appropriate context:
+  pso_arx(c(0.5, 0.7, 1, 2))
+  pso_arx(c(0.5, 0.7, 0.2, 1, 2))
+}
 }

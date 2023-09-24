@@ -18,5 +18,5 @@ A function reference to the selected objective function.
 This function selects an appropriate objective function based on the model provided.
 }
 \examples{
-main_pso_objective("FIR")
+pso_objective_selector("FIR")
 }

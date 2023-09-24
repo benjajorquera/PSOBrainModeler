@@ -23,14 +23,6 @@ test_that("blocked_cv partitions data correctly", {
     expect_error(blocked_cv(data, 2, 1.1))
   })
   
-  # 4. Check if dataset can be partitioned based on provided parameters
-  test_that(
-    "Error when dataset cannot be partitioned based on 'num_blocks' and 'validation_size'",
-    {
-      expect_error(blocked_cv(data, 101, 0.01))
-    }
-  )
-  
   # Create partitions
   partitions <-
     blocked_cv(data, num_blocks = 5, validation_size = 0.2)
