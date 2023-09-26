@@ -46,36 +46,3 @@ extract_and_round_pso_params <-
       ))
     }
   }
-
-#' PSO Objective Function Selector
-#'
-#' This function selects an appropriate objective function based on the model provided.
-#'
-#' @param model A character string indicating the model to optimize. Should be one of "FIR", "NFIR", "ARX", "NARX".
-#' @param multi A logical indicating if multi-objective optimization is being conducted.
-#' @return A function reference to the selected objective function.
-#' @examples
-#' pso_objective_selector("FIR")
-#' @export
-pso_objective_selector <- function(model, multi = FALSE) {
-  # Validations
-  stopifnot(is.character(model),
-            model %in% c("FIR", "NFIR", "ARX", "NARX"),
-            is.logical(multi))
-  
-  message(model)
-  
-  if (model %in% c("FIR", "NFIR")) {
-    if (multi) {
-      return(pso_fir)
-    } else {
-      return(pso_fir)
-    }
-  } else if (model %in% c("ARX", "NARX")) {
-    if (multi) {
-      return(pso_fir)
-    } else {
-      return(pso_arx)
-    }
-  }
-}
