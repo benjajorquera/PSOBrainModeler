@@ -30,6 +30,8 @@ pso_fir <- function(params) {
     params_list$cost,
     "\nNu: ",
     params_list$nu,
+    "Gamma: ",
+    params_list$gamma,
     "\nLags: ",
     params_list$lags,
     "\n"
@@ -76,28 +78,29 @@ pso_arx <- function(params) {
   
   has_gamma <- length(params) == 5
   
-  if (has_gamma) {
-    params_list <-
-      extract_and_round_pso_params(params, has_gamma = TRUE, n_lags = 2)
-  } else {
-    params_list <-
-      extract_and_round_pso_params(params, has_gamma = FALSE, n_lags = 2)
-  }
+  params_list <-
+    extract_and_round_pso_params(params, has_gamma = has_gamma, n_lags = 2)
   
-  cat("Cost: ",
-      params_list$cost,
-      "Nu: ",
-      params_list$nu,
-      "Lags: ",
-      params_list$lags,
-      "\n")
+  cat(
+    "Cost: ",
+    params_list$cost,
+    "Nu: ",
+    params_list$nu,
+    "Gamma: ",
+    params_list$gamma,
+    "Lags: ",
+    params_list$lags,
+    "\n"
+  )
   
   return(
     pso_training_model(
       cost = params_list$cost,
       nu = params_list$nu,
       gamma = params_list$gamma,
-      col_lags = params_list$lags
+      col_lags = params_list$lags[1],
+      response_lags = params_list$lags[2],
+      vsvr_response = get("NORM_VSVR_RESPONSE", envir = .psoBrainModelerEnv)
     )
   )
 }

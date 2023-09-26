@@ -16,6 +16,7 @@ generate_signal_response_predictions(
   initial_column_values,
   prediction_col_name,
   prediction_initial_value,
+  predictor_cols,
   cost,
   nu,
   gamma = NULL,
@@ -57,6 +58,8 @@ predictive variable.}
 \item{prediction_initial_value}{A numeric value indicating the initial value of the
 predictive variable.}
 
+\item{predictor_cols}{Character vector of column names to include in the prediction set.}
+
 \item{cost}{A numeric value indicating the cost parameter of the SVR model.}
 
 \item{nu}{A numeric value indicating the nu parameter of the SVR model.}
@@ -89,6 +92,7 @@ prediction <- generate_signal_response_predictions(
                     initial_column_values = c(1),
                     prediction_col_name = "feature2_norm",
                     prediction_initial_value = 0.5,
+                    predictor_cols = c("feature1_norm"),
                     cost = 1,
                     nu = 0.5,
                     tolerance = 1)

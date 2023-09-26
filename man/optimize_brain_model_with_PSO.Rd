@@ -26,9 +26,11 @@ optimize_brain_model_with_PSO(
 
 \item{data}{A data frame containing the dataset to be optimized.}
 
-\item{model}{Type of model to be optimized (e.g., FIR, NFIR).}
+\item{model}{Character string specifying the type of model to be optimized.
+Should be one of "FIR", "NFIR", "ARX", or "NARX".}
 
-\item{multi}{Logical indicating if the model should be multivariate.}
+\item{multi}{Logical indicating if the model should be multivariate.
+If TRUE, optimizes with two input variables; if FALSE, optimizes with one input variable.}
 
 \item{signal_names}{Vector of names representing signal columns.}
 
@@ -36,11 +38,12 @@ optimize_brain_model_with_PSO(
 
 \item{predictors_names}{Vector of predictor names for the model.}
 
-\item{params_lower_bounds}{Vector of lower bounds for model parameters.}
+\item{params_lower_bounds}{Vector of lower bounds for model optimization parameters.}
 
-\item{params_upper_bounds}{Vector of upper bounds for model parameters.}
+\item{params_upper_bounds}{Vector of upper bounds for model optimization parameters.}
 
-\item{params_initial_values}{Vector of initial values for model parameters.}
+\item{params_initial_values}{Vector of initial values for model optimization parameters.
+Length should be equal for all parameter vectors.}
 
 \item{vsvr_response}{Name of the column representing the VSVR response.}
 }
@@ -57,4 +60,31 @@ This function offers a comprehensive toolkit for the analysis and
 modeling of biological signal data specific to individual patients.
 It facilitates the training of SVR models to represent and predict
 cerebral autoregulation phenomena.
+}
+\examples{
+
+\dontrun{
+ mydata <-   data.frame(
+  Feature1 = rnorm(100),
+  Feature2 = rnorm(100),
+  Feature3 = rnorm(100),
+  Feature4 = rnorm(100)
+  )
+ brain_modeler_config <- configure_pso_brain_modeler()
+ psoptim_config <- configure_psoptim_control()
+
+ optimize_brain_model_with_PSO(config = brain_modeler_config,
+   psoptim_config = psoptim_config,
+   data = mydata,
+   model = "MODEL",
+   multi = FALSE,
+   signal_names = c("Feature1", "Feature2"),
+   excluded_cols = c("Feature3", "Feature4"),
+   predictors_names = c("Feature1"),
+   params_lower_bounds = c(1, 0.1, 1),
+   params_upper_bounds = c(10, 0.5, 3),
+   params_initial_values = c(NA, NA, NA),
+   vsvr_response = "Feature2")
+}
+
 }

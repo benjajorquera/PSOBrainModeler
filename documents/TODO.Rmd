@@ -1,0 +1,11 @@
+---
+title: "TODO LIST"
+---
+- <input type="checkbox" checked> Pruebas unitarias de optimize_brain_model_with_PSO</input>
+- <input type="checkbox" unchecked> Agregar parámetros faltantes de pso::psoptim</input>
+- <input type="checkbox" unchecked> Sacar @export de funciones auxiliares</input>
+- <input type="checkbox" checked> Pruebas con NFIR, ARX y NARX</input>
+- <input type="checkbox" unchecked> Pruebas con Sujeto2 y Sujeto3</input>
+- <input type="checkbox" unchecked> Pruebas con NFIR, ARX y NARX: Revisar que todos los datos estén bien</input>
+- <input type="checkbox" unchecked> Calcular tiempo, revisar posibles problemas de tiempo</input>
+- <input type="checkbox" unchecked> Cambiar todo el paquete para que PSOPTIM reciba el parámetro extra del modelo</input>

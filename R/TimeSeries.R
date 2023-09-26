@@ -68,23 +68,26 @@ add_pressure_step <-
 #' @param lag_values Integer vector specifying the number of lags for each lagged column.
 #'  Should be in the same order as 'lagged_cols'.
 #' @param is_training Boolean indicating whether the data is for training (TRUE) or prediction (FALSE).
+#' @param vsvr_response Character. Response column name for the SVR model.
 #'
 #' @return Dataframe containing the specified columns and their lagged values.
 #'
 #' @examples
+#'
 #' my_df <- data.frame(feature1 = c(1:10), feature2 = c(1:10), feature3 = c(1:10),
 #' feature4 = c(1:10), feature1_1 = c(2:11), feature2_1 = c(2:11),
 #' feature3_1 = c(2:11), feature4_1 = c(2:11), feature1_2 = c(3:12),
 #' feature2_2 = c(3:12), feature3_2 = c(3:12), feature4_2 = c(3:12))
+#'
 #' # Generate training set
 #' training_data <- generate_time_series_data(input_df = my_df, data_cols = c("feature1", "feature2"),
 #'  predictor_cols = NULL, lagged_cols = c("feature1", "feature2"), lag_values = c(2, 2),
-#'  is_training = TRUE)
+#'  is_training = TRUE, vsvr_response = "feature2")
 #'
 #' # Generate prediction set
 #' prediction_data <- generate_time_series_data(input_df = my_df, data_cols = NULL,
 #'  predictor_cols = c("feature3", "feature4"), lagged_cols = c("feature3", "feature4"),
-#'   lag_values = c(2, 2), is_training = FALSE)
+#'  lag_values = c(2, 2), is_training = FALSE, vsvr_response = "feature3")
 #'
 #' @importFrom dplyr select bind_cols all_of %>%
 #' @export
@@ -94,7 +97,8 @@ generate_time_series_data <-
            predictor_cols,
            lagged_cols,
            lag_values,
-           is_training) {
+           is_training,
+           vsvr_response) {
     # Validation checks
     if (is.null(input_df))
       stop("The input dataframe cannot be NULL.")
@@ -131,6 +135,9 @@ generate_time_series_data <-
       }
       new_df <- dplyr::bind_cols(new_df, lag_df)
     }
+    
+    if (!is_training && (vsvr_response %in% colnames(new_df)))
+      new_df = exclude_signals_dataframe(df = new_df, signal_names = vsvr_response)
     
     return(new_df)
   }

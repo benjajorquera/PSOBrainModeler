@@ -43,6 +43,7 @@ generate_time_series_data_helper <-
       data_cols = get("NORM_SIGNAL_NAMES", envir = .psoBrainModelerEnv),
       predictor_cols = get("NORM_PREDICTORS_NAMES", envir = .psoBrainModelerEnv),
       lagged_cols = get("NORM_PREDICTORS_NAMES", envir = .psoBrainModelerEnv),
+      vsvr_response = get("NORM_VSVR_RESPONSE", envir = .psoBrainModelerEnv),
       lag_values = lag_values,
       is_training = is_training
     )
@@ -74,16 +75,25 @@ generate_signal_response_predictions_helper <-
            cost,
            nu,
            gamma) {
+    initial_column_names <-
+      get("NORM_PREDICTORS_NAMES", envir = .psoBrainModelerEnv)
+    prediction_col_name <-
+      get("NORM_VSVR_RESPONSE", envir = .psoBrainModelerEnv)
+    if (prediction_col_name %in% initial_column_names)
+      initial_column_names <-
+      setdiff(initial_column_names, prediction_col_name)
+
     params_list <- list(
       data = data,
       pressure_signal_df = get("pressure_df", envir = .psoBrainModelerEnv),
       column_names = get("NORM_SIGNAL_NAMES", envir = .psoBrainModelerEnv),
       initial_columns_lags = col_lags,
       predicted_column_lags = response_lags,
-      initial_column_names = get("NORM_PREDICTORS_NAMES", envir = .psoBrainModelerEnv),
+      initial_column_names = initial_column_names,
       initial_column_values = initial_column_values,
-      prediction_col_name = get("NORM_VSVR_RESPONSE", envir = .psoBrainModelerEnv),
+      prediction_col_name = prediction_col_name,
       prediction_initial_value = prediction_initial_value,
+      predictor_cols = get("NORM_PREDICTORS_NAMES", envir = .psoBrainModelerEnv),
       cost = cost,
       nu = nu,
       gamma = gamma,

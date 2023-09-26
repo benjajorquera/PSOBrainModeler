@@ -36,7 +36,7 @@
 #'
 #' @param prediction_initial_value A numeric value indicating the initial value of the
 #'                                 predictive variable.
-#'
+#' @param predictor_cols Character vector of column names to include in the prediction set.
 #' @param cost A numeric value indicating the cost parameter of the SVR model.
 #' @param nu A numeric value indicating the nu parameter of the SVR model.
 #' @param gamma A numeric value (optional) indicating the gamma parameter of the SVR model.
@@ -61,6 +61,7 @@
 #'                     initial_column_values = c(1),
 #'                     prediction_col_name = "feature2_norm",
 #'                     prediction_initial_value = 0.5,
+#'                     predictor_cols = c("feature1_norm"),
 #'                     cost = 1,
 #'                     nu = 0.5,
 #'                     tolerance = 1)
@@ -79,6 +80,7 @@ generate_signal_response_predictions <- function(data,
                                                  initial_column_values,
                                                  prediction_col_name,
                                                  prediction_initial_value,
+                                                 predictor_cols,
                                                  cost,
                                                  nu,
                                                  gamma = NULL,
@@ -120,9 +122,10 @@ generate_signal_response_predictions <- function(data,
     input_df = data,
     data_cols = column_names,
     predictor_cols = NULL,
-    lagged_cols = initial_column_names,
+    lagged_cols = predictor_cols,
     lag_values = c(initial_columns_lags, predicted_column_lags),
-    is_training = TRUE
+    is_training = TRUE,
+    vsvr_response = prediction_col_name
   )
   
   SVR_model <-
@@ -145,6 +148,7 @@ generate_signal_response_predictions <- function(data,
   # Create a dataframe with initial values replicated
   pressure_df_model <-
     data.frame(name = rep(initial_column_values, each = pressure_start))
+  
   names(pressure_df_model) <- initial_column_names
   
   # Initialize a list to hold lagged columns

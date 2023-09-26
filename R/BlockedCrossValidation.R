@@ -124,7 +124,8 @@ cross_validate_partition <-
       data_cols = signal_norm_names,
       predictor_cols = predictors_norm_names,
       lagged_cols = lagged_cols,
-      lag_values = col_lags
+      lag_values = col_lags,
+      vsvr_response = vsvr_response
     )
     
     for (df_list in seq_len(bcv_folds)) {

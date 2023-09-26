@@ -1,4 +1,5 @@
 ^PSOBrainModeler\.Rproj$
 ^\.Rproj\.user$
 ^data-raw$
-^/TODO\.txt$
+^sandbox$
+^documents$
