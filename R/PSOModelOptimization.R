@@ -25,7 +25,7 @@ pso_training_model <- function(cost,
     cost = cost,
     nu = nu,
     gamma = gamma,
-    col_lags = col_lags
+    col_lags = c(col_lags, response_lags)
   )
   
   avg_cor <- results$avg_cor
@@ -37,7 +37,7 @@ pso_training_model <- function(cost,
   
   # Training with all data
   data_training <-
-    generate_time_series_data_helper(lag_values = col_lags,
+    generate_time_series_data_helper(lag_values = c(col_lags, response_lags),
                                      is_training = TRUE)
   
   # Generate response predictions

@@ -1,5 +1,0 @@
-TODO LIST
-- Revisar TimeSeriesSignalPrediction, las validaciones y pruebas unitarias.
-- Llamada a generate_time_series_data en TimeSeriesSignalPrediction y casos bordes
-- Pruebas unitarias de validaciones de archivos que tienen pocas pruebas unitarias
-- Trabajar en PSOModelOptimization
