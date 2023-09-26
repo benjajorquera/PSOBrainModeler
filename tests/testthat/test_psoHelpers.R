@@ -11,15 +11,3 @@ test_that("extract_and_round_pso_params works correctly", {
   expect_equal(result$gamma, 0.00089)
   expect_equal(result$lags, 2)
 })
-
-test_that("pso_objective_selector selects the right function", {
-  result_fir <- pso_objective_selector("FIR")
-  #result_multi_fir <- pso_objective_selector("FIR", multi = TRUE)
-  result_arx <- pso_objective_selector("ARX")
-  #result_multi_arx <- pso_objective_selector("ARX", multi = TRUE)
-  
-  expect_identical(result_fir, pso_fir)
-  #expect_identical(result_multi_fir, pso_multi_fir)
-  expect_identical(result_arx, pso_arx)
-  #expect_identical(result_multi_arx, pso_multi_arx)
-})

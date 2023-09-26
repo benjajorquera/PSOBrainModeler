@@ -99,44 +99,78 @@ configure_data_env <- function(config,
 #'
 #' Sets the configuration for the psoptim optimizer.
 #'
-#' @param pso_swarm_size Size of the particle swarm. Default: 5.
-#' @param pso_max_iterations Maximum number of iterations for PSO. Default: 100.
-#' @param pso_max_fn_calls Maximum number of function calls for PSO. Default: 200.
-#' @param pso_informed_swarm Proportion of swarm to inform. Default: 0.5.
-#' @param pso_global_exp_const Global expansion constant for PSO. Default: 10.
-#' @param pso_maxit_without_improvement Maximum iterations without improvement. Default: 50.
-#' @param pso_restart_tolerance Tolerance for restarting PSO. Default: 0.5.
-#' @param pso_hybrid_type Type of hybrid method for PSO. Default: "improved".
-#' @param pso_type Type of PSO method. Default: "SPSO2011".
-#' @param pso_vectorization Logical indicating if PSO should be vectorized. Default: TRUE.
-#' @param pso_hybrid_control List of control parameters for the hybrid method.
+#' @param pso_trace Non-negative integer for tracing optimization progress. Defaults to 1.
+#' @param pso_fnscale Scaling for the fn value. If negative, optimization becomes a maximization problem.
+#'  Defaults to 1.
+#' @param pso_max_iterations Max number of PSO iterations. Defaults to 100.
+#' @param pso_max_fn_calls Max function calls for PSO. Defaults to 200.
+#' @param pso_abstol Absolute convergence tolerance. Converges when fitness is <= abstol.
+#'  Defaults to -Inf.
+#' @param pso_restart_tolerance Tolerance for PSO restarting. Defaults to 0.5.
+#' @param pso_report Frequency for reporting if trace is positive. Defaults to 1.
+#' @param pso_trace_stats Logical; if TRUE, collects statistics at each reporting step.
+#'  Defaults to TRUE.
+#' @param pso_swarm_size Swarm size. Defaults to 5.
+#' @param pso_informants Exponent for calculating informants. Defaults to 3.
+#' @param pso_informed_swarm Proportion of swarm to inform. Defaults to 0.5.
+#' @param pso_exploitation_const Exploitation constant. A vector of length 1 or 2.
+#'  Changes from w[1] to w[2] as iterations increase. Defaults to 1/(2*log(2)).
+#' @param pso_local_exp_const Local exploration constant. Defaults to .5+log(2).
+#' @param pso_global_exp_const Global expansion constant. Defaults to 10.
+#' @param pso_rand_order Logical; if TRUE, particles are processed randomly.
+#'  Ignored if vectorize is TRUE. Defaults to TRUE.
+#' @param pso_max_restart Maximum restarts allowed. Defaults to Inf.
+#' @param pso_maxit_without_improvement Iterations allowed without improvement.
+#'  Defaults to 50.
+#' @param pso_hybrid_type Hybrid method type. Defaults to "improved".
+#' @param pso_type PSO method type. Defaults to "SPSO2011".
+#' @param pso_vectorization Logical; if TRUE, PSO is vectorized. Defaults to TRUE.
+#' @param pso_hybrid_control Control parameters for hybrid method.
+#'
 #' @return A list containing the psoptim configuration with class "PSOBrainModelerPSOPTIMConfig".
-configure_psoptim_control <- function(pso_swarm_size = 5,
+configure_psoptim_control <- function(pso_trace = 1,
+                                      pso_fnscale = 1,
                                       pso_max_iterations = 100,
                                       pso_max_fn_calls = 200,
-                                      pso_informed_swarm = 0.5,
-                                      pso_global_exp_const = 10,
-                                      pso_maxit_without_improvement = 50,
+                                      pso_abstol = -Inf,
                                       pso_restart_tolerance = 0.5,
+                                      pso_report = 1,
+                                      pso_trace_stats = TRUE,
+                                      pso_swarm_size = 5,
+                                      pso_informants = 3,
+                                      pso_informed_swarm = 0.5,
+                                      pso_exploitation_const = (1 / 2 * log(2)),
+                                      pso_local_exp_const = (5 + log(2)),
+                                      pso_global_exp_const = 10,
+                                      pso_rand_order = TRUE,
+                                      pso_max_restart = Inf,
+                                      pso_maxit_without_improvement = 50,
                                       pso_hybrid_type = "improved",
                                       pso_type = "SPSO2011",
                                       pso_vectorization = TRUE,
                                       pso_hybrid_control = list(maxit = 1)) {
   options <- list(
-    s = pso_swarm_size,
+    trace = pso_trace,
+    fnscale = pso_fnscale,
     maxit = pso_max_iterations,
     maxf = pso_max_fn_calls,
-    p = pso_informed_swarm,
-    c.g = pso_global_exp_const,
-    maxit.stagnate = pso_maxit_without_improvement,
+    abstol = pso_abstol,
     reltol = pso_restart_tolerance,
-    hybrid = pso_hybrid_type,
-    type = pso_type,
+    REPORT = pso_report,
+    trace.stats = pso_trace_stats,
+    s = pso_swarm_size,
+    k = pso_informants,
+    p = pso_informed_swarm,
+    w = pso_exploitation_const,
+    c.p = pso_local_exp_const,
+    c.g = pso_global_exp_const,
+    rand.order = pso_rand_order,
+    max.restart = pso_max_restart,
+    maxit.stagnate = pso_maxit_without_improvement,
     vectorize = pso_vectorization,
+    hybrid = pso_hybrid_type,
     hybrid.control = pso_hybrid_control,
-    trace = 1,
-    REPORT = 1,
-    trace.stats = TRUE
+    type = pso_type
   )
   
   attr(options, "class") <- "PSOBrainModelerPSOPTIMConfig"

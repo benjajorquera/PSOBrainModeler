@@ -103,12 +103,14 @@ optimize_brain_model_with_PSO <- function(config,
     vsvr_response = vsvr_response
   )
   
-  main_pso <- pso_objective_selector(model, multi)
+  message(model)
   
   return(
     pso::psoptim(
       par = params_initial_values,
-      fn = main_pso,
+      fn = pso_model,
+      model = model,
+      multi = multi,
       lower = params_lower_bounds,
       upper = params_upper_bounds,
       control = psoptim_config
