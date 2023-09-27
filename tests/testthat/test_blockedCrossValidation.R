@@ -1,4 +1,4 @@
-context("Tests for blocked_cv function")
+context("Tests for Blocked Cross Validation functions")
 
 test_that("blocked_cv partitions data correctly", {
   # Example data
@@ -38,7 +38,7 @@ test_that("blocked_cv partitions data correctly", {
 })
 
 
-test_that("cross_validate_partition data correctly", {
+test_that("cross_validate_partition process data correctly", {
   data_partitions_test <- list(
     list(
       training = data.frame(

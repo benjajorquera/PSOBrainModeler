@@ -1,14 +1,9 @@
-#' Generate Data Partitions for Blocked Cross-Validation
+#' Generate Data Partitions for Blocked K-fold Cross-Validation
 #'
-#' This function takes a dataset, divides it into a specified number of blocks,
-#' and creates partitions for cross-validation, ensuring that data points are
-#' blocked together for validation. Each partition consists of a training set
-#' and a validation set.
-#'
-#' @param data Dataframe. The dataset to partition.
-#' @param num_blocks Integer. The number of blocks to divide the dataset into.
-#' @param validation_size Numeric (between 0 and 1). Proportion of data to be used
-#'        for validation in each partition.
+#' @param data Dataframe. The dataset to partition. Defaults to NULL.
+#' @param num_blocks (Optional) Integer. The number of blocks to divide the dataset into. Defaults to 5.
+#' @param validation_size (Optional) Numeric (between 0 and 1). Proportion of data to be used
+#'  for validation in each partition. Defaults to 0.2.
 #'
 #' @return A list of partitions, each containing a training set and a validation set.
 #'
@@ -21,8 +16,8 @@ blocked_cv <-
            num_blocks = 5,
            validation_size = 0.2) {
     # Validation Checks
-    if (!is.data.frame(data))
-      stop("'data' must be a data frame.")
+    if (!is.data.frame(data) || nrow(data) == 0)
+      stop("'data' is empty or is not a data frame.")
     if (!is.numeric(num_blocks) ||
         (num_blocks < 1) ||
         (num_blocks != round(num_blocks)))
@@ -62,22 +57,29 @@ blocked_cv <-
 
 #' Cross-Validate Partition for SVR Model
 #'
-#' This function performs cross-validation on the given data partitions using a Support Vector Regression (SVR) model.
+#' This function performs cross-validation on the given data partitions using a
+#'  Support Vector Regression (SVR) model.
 #' It returns the average correlation and mean squared error over the partitions.
 #'
 #' @param cost Numeric. The cost parameter for the SVR model.
 #' @param nu Numeric. The nu parameter for the SVR model.
-#' @param gamma Numeric. The gamma parameter for the SVR model.
+#' @param gamma (Optional) Numeric. The gamma parameter for the SVR model. Defaults to NULL.
 #' @param data_partitions List of dataframes. The data partitions to use for training and validation.
-#' @param bcv_folds Numeric. Number of cross-validation folds.
+#' @param bcv_folds (Optional) Numeric. Number of cross-validation folds. Defaults to 5.
 #' @param signal_norm_names Character vector. Normalized signal column names.
 #' @param predictors_norm_names Character vector. Normalized predictor column names.
 #' @param lagged_cols Character vector. Names of lagged columns.
 #' @param col_lags Numeric vector. Number of lags for each column.
 #' @param vsvr_response Character. Response column name for the SVR model.
-#' @param vsvr_tolerance Numeric. Tolerance parameter for the SVR model.
+#' @param vsvr_tolerance (Optional) Numeric. Tolerance parameter for the SVR model. Defaults to 1.
+#' @param silent (Optional) A logical for run the function silently (without printouts). Defaults to FALSE.
 #'
 #' @return A list containing the average correlation (`avg_cor`) and average mean squared error (`avg_error`).
+#'
+#' @details
+#' This function depends on the following internal package functions:
+#' - \code{\link{generate_time_series_data}}: Constructs a dataset for time-series modeling.
+#' - \code{\link{vsvr_model}}: Fits a Nu Support Vector Regression (SVR) model.
 #'
 #' @examples
 #'
@@ -95,7 +97,7 @@ blocked_cv <-
 cross_validate_partition <-
   function(cost,
            nu,
-           gamma,
+           gamma = NULL,
            data_partitions,
            bcv_folds = 5,
            signal_norm_names,
@@ -103,7 +105,8 @@ cross_validate_partition <-
            lagged_cols,
            col_lags,
            vsvr_response,
-           vsvr_tolerance = 1) {
+           vsvr_tolerance = 1,
+           silent = FALSE) {
     if (!is.numeric(cost))
       stop("The 'cost' argument must be numeric.")
     if (!is.numeric(nu))
@@ -158,9 +161,11 @@ cross_validate_partition <-
       predictions_pso <- predict(svr_model_pso, new_data_validation)
       
       if (stats::sd(predictions_pso) == 0) {
-        message(
-          "STANDARD DEVIATION OF 'PREDICTIONS PSO' IS ZERO: SVM TOLERANCE IS TOO HIGH FOR NUMBER OF LAGS USED"
-        )
+        if (!silent) {
+          message(
+            "STANDARD DEVIATION OF 'PREDICTIONS PSO' IS ZERO: SVM TOLERANCE IS TOO HIGH FOR NUMBER OF LAGS USED"
+          )
+        }
         return(list(avg_cor = NA, avg_error = NA))
       }
       

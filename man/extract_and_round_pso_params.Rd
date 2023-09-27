@@ -9,9 +9,9 @@ extract_and_round_pso_params(params, has_gamma = FALSE, n_lags = 1)
 \arguments{
 \item{params}{A numeric vector with the optimization parameters.}
 
-\item{has_gamma}{A logical indicating if the gamma parameter is included.}
+\item{has_gamma}{(Optional) A logical indicating if the gamma parameter is included. Defaults to FALSE.}
 
-\item{n_lags}{An integer for the number of lags being optimized.}
+\item{n_lags}{(Optional) An integer for the number of lags being optimized. Defaults to 1.}
 }
 \value{
 A list containing the rounded parameters including cost, nu, gamma (if applicable), and lags.
@@ -22,5 +22,6 @@ and structures them in a list for easier use in subsequent processes.
 }
 \examples{
 params <- c(1.234, 0.5678, 0.00089, 2.345)
-extract_and_round_pso_params(params, has_gamma = TRUE, n_lags = 1)
+PSOBrainModeler:::extract_and_round_pso_params(params, has_gamma = TRUE, n_lags = 1)
+
 }

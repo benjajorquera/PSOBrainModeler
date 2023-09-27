@@ -60,6 +60,6 @@ result <- optimize_brain_model_with_PSO(
   predictors_names = c("MABP", "CBFV.L"),
   params_lower_bounds = c(0.25, 0.1, (1 / (2 * 1024 ^ 2)), 1, 0),
   params_upper_bounds = c(4096, 0.9, (1 / (2 * 0.0625 ^ 2)), 8, 6),
-  params_initial_values = c(NA, NA, NA, NA),
+  params_initial_values = c(NA, NA, NA, NA, NA),
   vsvr_response = "CBFV.L"
 )

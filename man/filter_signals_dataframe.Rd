@@ -12,9 +12,8 @@ filter_signals_dataframe(df, signal_names)
 \item{signal_names}{A character vector specifying the names of the columns to include in the output.}
 }
 \value{
-A data frame containing only the specified columns. Returns NULL if any of the specified columns are not found.
+A data frame containing only the specified columns.
 }
 \description{
 This function returns a subset of the given data frame containing only the specified columns.
-It validates if the specified column names exist in the data frame before filtering.
 }

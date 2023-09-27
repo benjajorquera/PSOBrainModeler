@@ -5,20 +5,20 @@
 \title{Generate and Add a Smoothed Pressure Step to a Signal}
 \usage{
 add_pressure_step(
-  pressure_start = 5,
-  signal_end = 40,
-  butter_order = 2,
+  pressure_start = 3L,
+  signal_end = 40L,
+  butter_order = 2L,
   butter_fs = 0.2
 )
 }
 \arguments{
-\item{pressure_start}{Integer indicating the index at which the pressure step starts.}
+\item{pressure_start}{(Optional) Integer indicating the index at which the pressure step starts. Defaults to 3L.}
 
-\item{signal_end}{Integer indicating the index at which the pressure step ends.}
+\item{signal_end}{(Optional) Integer indicating the index at which the pressure step ends. Defaults to 40L.}
 
-\item{butter_order}{Integer representing the order of the Butterworth filter.}
+\item{butter_order}{(Optional) Integer representing the order of the Butterworth filter. Defaults to 2L.}
 
-\item{butter_fs}{Numeric value representing the sampling frequency for the Butterworth filter.}
+\item{butter_fs}{(Optional) Numeric value representing the sampling frequency for the Butterworth filter. Defaults to 0.2.}
 }
 \value{
 A data frame containing a single column, `signal`, with the smoothed pressure step.
@@ -29,8 +29,7 @@ and returns the result as a data frame. The output signal starts with a zero val
 up to `pressure_start` and then steps down to -1, smoothed using the Butterworth filter.
 }
 \examples{
-pressure_step <- add_pressure_step(pressure_start = 10, signal_end = 100,
-                                   butter_order = 2, butter_fs = 0.2)
-plot(pressure_step$signal)
+pressure_step <- add_pressure_step(pressure_start = 10L, signal_end = 100L,
+                                   butter_order = 2L, butter_fs = 0.2)
 
 }

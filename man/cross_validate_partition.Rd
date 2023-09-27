@@ -7,7 +7,7 @@
 cross_validate_partition(
   cost,
   nu,
-  gamma,
+  gamma = NULL,
   data_partitions,
   bcv_folds = 5,
   signal_norm_names,
@@ -15,7 +15,8 @@ cross_validate_partition(
   lagged_cols,
   col_lags,
   vsvr_response,
-  vsvr_tolerance = 1
+  vsvr_tolerance = 1,
+  silent = FALSE
 )
 }
 \arguments{
@@ -23,11 +24,11 @@ cross_validate_partition(
 
 \item{nu}{Numeric. The nu parameter for the SVR model.}
 
-\item{gamma}{Numeric. The gamma parameter for the SVR model.}
+\item{gamma}{(Optional) Numeric. The gamma parameter for the SVR model. Defaults to NULL.}
 
 \item{data_partitions}{List of dataframes. The data partitions to use for training and validation.}
 
-\item{bcv_folds}{Numeric. Number of cross-validation folds.}
+\item{bcv_folds}{(Optional) Numeric. Number of cross-validation folds. Defaults to 5.}
 
 \item{signal_norm_names}{Character vector. Normalized signal column names.}
 
@@ -39,14 +40,22 @@ cross_validate_partition(
 
 \item{vsvr_response}{Character. Response column name for the SVR model.}
 
-\item{vsvr_tolerance}{Numeric. Tolerance parameter for the SVR model.}
+\item{vsvr_tolerance}{(Optional) Numeric. Tolerance parameter for the SVR model. Defaults to 1.}
+
+\item{silent}{(Optional) A logical for run the function silently (without printouts). Defaults to FALSE.}
 }
 \value{
 A list containing the average correlation (`avg_cor`) and average mean squared error (`avg_error`).
 }
 \description{
-This function performs cross-validation on the given data partitions using a Support Vector Regression (SVR) model.
+This function performs cross-validation on the given data partitions using a
+ Support Vector Regression (SVR) model.
 It returns the average correlation and mean squared error over the partitions.
+}
+\details{
+This function depends on the following internal package functions:
+- \code{\link{generate_time_series_data}}: Constructs a dataset for time-series modeling.
+- \code{\link{vsvr_model}}: Fits a Nu Support Vector Regression (SVR) model.
 }
 \examples{
 

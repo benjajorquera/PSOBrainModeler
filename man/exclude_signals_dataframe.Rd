@@ -9,12 +9,11 @@ exclude_signals_dataframe(df, signal_names = NULL)
 \arguments{
 \item{df}{A data frame to filter.}
 
-\item{signal_names}{A character vector specifying the names of the columns to exclude from the output.}
+\item{signal_names}{(Optional) A character vector specifying the names of the columns to exclude from the output. Defaults to NULL.}
 }
 \value{
-A data frame without the specified columns. Returns NULL if any of the specified columns are not found.
+A data frame without the specified columns.
 }
 \description{
 This function returns a subset of the given data frame excluding the specified columns.
-It validates if the specified column names exist in the data frame before exclusion.
 }

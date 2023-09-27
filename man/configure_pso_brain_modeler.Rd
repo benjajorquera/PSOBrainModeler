@@ -8,36 +8,39 @@ configure_pso_brain_modeler(
   seed = 123,
   bcv_folds = 5,
   bcv_validation_size = 0.2,
-  pressure_signal_start = 3,
-  pressure_signal_response_size = 40,
-  butter_filter_order = 2,
+  pressure_signal_start = 3L,
+  pressure_signal_response_size = 40L,
+  butter_filter_order = 2L,
   butter_filter_fs = 0.2,
   max_lag_number = 8,
   vsvr_tolerance = 1
 )
 }
 \arguments{
-\item{seed}{Seed for random number generation. Default: 123.}
+\item{seed}{(Optional) Seed for random number generation. Defaults to 123.}
 
-\item{bcv_folds}{Number of folds for blocked cross-validation. Default: 5.}
+\item{bcv_folds}{(Optional) Number of folds for blocked cross-validation. Defaults to 5.}
 
-\item{bcv_validation_size}{Proportion of data for validation in blocked CV. Default: 0.2.}
+\item{bcv_validation_size}{(Optional) Proportion of data for validation in blocked CV. Defaults to 0.2.}
 
-\item{pressure_signal_start}{Starting point for pressure signal. Default: 3.}
+\item{pressure_signal_start}{(Optional) Integer indicating the starting point for pressure signal. Defaults to 3L.}
 
-\item{pressure_signal_response_size}{Size of the response signal for pressure. Default: 40.}
+\item{pressure_signal_response_size}{(Optional) Integer indicating the size of the response signal for pressure. Defaults to 40L.}
 
-\item{butter_filter_order}{Order of the Butterworth filter. Default: 2.}
+\item{butter_filter_order}{(Optional) Integer indicating the order of the Butterworth filter. Defaults to 2L.}
 
-\item{butter_filter_fs}{Sampling frequency for the Butterworth filter. Default: 0.2.}
+\item{butter_filter_fs}{(Optional) Sampling frequency for the Butterworth filter. Defaults to 0.2.}
 
-\item{max_lag_number}{Maximum number of lags to consider. Default: 8.}
+\item{max_lag_number}{(Optional) Maximum number of lags to consider. Defaults to 8.}
 
-\item{vsvr_tolerance}{Tolerance level for VSVR. Default: 1.}
+\item{vsvr_tolerance}{(Optional) Tolerance level for VSVR. Defaults to 1.}
 }
 \value{
 A list containing the configuration with class "PSOBrainModelerConfig".
 }
 \description{
 This function sets the configuration for the PSO brain modeler.
+}
+\examples{
+PSOBrainModeler:::configure_pso_brain_modeler()
 }

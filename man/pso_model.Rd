@@ -4,18 +4,43 @@
 \alias{pso_model}
 \title{PSO Model Function}
 \usage{
-pso_model(params, model, multi = FALSE)
+pso_model(
+  params,
+  model,
+  multi = FALSE,
+  data_list,
+  silent = FALSE,
+  plot_response = TRUE
+)
 }
 \arguments{
 \item{params}{A numeric vector of parameters.}
 
 \item{model}{A character string specifying the model. Valid values are "FIR", "NFIR", "ARX", and "NARX".}
 
-\item{multi}{A logical indicating whether multi-response is used.}
+\item{multi}{A logical indicating whether multi-response is used. Defaults to FALSE.}
+
+\item{data_list}{A list containing various data configurations.}
+
+\item{silent}{A logical for run the function silently (without printouts). Defaults to FALSE.}
+
+\item{plot_response}{(Optional) A logical to decide whether to plot the response signal. Defaults to TRUE.}
 }
 \value{
 The result of the `pso_training_model`.
 }
 \description{
 This function performs the Particle Swarm Optimization (PSO) model based on the provided parameters and model.
+}
+\details{
+This function depends on the following internal package functions:
+- \code{\link{extract_and_round_pso_params}}: Extract and Round Parameters from PSO Optimization
+- \code{\link{pso_training_model}}: Model training function using PSO optimization
+}
+\examples{
+\dontrun{
+ pso_model(params = c(cost = 1, nu = 0.5, lags = c(1)),
+   model = "FIR", multi = FALSE, data_list = list())
+}
+
 }

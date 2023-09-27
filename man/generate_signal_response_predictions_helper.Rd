@@ -12,7 +12,8 @@ generate_signal_response_predictions_helper(
   prediction_initial_value,
   cost,
   nu,
-  gamma
+  gamma,
+  data_list
 )
 }
 \arguments{
@@ -31,6 +32,8 @@ generate_signal_response_predictions_helper(
 \item{nu}{A numeric value for the nu parameter.}
 
 \item{gamma}{A numeric value for the gamma parameter (default: NULL).}
+
+\item{data_list}{A list containing various data configurations}
 }
 \value{
 Result from the generate_signal_response_predictions function.
