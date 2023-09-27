@@ -2,20 +2,22 @@
 % Please edit documentation in R/ScoreSignal.R
 \name{evaluate_signal_quality}
 \alias{evaluate_signal_quality}
-\title{Evaluate Signal Quality}
+\title{Signal Quality Evaluation}
 \usage{
-evaluate_signal_quality(signal, pressure_start_point = 3)
+evaluate_signal_quality(signal, pressure_start_point = 3L, silent = FALSE)
 }
 \arguments{
 \item{signal}{A numeric vector representing the signal.}
 
-\item{pressure_start_point}{The starting point of the pressure.}
+\item{pressure_start_point}{(Optional) The starting point of the pressure. Defaults to 3L.}
+
+\item{silent}{(Optional) A logical for run the function silently (without printouts). Defaults to FALSE.}
 }
 \value{
 A numeric score indicating the quality of the signal.
 }
 \description{
-This function evaluates the quality of a provided signal based on specific criteria.
+Evaluates the quality of a provided signal based on specific criteria.
 }
 \details{
 The function applies both basic and advanced filters to evaluate the signal's quality.
@@ -23,7 +25,8 @@ The basic filter checks for conditions related to peaks, minimums, variance, and
 The advanced filter performs checks on stabilization and drop rates.
 }
 \examples{
-sample_signal <- rnorm(40)
-start_point <- 5
-quality_score <- evaluate_signal_quality(sample_signal, start_point)
+ sample_signal <- rnorm(40)
+ start_point <- 5
+ quality_score <- evaluate_signal_quality(sample_signal, start_point)
+
 }

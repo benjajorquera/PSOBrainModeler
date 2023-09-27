@@ -1,9 +1,12 @@
-#' Evaluate Signal Quality
+#' Signal Quality Evaluation
 #'
-#' This function evaluates the quality of a provided signal based on specific criteria.
+#' @description
+#' Evaluates the quality of a provided signal based on specific criteria.
 #'
 #' @param signal A numeric vector representing the signal.
-#' @param pressure_start_point The starting point of the pressure.
+#' @param pressure_start_point (Optional) The starting point of the pressure. Defaults to 3L.
+#' @param silent (Optional) A logical for run the function silently (without printouts). Defaults to FALSE.
+#'
 #' @return A numeric score indicating the quality of the signal.
 #'
 #' @details
@@ -12,18 +15,29 @@
 #' The advanced filter performs checks on stabilization and drop rates.
 #'
 #' @examples
-#' sample_signal <- rnorm(40)
-#' start_point <- 5
-#' quality_score <- evaluate_signal_quality(sample_signal, start_point)
+#'  sample_signal <- rnorm(40)
+#'  start_point <- 5
+#'  quality_score <- evaluate_signal_quality(sample_signal, start_point)
+#'
 #' @importFrom stats var
 #' @importFrom utils head
+#'
 #' @export
 evaluate_signal_quality <-
-  function(signal, pressure_start_point = 3) {
-    # Ensure that the signal is a numeric vector
+  function(signal,
+           pressure_start_point = 3L,
+           silent = FALSE) {
+    # Constants
+    MIN_PEAK_VALUE <- -0.2
+    MAX_PEAK_VALUE <- 0.5
+    VARIANCE_THRESHOLD <- 0.002
+    MAX_SIGNAL_VALUE <- 1.2
+    
+    # Ensure that the signal and pressure_start_point are numeric
     if (!is.numeric(signal) ||
+        !is.numeric(pressure_start_point) ||
         length(signal) < (pressure_start_point + 30)) {
-      stop("Invalid signal or insufficient length given the pressure start point.")
+      stop("Invalid signal or pressure start point.")
     }
     
     # Basic filter checks:
@@ -41,11 +55,17 @@ evaluate_signal_quality <-
     global_min <- min(signal)
     max_drop <- max(drop_range)
     
+    signal_range <- range(signal)
+    
     if (!(global_min %in% peak_range) ||
-        !(global_min >= -0.2 && global_min <= 0.5) ||
-        stats::var(stabilization_range) > 0.002 ||
-        !(max(signal) < 1.2 && min(signal) > -0.2)) {
-      message("RESPONSE SIGNAL FAILED BASIC FILTER")
+        !(global_min >= MIN_PEAK_VALUE &&
+          global_min <= MAX_PEAK_VALUE) ||
+        stats::var(stabilization_range) > VARIANCE_THRESHOLD ||
+        !(signal_range[2] < MAX_SIGNAL_VALUE &&
+          signal_range[1] > MIN_PEAK_VALUE)) {
+      if (!silent) {
+        message("RESPONSE SIGNAL FAILED BASIC FILTER")
+      }
       return(-10)
     }
     

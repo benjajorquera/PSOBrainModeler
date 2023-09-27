@@ -6,32 +6,44 @@
 \usage{
 process_dataframe(
   df = data.frame(),
-  excluded_cols,
+  excluded_cols = NULL,
   lags = NULL,
   signals,
   lagged_signals = NULL
 )
 }
 \arguments{
-\item{df}{A data frame containing the signals to be processed.}
+\item{df}{(Optional) A data frame containing the signals to be processed. Defaults to an empty data frame.}
 
-\item{excluded_cols}{A character vector specifying the columns to be excluded.}
+\item{excluded_cols}{(Optional) A character vector specifying the columns to be excluded. Defaults to NULL.}
 
-\item{lags}{An integer specifying the number of lags to add for each signal.}
+\item{lags}{(Optional) An integer specifying the number of lags to add for each signal. Defaults to NULL.}
 
 \item{signals}{A character vector specifying the signals to be excluded after normalization.}
 
-\item{lagged_signals}{A character vector specifying the signals to be lagged.
-If NULL, all signals will be lagged.}
+\item{lagged_signals}{(Optional) A character vector specifying the signals to be lagged.
+If NULL, all signals will be lagged. Defaults to NULL.}
 }
 \value{
 A new data frame with specified columns excluded, all columns normalized,
         and lagged versions of the signals added. Rows with resulting NA values
-         from lags are omitted.
+        from lags are omitted.
 }
 \description{
 This function processes a given data frame to exclude specified columns,
 normalize all columns, and add lagged versions of the signals.
+}
+\details{
+This function depends on:
+\itemize{
+  \item Internal package functions:
+  \itemize{
+    \item \code{\link{exclude_signals_dataframe}}: Exclude Columns in a Data Frame by Names
+    \item \code{\link{normalize_signals_by_name}}: Normalize Selected Columns in a Data Frame Using Min-Max Scaling
+    \item \code{\link{lag_all_signals}}: Add Lagged Columns to All Normalized Columns in a Data Frame
+    \item \code{\link{lag_normalized_signals}}: Add Lagged Columns to a Normalized Data Frame
+  }
+}
 }
 \examples{
 df <- data.frame(Time = 1:10, A = c(2, 4, 6, 8, 10, 5, 3, 7, 9, 1),

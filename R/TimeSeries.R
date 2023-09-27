@@ -4,35 +4,34 @@
 #' and returns the result as a data frame. The output signal starts with a zero value
 #' up to `pressure_start` and then steps down to -1, smoothed using the Butterworth filter.
 #'
-#' @param pressure_start Integer indicating the index at which the pressure step starts.
-#' @param signal_end Integer indicating the index at which the pressure step ends.
-#' @param butter_order Integer representing the order of the Butterworth filter.
-#' @param butter_fs Numeric value representing the sampling frequency for the Butterworth filter.
+#' @param pressure_start (Optional) Integer indicating the index at which the pressure step starts. Defaults to 3L.
+#' @param signal_end (Optional) Integer indicating the index at which the pressure step ends. Defaults to 40L.
+#' @param butter_order (Optional) Integer representing the order of the Butterworth filter. Defaults to 2L.
+#' @param butter_fs (Optional) Numeric value representing the sampling frequency for the Butterworth filter. Defaults to 0.2.
 #'
 #' @return A data frame containing a single column, `signal`, with the smoothed pressure step.
 #'
 #' @examples
-#' pressure_step <- add_pressure_step(pressure_start = 10, signal_end = 100,
-#'                                    butter_order = 2, butter_fs = 0.2)
-#' plot(pressure_step$signal)
+#' pressure_step <- add_pressure_step(pressure_start = 10L, signal_end = 100L,
+#'                                    butter_order = 2L, butter_fs = 0.2)
 #'
 #' @importFrom signal butter filter
 #' @export
 add_pressure_step <-
-  function(pressure_start = 5,
-           signal_end = 40,
-           butter_order = 2,
+  function(pressure_start = 3L,
+           signal_end = 40L,
+           butter_order = 2L,
            butter_fs = 0.2) {
     # Validation
-    if (!is.numeric(pressure_start) || pressure_start < 0) {
-      stop("pressure_start should be a non-negative numeric value.")
+    if (!is.integer(pressure_start) || pressure_start < 0) {
+      stop("pressure_start should be a non-negative integer.")
     }
     
-    if (!is.numeric(signal_end) || signal_end <= pressure_start) {
-      stop("signal_end should be a numeric value greater than pressure_start.")
+    if (!is.integer(signal_end) || signal_end <= pressure_start) {
+      stop("signal_end should be an integer value greater than pressure_start.")
     }
     
-    if (!is.numeric(butter_order) || butter_order < 1) {
+    if (!is.integer(butter_order) || butter_order < 1) {
       stop("butter_order should be a positive integer.")
     }
     
@@ -55,6 +54,7 @@ add_pressure_step <-
     # Return the result as a data frame
     return(data.frame(signal = pressure_step_smooth))
   }
+
 
 #' Generate Time-series Model Data
 #'
@@ -147,16 +147,28 @@ generate_time_series_data <-
 #' This function processes a given data frame to exclude specified columns,
 #' normalize all columns, and add lagged versions of the signals.
 #'
-#' @param df A data frame containing the signals to be processed.
-#' @param excluded_cols A character vector specifying the columns to be excluded.
-#' @param lags An integer specifying the number of lags to add for each signal.
+#' @param df (Optional) A data frame containing the signals to be processed. Defaults to an empty data frame.
+#' @param excluded_cols (Optional) A character vector specifying the columns to be excluded. Defaults to NULL.
+#' @param lags (Optional) An integer specifying the number of lags to add for each signal. Defaults to NULL.
 #' @param signals A character vector specifying the signals to be excluded after normalization.
-#' @param lagged_signals A character vector specifying the signals to be lagged.
-#'  If NULL, all signals will be lagged.
+#' @param lagged_signals (Optional) A character vector specifying the signals to be lagged.
+#'  If NULL, all signals will be lagged. Defaults to NULL.
 #'
 #' @return A new data frame with specified columns excluded, all columns normalized,
 #'         and lagged versions of the signals added. Rows with resulting NA values
-#'          from lags are omitted.
+#'         from lags are omitted.
+#'
+#' @details
+#' This function depends on:
+#' \itemize{
+#'   \item Internal package functions:
+#'   \itemize{
+#'     \item \code{\link{exclude_signals_dataframe}}: Exclude Columns in a Data Frame by Names
+#'     \item \code{\link{normalize_signals_by_name}}: Normalize Selected Columns in a Data Frame Using Min-Max Scaling
+#'     \item \code{\link{lag_all_signals}}: Add Lagged Columns to All Normalized Columns in a Data Frame
+#'     \item \code{\link{lag_normalized_signals}}: Add Lagged Columns to a Normalized Data Frame
+#'   }
+#' }
 #'
 #' @examples
 #' df <- data.frame(Time = 1:10, A = c(2, 4, 6, 8, 10, 5, 3, 7, 9, 1),
@@ -167,9 +179,10 @@ generate_time_series_data <-
 #'                                   signals = c("A", "B"))
 #'
 #' @export
+
 process_dataframe <-
   function(df = data.frame(),
-           excluded_cols,
+           excluded_cols = NULL,
            lags = NULL,
            signals,
            lagged_signals = NULL) {
@@ -178,7 +191,7 @@ process_dataframe <-
       stop("Input 'df' should be a non-empty data frame.")
     }
     
-    if (!is.numeric(lags) || lags <= 0) {
+    if (!is.null(lags) && (!is.numeric(lags) || lags <= 0)) {
       stop("Input 'lags' should be a positive integer.")
     }
     

@@ -20,15 +20,39 @@ configure_data_env(
 
 \item{excluded_cols}{Vector of column names that should be excluded from processing.}
 
-\item{signal_names}{Vector of names representing signal columns.}
+\item{signal_names}{Vector of names representing signal columns. The resulting normalized signal names
+in the processed data will have a "_norm" suffix.}
 
-\item{predictors_names}{Vector of predictor names for the model.}
+\item{predictors_names}{Vector of predictor names for the model. The resulting normalized predictor names
+in the processed data will have a "_norm" suffix.}
 
-\item{vsvr_response}{Name of the column representing the VSVR response.}
+\item{vsvr_response}{Name of the column representing the VSVR response. The resulting normalized name
+in the processed data will have a "_norm" suffix.}
 }
 \value{
-NULL. The function assigns values to global variables in the package environment.
+A list containing various data configurations including the processed data with normalized signal names.
 }
 \description{
-This function prepares the data environment required for modeling.
+This function prepares the data environment required for modeling. The signals in the resulting data
+are normalized and the signal names have a "_norm" suffix to indicate this normalization.
+}
+\details{
+This function depends on:
+\itemize{
+  \item Internal package functions:
+  \itemize{
+    \item \code{\link{add_pressure_step}}: Generate a dataframe for the smoothed negative
+   pressure step response with a Butterworth filter.
+    \item \code{\link{process_dataframe}}: Exclude, Normalize, and Lag Signals of Data Frame.
+The normalization will append a "_norm" suffix to the signal names.
+    \item \code{\link{blocked_cv}}: Perform k-folded blocked cross-validation.
+  }
+}
+}
+\examples{
+config <- PSOBrainModeler:::configure_pso_brain_modeler()
+data <- data.frame(feature1 = rnorm(10), feature2 = rnorm(10))
+PSOBrainModeler:::configure_data_env(config = config, data = data, excluded_cols = NULL,
+  signal_names = c("feature1", "feature2"), predictors_names = c("feature1"),
+  vsvr_response = "feature2")
 }

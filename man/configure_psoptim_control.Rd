@@ -16,7 +16,7 @@ configure_psoptim_control(
   pso_swarm_size = 5,
   pso_informants = 3,
   pso_informed_swarm = 0.5,
-  pso_exploitation_const = (1/2 * log(2)),
+  pso_exploitation_const = (1/(2 * log(2))),
   pso_local_exp_const = (5 + log(2)),
   pso_global_exp_const = 10,
   pso_rand_order = TRUE,
@@ -29,57 +29,60 @@ configure_psoptim_control(
 )
 }
 \arguments{
-\item{pso_trace}{Non-negative integer for tracing optimization progress. Defaults to 1.}
+\item{pso_trace}{(Optional) Non-negative integer for tracing optimization progress. Defaults to 1.}
 
-\item{pso_fnscale}{Scaling for the fn value. If negative, optimization becomes a maximization problem.
+\item{pso_fnscale}{(Optional) Scaling for the fn value. If negative, optimization becomes a maximization problem.
 Defaults to 1.}
 
-\item{pso_max_iterations}{Max number of PSO iterations. Defaults to 100.}
+\item{pso_max_iterations}{(Optional) Max number of PSO iterations. Defaults to 100.}
 
-\item{pso_max_fn_calls}{Max function calls for PSO. Defaults to 200.}
+\item{pso_max_fn_calls}{(Optional) Max function calls for PSO. Defaults to 200.}
 
-\item{pso_abstol}{Absolute convergence tolerance. Converges when fitness is <= abstol.
+\item{pso_abstol}{(Optional) Absolute convergence tolerance. Converges when fitness is <= abstol.
 Defaults to -Inf.}
 
-\item{pso_restart_tolerance}{Tolerance for PSO restarting. Defaults to 0.5.}
+\item{pso_restart_tolerance}{(Optional) Tolerance for PSO restarting. Defaults to 0.5.}
 
-\item{pso_report}{Frequency for reporting if trace is positive. Defaults to 1.}
+\item{pso_report}{(Optional) Frequency for reporting if trace is positive. Defaults to 1.}
 
-\item{pso_trace_stats}{Logical; if TRUE, collects statistics at each reporting step.
+\item{pso_trace_stats}{(Optional) Logical; if TRUE, collects statistics at each reporting step.
 Defaults to TRUE.}
 
-\item{pso_swarm_size}{Swarm size. Defaults to 5.}
+\item{pso_swarm_size}{(Optional) Swarm size. Defaults to 5.}
 
-\item{pso_informants}{Exponent for calculating informants. Defaults to 3.}
+\item{pso_informants}{(Optional) Exponent for calculating informants. Defaults to 3.}
 
-\item{pso_informed_swarm}{Proportion of swarm to inform. Defaults to 0.5.}
+\item{pso_informed_swarm}{(Optional) Proportion of swarm to inform. Defaults to 0.5.}
 
-\item{pso_exploitation_const}{Exploitation constant. A vector of length 1 or 2.
+\item{pso_exploitation_const}{(Optional) Exploitation constant. A vector of length 1 or 2.
 Changes from w[1] to w[2] as iterations increase. Defaults to 1/(2*log(2)).}
 
-\item{pso_local_exp_const}{Local exploration constant. Defaults to .5+log(2).}
+\item{pso_local_exp_const}{(Optional) Local exploration constant. Defaults to .5+log(2).}
 
-\item{pso_global_exp_const}{Global expansion constant. Defaults to 10.}
+\item{pso_global_exp_const}{(Optional) Global expansion constant. Defaults to 10.}
 
-\item{pso_rand_order}{Logical; if TRUE, particles are processed randomly.
+\item{pso_rand_order}{(Optional) Logical; if TRUE, particles are processed randomly.
 Ignored if vectorize is TRUE. Defaults to TRUE.}
 
-\item{pso_max_restart}{Maximum restarts allowed. Defaults to Inf.}
+\item{pso_max_restart}{(Optional) Maximum restarts allowed. Defaults to Inf.}
 
-\item{pso_maxit_without_improvement}{Iterations allowed without improvement.
+\item{pso_maxit_without_improvement}{(Optional) Iterations allowed without improvement.
 Defaults to 50.}
 
-\item{pso_hybrid_type}{Hybrid method type. Defaults to "improved".}
+\item{pso_hybrid_type}{(Optional) Hybrid method type. Defaults to "improved".}
 
-\item{pso_type}{PSO method type. Defaults to "SPSO2011".}
+\item{pso_type}{(Optional) PSO method type. Defaults to "SPSO2011".}
 
-\item{pso_vectorization}{Logical; if TRUE, PSO is vectorized. Defaults to TRUE.}
+\item{pso_vectorization}{(Optional) Logical; if TRUE, PSO is vectorized. Defaults to TRUE.}
 
-\item{pso_hybrid_control}{Control parameters for hybrid method.}
+\item{pso_hybrid_control}{(Optional) Control parameters for hybrid method.}
 }
 \value{
 A list containing the psoptim configuration with class "PSOBrainModelerPSOPTIMConfig".
 }
 \description{
 Sets the configuration for the psoptim optimizer.
+}
+\examples{
+PSOBrainModeler:::configure_psoptim_control()
 }

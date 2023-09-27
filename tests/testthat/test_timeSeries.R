@@ -18,9 +18,9 @@ test_that(
   {
     result <-
       add_pressure_step(
-        pressure_start = 2,
-        signal_end = 10,
-        butter_order = 2,
+        pressure_start = 2L,
+        signal_end = 10L,
+        butter_order = 2L,
         butter_fs = 0.2
       )
     expect_is(result, "data.frame")
@@ -28,18 +28,20 @@ test_that(
     expect_equal(length(unique(result$signal)), 9)
     expect_error(
       add_pressure_step(
-        pressure_start = -1,
-        signal_end = 10,
-        butter_order = 1,
+        pressure_start = -1L,
+        signal_end = 10L,
+        butter_order = 1L,
         butter_fs = 1
       )
     )
-    expect_error(add_pressure_step(
-      pressure_start = 2,
-      signal_end = 2,
-      butter_order = 1,
-      butter_fs = 1
-    ))
+    expect_error(
+      add_pressure_step(
+        pressure_start = 2L,
+        signal_end = 2L,
+        butter_order = 1L,
+        butter_fs = 1
+      )
+    )
   }
 )
 

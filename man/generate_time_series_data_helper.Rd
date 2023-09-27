@@ -4,12 +4,14 @@
 \alias{generate_time_series_data_helper}
 \title{Helper function to generate time series data}
 \usage{
-generate_time_series_data_helper(lag_values, is_training)
+generate_time_series_data_helper(lag_values, is_training, data_list)
 }
 \arguments{
 \item{lag_values}{Numeric vector indicating the lags for the columns.}
 
 \item{is_training}{Logical indicating whether the data is used for training.}
+
+\item{data_list}{A list containing various data configurations}
 }
 \value{
 Result from the generate_time_series_data function.

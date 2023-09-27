@@ -4,7 +4,14 @@
 \alias{cross_validate_partition_helper}
 \title{Helper function for cross-validation of partitions}
 \usage{
-cross_validate_partition_helper(cost, nu, gamma, col_lags)
+cross_validate_partition_helper(
+  cost,
+  nu,
+  gamma,
+  col_lags,
+  data_list,
+  silent = FALSE
+)
 }
 \arguments{
 \item{cost}{A numeric value for the cost parameter.}
@@ -14,6 +21,10 @@ cross_validate_partition_helper(cost, nu, gamma, col_lags)
 \item{gamma}{A numeric value for the gamma parameter.}
 
 \item{col_lags}{Numeric vector indicating the lags for the columns.}
+
+\item{data_list}{A list containing various data configurations}
+
+\item{silent}{A logical for run the function silently (without printouts). Defaults to FALSE.}
 }
 \value{
 Result from the cross_validate_partition function.

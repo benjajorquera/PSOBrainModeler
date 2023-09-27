@@ -10,7 +10,10 @@ pso_training_model(
   gamma = NULL,
   col_lags,
   response_lags = NULL,
-  vsvr_response = NULL
+  vsvr_response,
+  data_list,
+  silent = FALSE,
+  plot_response = TRUE
 )
 }
 \arguments{
@@ -18,13 +21,19 @@ pso_training_model(
 
 \item{nu}{A numeric value for the nu parameter.}
 
-\item{gamma}{A numeric value for the gamma parameter (default: NULL).}
+\item{gamma}{(Optional) A numeric value for the gamma parameter. Defaults to NULL.}
 
 \item{col_lags}{Numeric vector indicating the lags for the columns.}
 
-\item{response_lags}{Numeric vector indicating the response lags (default: NULL).}
+\item{response_lags}{(Optional) Numeric vector indicating the response lags. Defaults to NULL.}
 
-\item{vsvr_response}{Name of the column representing the VSVR response. (default: NULL).}
+\item{vsvr_response}{Name of the column representing the VSVR response.}
+
+\item{data_list}{A list containing various data configurations.}
+
+\item{silent}{(Optional) A logical for run the function silently (without printouts). Defaults to FALSE.}
+
+\item{plot_response}{(Optional) A logical to decide whether to plot the response signal. Defaults to TRUE.}
 }
 \value{
 A numeric value that represents the optimization result for minimization.
@@ -32,5 +41,19 @@ A numeric value that represents the optimization result for minimization.
 \description{
 This function handles the training process for a model based on given parameters
 using Particle Swarm Optimization (PSO). It performs cross-validation, response
-predictions, and signal evaluation.
+predictions, and signal evaluation. The function returns an optimization value for
+minimization, calculated based on the average correlation, average error, and signal score.
+}
+\details{
+The function conducts the following steps:
+1. Cross-validation using the provided parameters.
+2. Training with all the provided data.
+3. Generate response predictions based on the training.
+4. Evaluate the quality of the signal response.
+
+This function depends on the following internal package functions:
+- \code{\link{cross_validate_partition_helper}}: Helper function for cross-validation of partitions
+- \code{\link{generate_time_series_data_helper}}: Helper function to generate time series data
+- \code{\link{generate_signal_response_predictions_helper}}: Helper function to generate signal response predictions
+- \code{\link{evaluate_signal_quality}}: Evaluate Signal Quality
 }
