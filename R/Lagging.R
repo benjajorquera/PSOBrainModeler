@@ -12,7 +12,6 @@
 #' @examples
 #' df <- data.frame(A_norm = c(0, 0.2, 0.4, 0.6, 0.8, 1))
 #' lagged_df <- lag_normalized_signals(df, 2, c("A_norm"))
-#' print(lagged_df)
 #'
 #' @importFrom dplyr lag
 #' @importFrom stats na.omit
@@ -67,7 +66,6 @@ lag_normalized_signals <-
 #' @examples
 #' df <- data.frame(A_norm = c(0, 0.2, 0.4, 0.6, 0.8, 1))
 #' lagged_df <- lag_all_signals(df, 2)
-#' print(lagged_df)
 #'
 #' @importFrom dplyr lag
 #' @importFrom stats na.omit

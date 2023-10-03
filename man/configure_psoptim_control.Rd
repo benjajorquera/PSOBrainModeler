@@ -84,5 +84,6 @@ A list containing the psoptim configuration with class "PSOBrainModelerPSOPTIMCo
 Sets the configuration for the psoptim optimizer.
 }
 \examples{
-PSOBrainModeler:::configure_psoptim_control()
+configure_psoptim_control()
+
 }

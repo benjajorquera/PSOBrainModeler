@@ -145,9 +145,16 @@ generate_signal_response_predictions <- function(data,
   initial_values <-
     stats::setNames(initial_column_values, initial_column_names)
   
-  # Create a dataframe with initial values replicated
   pressure_df_model <-
-    data.frame(name = rep(initial_column_values, each = pressure_start))
+    data.frame(name = rep(initial_column_values[1], each = pressure_start))
+  
+  if (length(initial_column_values) > 1) {
+    for (value in 2:length(initial_column_values)) {
+      # Create a dataframe with initial values replicated
+      pressure_df_model <- cbind(pressure_df_model,
+                                 data.frame(name = rep(initial_column_values[value], each = pressure_start)))
+    }
+  }
   
   names(pressure_df_model) <- initial_column_names
   
@@ -202,10 +209,23 @@ generate_signal_response_predictions <- function(data,
     new_pressure <-
       data.frame(name = pressure_signal_df[pressure_count, ],
                  stringsAsFactors = FALSE)
-    names(new_pressure) <- initial_column_names[1]
+    
+    if (length(initial_column_values) > 1) {
+      for (value in 2:length(initial_column_values)) {
+        new_pressure <-
+          cbind(
+            new_pressure,
+            data.frame(name = initial_column_values[value],
+                       stringsAsFactors = FALSE)
+          )
+      }
+    }
+    
+    names(new_pressure) <- initial_column_names
     
     # Add predicted value if applicable
-    if (!is.null(predicted_column_lags)) {
+    if (!is.null(predicted_column_lags) &&
+        predicted_column_lags > 0) {
       new_pressure[paste0(prediction_col_name, "_1")] <-
         utils::tail(predictions_data_pressure, 1)
     }

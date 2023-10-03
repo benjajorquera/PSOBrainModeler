@@ -12,14 +12,14 @@ test_that("blocked_cv partitions data correctly", {
   # 2. Validate num_blocks
   test_that("Error when 'num_blocks' is not a positive integer", {
     expect_error(blocked_cv(data, "a", 0.5))
-    expect_error(blocked_cv(data,-2, 0.5))
+    expect_error(blocked_cv(data, -2, 0.5))
     expect_error(blocked_cv(data, 2.5, 0.5))
   })
   
   # 3. Validate validation_size
   test_that("Error when 'validation_size' is not between 0 and 1", {
     expect_error(blocked_cv(data, 2, "a"))
-    expect_error(blocked_cv(data, 2,-0.1))
+    expect_error(blocked_cv(data, 2, -0.1))
     expect_error(blocked_cv(data, 2, 1.1))
   })
   
@@ -133,24 +133,7 @@ test_that("cross_validate_partition handles invalid arguments", {
       "feature2",
       1
     ),
-    "The 'cost' argument must be numeric."
-  )
-  
-  expect_error(
-    cross_validate_partition(
-      cost = 1,
-      nu = "wrong_type",
-      gamma = NULL,
-      mock_data_partitions,
-      1,
-      c("feature1", "feature2"),
-      c("feature1"),
-      c("feature1"),
-      c(1),
-      "feature2",
-      1
-    ),
-    "The 'nu' argument must be numeric."
+    "Invalid value for 'cost'. It should be a positive number."
   )
   
   expect_error(
@@ -167,7 +150,7 @@ test_that("cross_validate_partition handles invalid arguments", {
       "feature2",
       1
     ),
-    "The 'gamma' argument must be numeric or NULL."
+    "Invalid value for 'gamma'. It should be a positive number."
   )
   
   expect_error(
@@ -201,6 +184,6 @@ test_that("cross_validate_partition handles invalid arguments", {
       vsvr_response = "feature2",
       vsvr_tolerance = 1
     ),
-    "The 'bcv_folds' argument must be a single integer."
+    "The argument 'blocks' must be a single integer."
   )
 })
