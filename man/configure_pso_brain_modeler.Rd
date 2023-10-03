@@ -42,5 +42,6 @@ A list containing the configuration with class "PSOBrainModelerConfig".
 This function sets the configuration for the PSO brain modeler.
 }
 \examples{
-PSOBrainModeler:::configure_pso_brain_modeler()
+configure_pso_brain_modeler()
+
 }

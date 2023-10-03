@@ -28,8 +28,8 @@ evaluate_signal_quality <-
            pressure_start_point = 3L,
            silent = FALSE) {
     # Constants
-    MIN_PEAK_VALUE <- -0.2
-    MAX_PEAK_VALUE <- 0.5
+    MIN_PEAK_VALUE <- 0
+    MAX_PEAK_VALUE <- 0.8
     VARIANCE_THRESHOLD <- 0.002
     MAX_SIGNAL_VALUE <- 1.2
     
@@ -48,7 +48,7 @@ evaluate_signal_quality <-
     peak_range <-
       signal[(pressure_start_point + 3):(pressure_start_point + 9)]
     stabilization_range <-
-      signal[(pressure_start_point + 15):(pressure_start_point + 30)]
+      signal[(pressure_start_point + 20):(pressure_start_point + 35)]
     drop_range <-
       signal[(pressure_start_point + 9):(pressure_start_point + 15)]
     
@@ -57,7 +57,11 @@ evaluate_signal_quality <-
     
     signal_range <- range(signal)
     
-    if (!(global_min %in% peak_range) ||
+    not_peak_range <-
+      signal[-((pressure_start_point + 3):(pressure_start_point + 9))]
+    
+    if ((global_min %in% not_peak_range) ||
+        !(global_min %in% peak_range) ||
         !(global_min >= MIN_PEAK_VALUE &&
           global_min <= MAX_PEAK_VALUE) ||
         stats::var(stabilization_range) > VARIANCE_THRESHOLD ||

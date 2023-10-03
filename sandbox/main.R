@@ -1,6 +1,9 @@
+library(PSOBrainModeler)
+
 mydata <- read.table("data-raw/Sujeto1.txt", header = TRUE)
 
-brain_modeler_config <- configure_pso_brain_modeler()
+brain_modeler_config <-
+  configure_pso_brain_modeler()
 psoptim_config <- configure_psoptim_control()
 
 result <- optimize_brain_model_with_PSO(

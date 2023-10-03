@@ -36,8 +36,10 @@
 #' \itemize{
 #'   \item Internal package functions:
 #'   \itemize{
-#'     \item \code{\link{validate_inputs_main}}: Validate Main Inputs
+#'     \item \code{\link{configure_pso_brain_modeler}}: Configure the Brain Modeler for PSO
+#'     \item \code{\link{configure_psoptim_control}}: Configure the control parameters for psoptim
 #'     \item \code{\link{configure_data_env}}: Configure the data environment for modeling
+#'     \item \code{\link{validate_inputs_main}}: Validate Main Inputs
 #'     \item \code{\link{pso_model}}: PSO Model Function
 #'   }
 #'   \item External package function:
@@ -90,7 +92,11 @@ optimize_brain_model_with_PSO <- function(config,
                                           params_initial_values,
                                           vsvr_response,
                                           silent = FALSE,
-                                          plot_response = TRUE) {
+                                          plot_response = TRUE,
+                                          initial_pressure_value = c(1)) {
+  
+  # Validate params same lenght
+  # 
   # Call the validation function
   validate_inputs_main(
     data,
@@ -109,7 +115,10 @@ optimize_brain_model_with_PSO <- function(config,
     signal_names = signal_names,
     excluded_cols = excluded_cols,
     predictors_names = predictors_names,
-    vsvr_response = vsvr_response
+    vsvr_response = vsvr_response,
+    multi = multi,
+    extra_col_name = "etCO2",
+    initial_prediction_values = initial_pressure_value
   )
   
   message(model)

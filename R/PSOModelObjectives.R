@@ -29,47 +29,81 @@ pso_model <-
            multi = FALSE,
            data_list,
            silent = FALSE,
-           plot_response = TRUE) {
+           plot_response = TRUE,
+           initial_response_value = 1) {
     # Determine validation lengths and n_lags based on model
-    switch(
-      model,
-      "FIR" = {
-        valid_lengths <- c(3, 4)
-        n_lags <- 1
-      },
-      "NFIR" = {
-        valid_lengths <- c(3, 4)
-        n_lags <- 1
-      },
-      "ARX" = {
-        valid_lengths <- c(4, 5)
-        n_lags <- 2
-      },
-      "NARX" = {
-        valid_lengths <- c(4, 5)
-        n_lags <- 2
-      }
-    )
-    
-    # Validation
-    if (!is.numeric(params) ||
-        !(length(params) %in% valid_lengths)) {
-      stop(sprintf(
-        "params should be a numeric vector of length %s for model %s.",
-        paste(valid_lengths, collapse = " or "),
-        model
-      ))
+    if (model %in% c("FIR", "NFIR")) {
+      valid_lengths <- c(3, 4)
+      valid_multi_lengths <- c(4, 5)
+      n_lags <- 1
+      n_multi_lags <- 2
+    }
+    else if (model %in% c("ARX", "NARX")) {
+      valid_lengths <- c(4, 5)
+      valid_multi_lengths <- c(5, 6)
+      n_lags <- 2
+      n_multi_lags <- 3
     }
     
-    has_gamma <- length(params) == max(valid_lengths)
-    params_list <-
-      extract_and_round_pso_params(params, has_gamma = has_gamma, n_lags = n_lags)
+    # Validation
+    if (is.numeric(params)) {
+      if (!multi) {
+        if (!(length(params) %in% valid_lengths)) {
+          stop(
+            sprintf(
+              "params should be a numeric vector of length %s for model %s.",
+              paste(valid_lengths, collapse = " or "),
+              model
+            )
+          )
+        }
+      }
+      else {
+        if (!(length(params) %in% valid_multi_lengths)) {
+          stop(
+            sprintf(
+              "params should be a numeric vector of length %s for model %s.",
+              paste(valid_multi_lengths, collapse = " or "),
+              model
+            )
+          )
+        }
+      }
+      
+    }
+    else {
+      stop(sprintf("params should be a numeric vector for model %s.",
+                   model))
+    }
     
-    col_lags <- params_list$lags[1]
-    response_lags <- if (n_lags == 2)
-      params_list$lags[2]
-    else
-      NULL
+    if (!multi) {
+      has_gamma <- length(params) == max(valid_lengths)
+      params_list <-
+        extract_and_round_pso_params(params, has_gamma = has_gamma, n_lags = n_lags)
+    }
+    else {
+      has_gamma <- length(params) == max(valid_multi_lengths)
+      params_list <-
+        extract_and_round_pso_params(params, has_gamma = has_gamma, n_lags = n_multi_lags)
+    }
+    
+    
+    if (!multi) {
+      col_lags <- params_list$lags[1]
+      response_lags <- if (n_lags == 2)
+        params_list$lags[2]
+      else
+        NULL
+    }
+    else {
+      col_lags <- c(params_list$lags[1], params_list$lags[2])
+      
+      response_lags <- if (n_multi_lags == 3)
+        params_list$lags[3]
+      else
+        NULL
+    }
+    
     
     if (!silent) {
       # Preparing message
@@ -98,7 +132,9 @@ pso_model <-
         vsvr_response = data_list$NORM_VSVR_RESPONSE,
         data_list = data_list,
         silent = silent,
-        plot_response = plot_response
+        plot_response = plot_response,
+        initial_column_values = data_list$INITIAL_PREDICTION_VALUES,
+        prediction_initial_value = initial_response_value
       )
     )
   }

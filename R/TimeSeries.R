@@ -90,6 +90,7 @@ add_pressure_step <-
 #'  lag_values = c(2, 2), is_training = FALSE, vsvr_response = "feature3")
 #'
 #' @importFrom dplyr select bind_cols all_of %>%
+#'
 #' @export
 generate_time_series_data <-
   function(input_df,
@@ -110,6 +111,7 @@ generate_time_series_data <-
       stop("Please specify predictor columns for prediction.")
     if (is.null(lagged_cols))
       stop("Please specify lagged columns.")
+
     if (length(lagged_cols) != length(lag_values))
       stop("The lengths of 'lagged_cols' and 'lag_values' must match.")
     
@@ -125,7 +127,8 @@ generate_time_series_data <-
       lag_cols <- paste0(lagged_cols[i], "_", seq_len(lag_values[i]))
       if (all(lag_cols %in% names(input_df))) {
         lag_df <- input_df %>% dplyr::select(dplyr::all_of(lag_cols))
-      } else {
+        new_df <- dplyr::bind_cols(new_df, lag_df)
+      } else if (lag_values[i] != 0) {
         stop(
           paste(
             "Error in dplyr::all_of(): Columns that you're trying to subset don't exist.",
@@ -133,7 +136,6 @@ generate_time_series_data <-
           )
         )
       }
-      new_df <- dplyr::bind_cols(new_df, lag_df)
     }
     
     if (!is_training && (vsvr_response %in% colnames(new_df)))

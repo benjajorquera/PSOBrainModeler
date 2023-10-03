@@ -1,23 +1,28 @@
 #' Generate Data Partitions for Blocked K-fold Cross-Validation
 #'
-#' @param data Dataframe. The dataset to partition. Defaults to NULL.
+#' @param data Dataframe. The dataset to partition.
 #' @param num_blocks (Optional) Integer. The number of blocks to divide the dataset into. Defaults to 5.
 #' @param validation_size (Optional) Numeric (between 0 and 1). Proportion of data to be used
 #'  for validation in each partition. Defaults to 0.2.
 #'
 #' @return A list of partitions, each containing a training set and a validation set.
 #'
+#' @details
+#' The function employs several auxiliary validation functions to ensure inputs adhere to expected criteria:
+#' - \code{\link{validate_data}}: Ensures provided data is non-empty dataframe.
+#'
 #' @examples
 #' data <- data.frame(x = 1:100, y = 101:200)
 #' partitions <- blocked_cv(data, num_blocks = 5, validation_size = 0.2)
+#'
 #' @export
+#'
 blocked_cv <-
-  function(data = NULL,
+  function(data,
            num_blocks = 5,
            validation_size = 0.2) {
     # Validation Checks
-    if (!is.data.frame(data) || nrow(data) == 0)
-      stop("'data' is empty or is not a data frame.")
+    validate_data(data)
     if (!is.numeric(num_blocks) ||
         (num_blocks < 1) ||
         (num_blocks != round(num_blocks)))
@@ -58,7 +63,7 @@ blocked_cv <-
 #' Cross-Validate Partition for SVR Model
 #'
 #' This function performs cross-validation on the given data partitions using a
-#'  Support Vector Regression (SVR) model.
+#' Support Vector Regression (SVR) model.
 #' It returns the average correlation and mean squared error over the partitions.
 #'
 #' @param cost Numeric. The cost parameter for the SVR model.
@@ -73,6 +78,8 @@ blocked_cv <-
 #' @param vsvr_response Character. Response column name for the SVR model.
 #' @param vsvr_tolerance (Optional) Numeric. Tolerance parameter for the SVR model. Defaults to 1.
 #' @param silent (Optional) A logical for run the function silently (without printouts). Defaults to FALSE.
+#' @param training_list_name (Optional) Character. Name of the training data list element. Defaults to "training".
+#' @param validation_list_name (Optional) Character. Name of the validation data list element. Defaults to "validation".
 #'
 #' @return A list containing the average correlation (`avg_cor`) and average mean squared error (`avg_error`).
 #'
@@ -81,19 +88,30 @@ blocked_cv <-
 #' - \code{\link{generate_time_series_data}}: Constructs a dataset for time-series modeling.
 #' - \code{\link{vsvr_model}}: Fits a Nu Support Vector Regression (SVR) model.
 #'
+#' \strong{Validations}:
+#' The function employs several auxiliary validation functions to ensure inputs adhere to expected criteria:
+#' - \code{\link{validate_pso_svr_params}}: Validates the parameters for the PSO and SVR.
+#' - \code{\link{validate_character_vector_list}}: Ensures provided vectors are non-empty character vectors.
+#' - \code{\link{validate_logical}}: Checks if an input is a logical value.
+#' - \code{\link{validate_data_partitions}}: Validates the data partitions for correct structure and content.
+#'
+#' It's essential to provide inputs meeting these validation criteria to ensure the function's correct operation.
+#'
 #' @examples
 #'
 #' data_partition_sample <- list(list(training = data.frame(feature1 = rnorm(20),
 #' feature2 = rnorm(20), feature1_1 = rnorm(20)), validation = data.frame(
 #' feature1 = rnorm(20), feature2 = rnorm(20), feature1_1 = rnorm(20))))
-#' cross_validate_partition(cost = 1, nu = 0.5, gamma = NULL, data_partition_sample,
+#' cross_validate_partition(cost = 1, nu = 0.5, gamma = NULL, data_partitions = data_partition_sample,
 #' bcv_folds = 1, signal_norm_names = c("feature1", "feature2"),
 #' predictors_norm_names = c("feature1"), lagged_cols = c("feature1"), col_lags = c(1),
 #' vsvr_response = "feature2", vsvr_tolerance = 1)
 #'
 #' @importFrom stats sd cor
 #' @importFrom utils modifyList
+#'
 #' @export
+#'
 cross_validate_partition <-
   function(cost,
            nu,
@@ -106,18 +124,22 @@ cross_validate_partition <-
            col_lags,
            vsvr_response,
            vsvr_tolerance = 1,
-           silent = FALSE) {
-    if (!is.numeric(cost))
-      stop("The 'cost' argument must be numeric.")
-    if (!is.numeric(nu))
-      stop("The 'nu' argument must be numeric.")
-    if (!is.null(gamma) &&
-        !is.numeric(gamma))
-      stop("The 'gamma' argument must be numeric or NULL.")
-    if (!is.list(data_partitions))
-      stop("The 'data_partitions' argument must be a list.")
-    if (!is.numeric(bcv_folds) || length(bcv_folds) != 1)
-      stop("The 'bcv_folds' argument must be a single integer.")
+           silent = FALSE,
+           training_list_name = "training",
+           validation_list_name = "validation") {
+    # Validate params
+    validate_pso_svr_params(list(
+      cost = cost,
+      nu = nu,
+      gamma = gamma,
+      lags = col_lags
+    ))
+    validate_character_vector_list(list(signal_norm_names, predictors_norm_names, lagged_cols))
+    validate_logical(silent, "silent")
+    validate_data_partitions(data_partitions = data_partitions, blocks = bcv_folds)
+    
+    if (!is.numeric(vsvr_tolerance) || length(vsvr_tolerance) != 1)
+      stop("The 'vsvr_tolerance' argument must be a single integer.")
     
     cors <- numeric(bcv_folds)
     errors <- numeric(bcv_folds)
@@ -134,7 +156,7 @@ cross_validate_partition <-
     for (df_list in seq_len(bcv_folds)) {
       # Prepare data for validation
       args_validation <-
-        utils::modifyList(list(input_df = data_partitions[[df_list]]$validation,
+        utils::modifyList(list(input_df = data_partitions[[df_list]][[validation_list_name]],
                                is_training = FALSE),
                           common_args)
       new_data_validation <-
@@ -142,7 +164,7 @@ cross_validate_partition <-
       
       # Prepare data for training
       args_training <-
-        utils::modifyList(list(input_df = data_partitions[[df_list]]$training,
+        utils::modifyList(list(input_df = data_partitions[[df_list]][[training_list_name]],
                                is_training = TRUE),
                           common_args)
       data_partitions_training <-
@@ -170,7 +192,7 @@ cross_validate_partition <-
       }
       
       target_vals <-
-        data_partitions[[df_list]]$validation[[vsvr_response]]
+        data_partitions[[df_list]][[validation_list_name]][[vsvr_response]]
       
       # Compute and save correlation and MSE
       cors[df_list] <- stats::cor(predictions_pso, target_vals)

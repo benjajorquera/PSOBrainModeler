@@ -16,7 +16,9 @@ cross_validate_partition(
   col_lags,
   vsvr_response,
   vsvr_tolerance = 1,
-  silent = FALSE
+  silent = FALSE,
+  training_list_name = "training",
+  validation_list_name = "validation"
 )
 }
 \arguments{
@@ -43,26 +45,39 @@ cross_validate_partition(
 \item{vsvr_tolerance}{(Optional) Numeric. Tolerance parameter for the SVR model. Defaults to 1.}
 
 \item{silent}{(Optional) A logical for run the function silently (without printouts). Defaults to FALSE.}
+
+\item{training_list_name}{(Optional) Character. Name of the training data list element. Defaults to "training".}
+
+\item{validation_list_name}{(Optional) Character. Name of the validation data list element. Defaults to "validation".}
 }
 \value{
 A list containing the average correlation (`avg_cor`) and average mean squared error (`avg_error`).
 }
 \description{
 This function performs cross-validation on the given data partitions using a
- Support Vector Regression (SVR) model.
+Support Vector Regression (SVR) model.
 It returns the average correlation and mean squared error over the partitions.
 }
 \details{
 This function depends on the following internal package functions:
 - \code{\link{generate_time_series_data}}: Constructs a dataset for time-series modeling.
 - \code{\link{vsvr_model}}: Fits a Nu Support Vector Regression (SVR) model.
+
+\strong{Validations}:
+The function employs several auxiliary validation functions to ensure inputs adhere to expected criteria:
+- \code{\link{validate_pso_svr_params}}: Validates the parameters for the PSO and SVR.
+- \code{\link{validate_character_vector_list}}: Ensures provided vectors are non-empty character vectors.
+- \code{\link{validate_logical}}: Checks if an input is a logical value.
+- \code{\link{validate_data_partitions}}: Validates the data partitions for correct structure and content.
+
+It's essential to provide inputs meeting these validation criteria to ensure the function's correct operation.
 }
 \examples{
 
 data_partition_sample <- list(list(training = data.frame(feature1 = rnorm(20),
 feature2 = rnorm(20), feature1_1 = rnorm(20)), validation = data.frame(
 feature1 = rnorm(20), feature2 = rnorm(20), feature1_1 = rnorm(20))))
-cross_validate_partition(cost = 1, nu = 0.5, gamma = NULL, data_partition_sample,
+cross_validate_partition(cost = 1, nu = 0.5, gamma = NULL, data_partitions = data_partition_sample,
 bcv_folds = 1, signal_norm_names = c("feature1", "feature2"),
 predictors_norm_names = c("feature1"), lagged_cols = c("feature1"), col_lags = c(1),
 vsvr_response = "feature2", vsvr_tolerance = 1)

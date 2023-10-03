@@ -55,4 +55,5 @@ data <- data.frame(feature1 = rnorm(10), feature2 = rnorm(10))
 PSOBrainModeler:::configure_data_env(config = config, data = data, excluded_cols = NULL,
   signal_names = c("feature1", "feature2"), predictors_names = c("feature1"),
   vsvr_response = "feature2")
+
 }

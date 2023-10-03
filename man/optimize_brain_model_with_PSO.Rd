@@ -74,8 +74,10 @@ This function depends on:
 \itemize{
   \item Internal package functions:
   \itemize{
-    \item \code{\link{validate_inputs_main}}: Validate Main Inputs
+    \item \code{\link{configure_pso_brain_modeler}}: Configure the Brain Modeler for PSO
+    \item \code{\link{configure_psoptim_control}}: Configure the control parameters for psoptim
     \item \code{\link{configure_data_env}}: Configure the data environment for modeling
+    \item \code{\link{validate_inputs_main}}: Validate Main Inputs
     \item \code{\link{pso_model}}: PSO Model Function
   }
   \item External package function:

@@ -39,7 +39,9 @@ pso_training_model <- function(cost,
                                vsvr_response,
                                data_list,
                                silent = FALSE,
-                               plot_response = TRUE) {
+                               plot_response = TRUE,
+                               initial_column_values = c(1),
+                               prediction_initial_value = 1) {
   # Cross-validation
   results <- cross_validate_partition_helper(
     cost = cost,
@@ -71,8 +73,8 @@ pso_training_model <- function(cost,
       data = data_training,
       col_lags = col_lags,
       response_lags = response_lags,
-      initial_column_values = c(1),
-      prediction_initial_value = 0.8,
+      initial_column_values = initial_column_values,
+      prediction_initial_value = prediction_initial_value,
       cost = cost,
       nu = nu,
       gamma = gamma,
@@ -89,6 +91,7 @@ pso_training_model <- function(cost,
   
   # Plot response signal if plot_response is TRUE
   if (plot_response) {
+    x_values <- 1:40
     plot(
       response_predictions[[vsvr_response]],
       type = "l",
@@ -96,6 +99,8 @@ pso_training_model <- function(cost,
       ylab = "Response",
       xlab = "Time/Instance"
     )
+    # Configurar el eje x con un intervalo de 1 en 1
+    axis(1, at = x_values, labels = x_values)
   }
   
   if (!silent) {

@@ -4,10 +4,10 @@
 \alias{blocked_cv}
 \title{Generate Data Partitions for Blocked K-fold Cross-Validation}
 \usage{
-blocked_cv(data = NULL, num_blocks = 5, validation_size = 0.2)
+blocked_cv(data, num_blocks = 5, validation_size = 0.2)
 }
 \arguments{
-\item{data}{Dataframe. The dataset to partition. Defaults to NULL.}
+\item{data}{Dataframe. The dataset to partition.}
 
 \item{num_blocks}{(Optional) Integer. The number of blocks to divide the dataset into. Defaults to 5.}
 
@@ -20,7 +20,12 @@ A list of partitions, each containing a training set and a validation set.
 \description{
 Generate Data Partitions for Blocked K-fold Cross-Validation
 }
+\details{
+The function employs several auxiliary validation functions to ensure inputs adhere to expected criteria:
+- \code{\link{validate_data}}: Ensures provided data is non-empty dataframe.
+}
 \examples{
 data <- data.frame(x = 1:100, y = 101:200)
 partitions <- blocked_cv(data, num_blocks = 5, validation_size = 0.2)
+
 }

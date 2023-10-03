@@ -86,7 +86,7 @@ validate_pso_svr_params <- function(list) {
   }
   
   # Validate 'lags'
-  if (!is.numeric(list$lags[1]) || list$lags[1] < 1) {
+  if (!all(is.numeric(list$lags)) || list$lags[1] < 1) {
     stop("Invalid first value for lags")
   }
   

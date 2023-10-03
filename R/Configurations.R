@@ -15,7 +15,9 @@
 #' @return A list containing the configuration with class "PSOBrainModelerConfig".
 #'
 #' @examples
-#' PSOBrainModeler:::configure_pso_brain_modeler()
+#' configure_pso_brain_modeler()
+#'
+#' @export
 
 configure_pso_brain_modeler <- function(seed = 123,
                                         bcv_folds = 5,
@@ -78,13 +80,17 @@ configure_pso_brain_modeler <- function(seed = 123,
 #' PSOBrainModeler:::configure_data_env(config = config, data = data, excluded_cols = NULL,
 #'   signal_names = c("feature1", "feature2"), predictors_names = c("feature1"),
 #'   vsvr_response = "feature2")
+#'
 
 configure_data_env <- function(config,
                                data,
                                excluded_cols,
                                signal_names,
                                predictors_names,
-                               vsvr_response) {
+                               vsvr_response,
+                               extra_col_name,
+                               initial_prediction_values = c(1),
+                               multi = FALSE) {
   set.seed(config$seed)
   
   pressure_df <- add_pressure_step(
@@ -108,6 +114,14 @@ configure_data_env <- function(config,
     validation_size = config$bcv_validation_size
   )
   
+  if (multi) {
+    extra_col_data <-
+      processed_data[[paste0(extra_col_name, "_norm")]][1:config$pressure_signal_start]
+    extra_col_avg <- mean(extra_col_data)
+    initial_prediction_values <-
+      c(initial_prediction_values, extra_col_avg)
+  }
+  
   return(
     list(
       pressure_df = pressure_df,
@@ -116,7 +130,8 @@ configure_data_env <- function(config,
       NORM_SIGNAL_NAMES = paste0(signal_names, "_norm"),
       NORM_PREDICTORS_NAMES = paste0(predictors_names, "_norm"),
       NORM_VSVR_RESPONSE = paste0(vsvr_response, "_norm"),
-      VSVR_TOL = config$vsvr_tolerance
+      VSVR_TOL = config$vsvr_tolerance,
+      INITIAL_PREDICTION_VALUES = initial_prediction_values
     )
   )
 }
@@ -156,7 +171,9 @@ configure_data_env <- function(config,
 #' @return A list containing the psoptim configuration with class "PSOBrainModelerPSOPTIMConfig".
 #'
 #' @examples
-#' PSOBrainModeler:::configure_psoptim_control()
+#' configure_psoptim_control()
+#'
+#' @export
 
 configure_psoptim_control <- function(pso_trace = 1,
                                       pso_fnscale = 1,
