@@ -228,3 +228,20 @@ plot(y[["0.0"]])
 for (i in y) {
   lines(i, type = "l")
 }
+
+# Definir una función que calcule la máxima diferencia entre puntos consecutivos de un vector
+max_diff <- function(vec) {
+  diffs <-
+    diff(vec)  # Calcular las diferencias entre puntos consecutivos
+  return(max(abs(diffs), na.rm = TRUE))  # Devolver la máxima diferencia en valor absoluto
+}
+
+# Función para calcular la máxima diferencia en una lista de vectores
+max_diff_list <- function(vectors_list) {
+  # Calcular la máxima diferencia para cada vector en la lista
+  max_diffs <- sapply(vectors_list, max_diff)
+  # Devolver la máxima diferencia de todas las diferencias calculadas
+  return(max(max_diffs, na.rm = TRUE))
+}
+
+max_diff_result <- max_diff_list(y)

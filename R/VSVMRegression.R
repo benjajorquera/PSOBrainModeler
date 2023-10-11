@@ -28,7 +28,8 @@ vsvr_model <-
            cost,
            nu,
            gamma = NULL,
-           tolerance) {
+           tolerance,
+           search_method = 'PSO') {
     # 1. Validate data type
     if (!is.data.frame(data))
       stop("'data' must be a data.frame.")
@@ -85,7 +86,27 @@ vsvr_model <-
     }
     
     # Training the SVM model using the do.call function
-    svm_model <- do.call(e1071::svm, model_params)
+    if (search_method == 'PSO')
+    {
+      svm_model <- do.call(e1071::svm, model_params)
+    }
+    else if (search_method == 'Grid') {
+      model_params_grid <- list(
+        METHOD = 'svm',
+        train.x = predictor_data,
+        train.y = response_data,
+        cost = cost,
+        nu = nu,
+        type = "nu-regression"
+      )
+      if (is.null(gamma)) {
+        model_params_grid$kernel <- "linear"
+      } else {
+        model_params_grid$kernel <- "radial"
+        model_params_grid$gamma <- gamma
+      }
+      svm_model <- do.call(e1071::tune, model_params_grid)
+    }
     
     return(svm_model)
   }

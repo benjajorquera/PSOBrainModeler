@@ -25,116 +25,93 @@
 #' @export
 pso_model <-
   function(params,
-           model,
            multi = FALSE,
            data_list,
+           model,
            silent = FALSE,
            plot_response = TRUE,
-           initial_response_value = 1) {
-    # Determine validation lengths and n_lags based on model
-    if (model %in% c("FIR", "NFIR")) {
-      valid_lengths <- c(3, 4)
-      valid_multi_lengths <- c(4, 5)
-      n_lags <- 1
-      n_multi_lags <- 2
-    }
-    else if (model %in% c("ARX", "NARX")) {
-      valid_lengths <- c(4, 5)
-      valid_multi_lengths <- c(5, 6)
-      n_lags <- 2
-      n_multi_lags <- 3
-    }
-    
+           initial_response_value = 1,
+           model_parameters) {
     # Validation
-    if (is.numeric(params)) {
-      if (!multi) {
-        if (!(length(params) %in% valid_lengths)) {
-          stop(
-            sprintf(
-              "params should be a numeric vector of length %s for model %s.",
-              paste(valid_lengths, collapse = " or "),
-              model
-            )
-          )
-        }
-      }
-      else {
-        if (!(length(params) %in% valid_multi_lengths)) {
-          stop(
-            sprintf(
-              "params should be a numeric vector of length %s for model %s.",
-              paste(valid_multi_lengths, collapse = " or "),
-              model
-            )
-          )
-        }
-      }
-      
-    }
-    else {
-      stop(sprintf("params should be a numeric vector for model %s.",
-                   model))
-    }
+    validate_params(params, model_parameters, model)
     
-    if (!multi) {
-      has_gamma <- length(params) == max(valid_lengths)
-      params_list <-
-        extract_and_round_pso_params(params, has_gamma = has_gamma, n_lags = n_lags)
-    }
-    else {
-      has_gamma <- length(params) == max(valid_multi_lengths)
-      params_list <-
-        extract_and_round_pso_params(params, has_gamma = has_gamma, n_lags = n_multi_lags)
-    }
+    # Get other parameters and extract them
+    has_gamma <-
+      length(params) == max(model_parameters$valid_lengths)
+    params_list <- extract_and_round_pso_params(params,
+                                                has_gamma = has_gamma,
+                                                n_lags = model_parameters$n_lags)
     
-    
-    if (!multi) {
-      col_lags <- params_list$lags[1]
-      response_lags <- if (n_lags == 2)
+    # More parameter extraction
+    col_lags <- params_list$lags[1]
+    response_lags <-
+      if (model_parameters$n_lags >= 2)
         params_list$lags[2]
-      else
-        NULL
-    }
-    else {
+    else
+      NULL
+    
+    # Additional extraction if multi is TRUE
+    if (multi && model_parameters$n_lags >= 2) {
       col_lags <- c(params_list$lags[1], params_list$lags[2])
-      
-      response_lags <- if (n_multi_lags == 3)
+      response_lags <- if (length(params_list$lags) >= 3) {
         params_list$lags[3]
-      else
+      } else {
         NULL
+      }
     }
     
+    # Display message
+    display_message(params_list, silent)
     
-    if (!silent) {
-      # Preparing message
-      message <- paste(
-        "Cost: ",
-        params_list$cost,
-        "Nu: ",
-        params_list$nu,
-        if (!is.null(params_list$gamma))
-          paste("Gamma: ", params_list$gamma),
-        "Lags: ",
-        paste(params_list$lags, collapse = ", "),
-        "\n"
-      )
-      
-      cat(message)
-    }
-    
-    return(
-      pso_training_model(
-        cost = params_list$cost,
-        nu = params_list$nu,
-        gamma = params_list$gamma,
-        col_lags = col_lags,
-        response_lags = response_lags,
-        vsvr_response = data_list$NORM_VSVR_RESPONSE,
-        data_list = data_list,
-        silent = silent,
-        plot_response = plot_response,
-        initial_column_values = data_list$INITIAL_PREDICTION_VALUES,
-        prediction_initial_value = initial_response_value
-      )
+    pso_training_model_result <- pso_training_model(
+      cost = params_list$cost,
+      nu = params_list$nu,
+      gamma = params_list$gamma,
+      col_lags = col_lags,
+      response_lags = response_lags,
+      vsvr_response = data_list$NORM_VSVR_RESPONSE,
+      data_list = data_list,
+      silent = silent,
+      plot_response = plot_response,
+      initial_column_values = data_list$INITIAL_PREDICTION_VALUES,
+      prediction_initial_value = initial_response_value
     )
+    
+    return(pso_training_model_result)
   }
+
+
+# Display message function
+display_message <- function(params_list, silent) {
+  if (!silent) {
+    message <- paste(
+      "Cost: ",
+      params_list$cost,
+      "Nu: ",
+      params_list$nu,
+      if (!is.null(params_list$gamma))
+        paste("Gamma: ", params_list$gamma),
+      "Lags: ",
+      paste(params_list$lags, collapse = ", "),
+      "\n"
+    )
+    cat(message)
+  }
+}
+
+# Validation function
+validate_params <- function(params, model_parameters, model) {
+  valid_lengths <- model_parameters$valid_lengths
+  
+  if (!is.numeric(params)) {
+    stop(sprintf("params should be a numeric vector for model %s.", model))
+  }
+  
+  if (!(length(params) %in% valid_lengths)) {
+    stop(sprintf(
+      "params should be a numeric vector of length %s for model %s.",
+      paste(valid_lengths, collapse = " or "),
+      model
+    ))
+  }
+}

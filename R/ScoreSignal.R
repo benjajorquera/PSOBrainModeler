@@ -60,18 +60,22 @@ evaluate_signal_quality <-
     not_peak_range <-
       signal[-((pressure_start_point + 3):(pressure_start_point + 9))]
     
-    if ((global_min %in% not_peak_range) ||
-        !(global_min %in% peak_range) ||
-        !(global_min >= MIN_PEAK_VALUE &&
-          global_min <= MAX_PEAK_VALUE) ||
-        stats::var(stabilization_range) > VARIANCE_THRESHOLD ||
-        !(signal_range[2] < MAX_SIGNAL_VALUE &&
-          signal_range[1] > MIN_PEAK_VALUE)) {
-      if (!silent) {
-        message("RESPONSE SIGNAL FAILED BASIC FILTER")
-      }
+    if (max_diff(signal) > 0.6){
       return(-10)
     }
+      
+      if ((global_min %in% not_peak_range) ||
+          !(global_min %in% peak_range) ||
+          !(global_min >= MIN_PEAK_VALUE &&
+            global_min <= MAX_PEAK_VALUE) ||
+          stats::var(stabilization_range) > VARIANCE_THRESHOLD ||
+          !(signal_range[2] < MAX_SIGNAL_VALUE &&
+            signal_range[1] > MIN_PEAK_VALUE)) {
+        if (!silent) {
+          message("RESPONSE SIGNAL FAILED BASIC FILTER")
+        }
+        return(-10)
+      }
     
     # Initial score
     score <- 10
@@ -101,3 +105,10 @@ evaluate_signal_quality <-
     
     return(score)
   }
+
+# Definir una función que calcule la máxima diferencia entre puntos consecutivos de un vector
+max_diff <- function(vec) {
+  diffs <-
+    diff(vec)  # Calcular las diferencias entre puntos consecutivos
+  return(max(abs(diffs), na.rm = TRUE))  # Devolver la máxima diferencia en valor absoluto
+}

@@ -126,7 +126,8 @@ cross_validate_partition <-
            vsvr_tolerance = 1,
            silent = FALSE,
            training_list_name = "training",
-           validation_list_name = "validation") {
+           validation_list_name = "validation",
+           search_method = 'PSO') {
     # Validate params
     validate_pso_svr_params(list(
       cost = cost,
@@ -172,12 +173,19 @@ cross_validate_partition <-
       
       # Train SVR model
       svr_model_pso <-
-        vsvr_model(data_partitions_training,
-                   vsvr_response,
-                   cost,
-                   nu,
-                   gamma,
-                   vsvr_tolerance)
+        vsvr_model(
+          data = data_partitions_training,
+          response_var = vsvr_response,
+          cost = cost,
+          nu = nu,
+          gamma = gamma,
+          tolerance = vsvr_tolerance,
+          search_method = search_method
+        )
+      
+      if(search_method == 'Grid') {
+        svr_model_pso <- svr_model_pso$best.model
+      }
       
       # Make predictions
       predictions_pso <- predict(svr_model_pso, new_data_validation)

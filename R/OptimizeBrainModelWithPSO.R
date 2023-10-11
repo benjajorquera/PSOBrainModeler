@@ -89,14 +89,11 @@ optimize_brain_model_with_PSO <- function(config,
                                           predictors_names,
                                           params_lower_bounds,
                                           params_upper_bounds,
-                                          params_initial_values,
+                                          params_initial_values = NULL,
                                           vsvr_response,
                                           silent = FALSE,
                                           plot_response = TRUE,
                                           initial_pressure_value = c(1)) {
-  
-  # Validate params same lenght
-  # 
   # Call the validation function
   validate_inputs_main(
     data,
@@ -106,7 +103,10 @@ optimize_brain_model_with_PSO <- function(config,
     vsvr_response,
     excluded_cols,
     multi,
-    silent
+    silent,
+    params_lower_bounds,
+    params_upper_bounds,
+    params_initial_values
   )
   
   data_env_list <- configure_data_env(
@@ -123,18 +123,41 @@ optimize_brain_model_with_PSO <- function(config,
   
   message(model)
   
-  return(
-    pso::psoptim(
-      par = params_initial_values,
-      fn = pso_model,
-      model = model,
-      multi = multi,
-      data_list = data_env_list,
-      silent = silent,
-      plot_response = plot_response,
-      lower = params_lower_bounds,
-      upper = params_upper_bounds,
-      control = psoptim_config
-    )
+  # Determine validation lengths and n_lags based on model
+  model_parameters <- get_model_parameters(model, multi)
+  
+  psoptim_result <- pso::psoptim(
+    par = params_initial_values,
+    fn = pso_model,
+    model = model,
+    multi = multi,
+    data_list = data_env_list,
+    silent = silent,
+    plot_response = plot_response,
+    model_parameters = model_parameters,
+    lower = params_lower_bounds,
+    upper = params_upper_bounds,
+    control = psoptim_config
   )
+  
+  return(psoptim_result)
+}
+
+# Auxiliary function to get model parameters
+get_model_parameters <- function(model, multi) {
+  if (model %in% c("FIR", "NFIR")) {
+    valid_lengths <- c(3, 4)
+    valid_multi_lengths <- c(4, 5)
+    n_lags <- 1
+    n_multi_lags <- 2
+  } else if (model %in% c("ARX", "NARX")) {
+    valid_lengths <- c(4, 5)
+    valid_multi_lengths <- c(5, 6)
+    n_lags <- 2
+    n_multi_lags <- 3
+  }
+  if (multi) {
+    return(list(valid_lengths = valid_multi_lengths, n_lags = n_multi_lags))
+  }
+  return(list(valid_lengths = valid_lengths, n_lags = n_lags))
 }

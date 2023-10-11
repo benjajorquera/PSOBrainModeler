@@ -128,6 +128,14 @@ generate_signal_response_predictions <- function(data,
     vsvr_response = prediction_col_name
   )
   
+  if (length(initial_columns_lags) > 1) {
+    zero_positions <- which(initial_columns_lags == 0)
+    if (length(zero_positions) > 0) {
+      initial_columns_lags <- initial_columns_lags[-zero_positions]
+      initial_column_names <- initial_column_names[-zero_positions]
+    }
+  }
+  
   SVR_model <-
     vsvr_model(data_training,
                prediction_col_name,
@@ -163,18 +171,23 @@ generate_signal_response_predictions <- function(data,
   
   # For each column, create lagged versions of the column
   for (col_name in initial_column_names) {
-    new_col_values <- rep(initial_values[col_name], pressure_start)
-    col_names <-
-      paste0(col_name, "_", 1:initial_columns_lags[col_name == initial_column_names])
-    new_data <-
-      stats::setNames(rep(list(new_col_values), length(col_names)), col_names)
-    
-    if (nrow(lagged_cols_list) == 0) {
-      lagged_cols_list <- data.frame(new_data)
-    } else {
-      lagged_cols_list <- cbind(lagged_cols_list, data.frame(new_data))
+    if (!is.na(initial_columns_lags[col_name == initial_column_names]))
+    {
+      new_col_values <- rep(initial_values[col_name], pressure_start)
+      col_names <-
+        paste0(col_name, "_", 1:initial_columns_lags[col_name == initial_column_names])
+      new_data <-
+        stats::setNames(rep(list(new_col_values), length(col_names)), col_names)
+      
+      
+      if (nrow(lagged_cols_list) == 0) {
+        lagged_cols_list <- data.frame(new_data)
+      } else {
+        lagged_cols_list <- cbind(lagged_cols_list, data.frame(new_data))
+      }
     }
   }
+  
   
   # Create lagged columns for the prediction column
   if (!is.null(predicted_column_lags) &&
@@ -192,6 +205,7 @@ generate_signal_response_predictions <- function(data,
             lagged_cols_list,
             lagged_prediction_col_values)
   } else {
+    # VALIDACIÓN DE DATA FRAMES
     pressure_df_model <- cbind(pressure_df_model, lagged_cols_list)
   }
   
@@ -207,7 +221,7 @@ generate_signal_response_predictions <- function(data,
   process_pressure_count <- function(pressure_count) {
     # Create new_pressure dataframe with correct column name
     new_pressure <-
-      data.frame(name = pressure_signal_df[pressure_count, ],
+      data.frame(name = pressure_signal_df[pressure_count,],
                  stringsAsFactors = FALSE)
     
     if (length(initial_column_values) > 1) {
@@ -238,6 +252,7 @@ generate_signal_response_predictions <- function(data,
     
     
     for (col_name in seq_len(length(initial_column_names))) {
+      # TODO VALIDACIÓN DE COL NAME EN INITIAL COLUMN LAG
       max_lag <- initial_columns_lags[col_name]
       
       if (max_lag >= 2) {

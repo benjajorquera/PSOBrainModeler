@@ -27,10 +27,18 @@ validate_inputs_main <- function(data,
                                  vsvr_response,
                                  excluded_cols = NULL,
                                  multi = FALSE,
-                                 silent = FALSE) {
+                                 silent = FALSE,
+                                 params_lower_bounds,
+                                 params_upper_bounds,
+                                 params_initial_values = NULL) {
   validate_data(data)
   validate_model(model)
   validate_character_vector_list(list(signal_names, predictors_names, vsvr_response))
+  validate_vector_lengths(list(
+    params_lower_bounds,
+    params_upper_bounds,
+    params_initial_values
+  ))
   
   # Validate vsvr_response
   if (length(vsvr_response) != 1) {
@@ -50,6 +58,30 @@ validate_inputs_main <- function(data,
   
   invisible(NULL)
 }
+
+validate_vector_lengths <- function(vectors_list) {
+  # Get the lengths of the non-NULL vectors
+  lengths <- sapply(vectors_list, function(vec) {
+    if (!is.null(vec)) {
+      return(length(vec))
+    } else {
+      return(NA)
+    }
+  }, simplify = TRUE, USE.NAMES = FALSE)
+  
+  # Remove NA values (corresponding to NULL vectors)
+  lengths <- na.omit(lengths)
+  
+  # Check if all the non-NULL lengths are equal
+  if (length(unique(lengths)) != 1) {
+    stop(
+      "Not all non-NULL vectors have the same length: ",
+      paste("lengths =", lengths, collapse = ", ")
+    )
+  }
+}
+
+
 
 #' Validate Character Vector List
 #'

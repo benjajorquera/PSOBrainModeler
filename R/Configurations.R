@@ -88,7 +88,7 @@ configure_data_env <- function(config,
                                signal_names,
                                predictors_names,
                                vsvr_response,
-                               extra_col_name,
+                               extra_col_name = NULL,
                                initial_prediction_values = c(1),
                                multi = FALSE) {
   set.seed(config$seed)
@@ -114,13 +114,20 @@ configure_data_env <- function(config,
     validation_size = config$bcv_validation_size
   )
   
+  # Check if 'multi' is TRUE to process additional data
   if (multi) {
+    # Create the additional column name and extract its first values up to 'pressure_signal_start'
     extra_col_data <-
       processed_data[[paste0(extra_col_name, "_norm")]][1:config$pressure_signal_start]
+    
+    # Calculate the mean of those values
     extra_col_avg <- mean(extra_col_data)
+    
+    # Add this average to 'initial_prediction_values'
     initial_prediction_values <-
       c(initial_prediction_values, extra_col_avg)
   }
+  
   
   return(
     list(

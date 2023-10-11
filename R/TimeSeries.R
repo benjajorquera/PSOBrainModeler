@@ -111,7 +111,6 @@ generate_time_series_data <-
       stop("Please specify predictor columns for prediction.")
     if (is.null(lagged_cols))
       stop("Please specify lagged columns.")
-
     if (length(lagged_cols) != length(lag_values))
       stop("The lengths of 'lagged_cols' and 'lag_values' must match.")
     

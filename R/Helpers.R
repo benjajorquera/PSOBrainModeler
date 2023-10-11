@@ -14,10 +14,11 @@
 cross_validate_partition_helper <-
   function(cost,
            nu,
-           gamma,
+           gamma = NULL,
            col_lags,
            data_list,
-           silent = FALSE) {
+           silent = FALSE,
+           search_method = 'PSO') {
     params_list <- list(
       cost = cost,
       nu = nu,
@@ -28,7 +29,8 @@ cross_validate_partition_helper <-
       lagged_cols = data_list$NORM_PREDICTORS_NAMES,
       col_lags = col_lags,
       vsvr_response = data_list$NORM_VSVR_RESPONSE,
-      silent = silent
+      silent = silent,
+      search_method = search_method
     )
     return(do.call(cross_validate_partition, params_list))
   }
