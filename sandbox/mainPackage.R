@@ -29,13 +29,23 @@ grid_search <- svr_grid_search(
   signal_names = c("MABP", "CBFV.L"),
   excluded_cols = c("Time", "CBFV.R", "etCO2"),
   predictors_names = c("MABP"),
-  params_lower_bounds = c(0.25, 0.1),
-  params_upper_bounds = c(4096, 0.9),
   vsvr_response = "CBFV.L",
   initial_pressure_value = c(1)
 )
 
-#
+grid_search <- svr_grid_search(
+  config = brain_modeler_config,
+  data = mydata,
+  model = "NFIR",
+  multi = FALSE,
+  signal_names = c("MABP", "CBFV.L"),
+  excluded_cols = c("Time", "CBFV.R", "etCO2"),
+  predictors_names = c("MABP"),
+  vsvr_response = "CBFV.L",
+  initial_pressure_value = c(1)
+)
+
+
 ###############################################################################
 result <- optimize_brain_model_with_PSO(
   config = brain_modeler_config,

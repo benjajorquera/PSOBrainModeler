@@ -60,22 +60,23 @@ evaluate_signal_quality <-
     not_peak_range <-
       signal[-((pressure_start_point + 3):(pressure_start_point + 9))]
     
-    if (max_diff(signal) > 0.6){
+    if (max_diff(signal) > 0.6) {
+      message("RESPONSE SIGNAL FAILED BASIC FILTER")
       return(-10)
     }
-      
-      if ((global_min %in% not_peak_range) ||
-          !(global_min %in% peak_range) ||
-          !(global_min >= MIN_PEAK_VALUE &&
-            global_min <= MAX_PEAK_VALUE) ||
-          stats::var(stabilization_range) > VARIANCE_THRESHOLD ||
-          !(signal_range[2] < MAX_SIGNAL_VALUE &&
-            signal_range[1] > MIN_PEAK_VALUE)) {
-        if (!silent) {
-          message("RESPONSE SIGNAL FAILED BASIC FILTER")
-        }
-        return(-10)
+    
+    if ((global_min %in% not_peak_range) ||
+        !(global_min %in% peak_range) ||
+        !(global_min >= MIN_PEAK_VALUE &&
+          global_min <= MAX_PEAK_VALUE) ||
+        stats::var(stabilization_range) > VARIANCE_THRESHOLD ||
+        !(signal_range[2] < MAX_SIGNAL_VALUE &&
+          signal_range[1] > MIN_PEAK_VALUE)) {
+      if (!silent) {
+        message("RESPONSE SIGNAL FAILED BASIC FILTER")
       }
+      return(-10)
+    }
     
     # Initial score
     score <- 10

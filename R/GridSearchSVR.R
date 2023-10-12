@@ -5,25 +5,10 @@ svr_grid_search <- function(config,
                             signal_names,
                             excluded_cols = NULL,
                             predictors_names,
-                            params_lower_bounds,
-                            params_upper_bounds,
                             vsvr_response,
                             silent = FALSE,
                             plot_response = TRUE,
                             initial_pressure_value = c(1)) {
-  validate_inputs_main(
-    data,
-    model,
-    signal_names,
-    predictors_names,
-    vsvr_response,
-    excluded_cols,
-    multi,
-    silent,
-    params_lower_bounds,
-    params_upper_bounds
-  )
-  
   data_env_list <- configure_data_env(
     config,
     data = data,
@@ -36,19 +21,48 @@ svr_grid_search <- function(config,
     initial_prediction_values = initial_pressure_value
   )
   
-  # Cross-validation
-  results <- cross_validate_partition_helper(
-    cost = params_upper_bounds[1],
-    nu = params_upper_bounds[2],
-    gamma = NULL,
-    col_lags = c(8),
-    data_list = data_env_list,
-    silent = silent,
-    search_method = 'Grid'
+  training_x <-
+    exclude_signals_dataframe(data_env_list$processed_data,
+                              data_env_list$NORM_VSVR_RESPONSE)
+  training_y <-
+    filter_signals_dataframe(data_env_list$processed_data,
+                             data_env_list$NORM_VSVR_RESPONSE)
+  
+  if (model == 'FIR') {
+    nu <- seq(0.1, 0.9, 0.1)
+    cost <-
+      c(0.25, 0.5, 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096)
+    params_ranges <- list(cost = cost, nu = nu)
+    kernel <- 'linear'
+  }
+  if (model == 'NFIR') {
+    nu <- seq(0.1, 0.9, 0.1)
+    cost <-
+      c(0.25, 0.5, 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096)
+    sigma <- 2 ^ seq(-4, 10, 2)
+    gamma <- 1 / (2 * sigma ^ 2)
+    params_ranges <- list(cost = cost,
+                          nu = nu,
+                          gamma = gamma)
+    kernel <- 'radial'
+  }
+  
+  grid_search <- e1071::tune(
+    METHOD = 'svm',
+    train.x = training_x,
+    train.y = training_y,
+    ranges = params_ranges,
+    type = "nu-regression",
+    kernel = kernel,
+    tune.control = list(
+      random = FALSE,
+      cross = 5,
+      samping = 'cross',
+      best.model = TRUE
+    )
   )
   
-  print(results)
+  #### VARIAR PLIEGUES DE VALIDACIÓN CRUZADA EN PSO
   
-  
-  return(data_env_list)
+  return(grid_search)
 }
