@@ -136,6 +136,9 @@ generate_signal_response_predictions <- function(data,
     }
   }
   
+  # print("Pressure response training data: ")
+  # print(head(data_training, 6))
+  
   SVR_model <-
     vsvr_model(data_training,
                prediction_col_name,
@@ -293,7 +296,6 @@ generate_signal_response_predictions <- function(data,
     predicted_values <<-
       rbind(predicted_values,
             utils::tail(predictions_data_pressure, 1))
-    
     
     # Lapply requires a return value
     return(NULL)

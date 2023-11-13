@@ -135,9 +135,39 @@ optimize_brain_model_with_PSO <- function(config,
     silent = silent,
     plot_response = plot_response,
     model_parameters = model_parameters,
+    bcv_folds = config$bcv_folds,
     lower = params_lower_bounds,
     upper = params_upper_bounds,
-    control = psoptim_config
+    control = list(
+      trace = 1,
+      REPORT = 1,
+      maxit = 50,
+      s = 8,
+      w = 1,
+      #p = 0.2,
+      c.p = 2,
+      c.g = 5,
+      vectorize = TRUE,
+      reltol = 0.5,
+      hybrid = "improved",
+      hybrid.control = list(maxit = 10),
+      maxit.stagnate = 30,
+      maxf = 8000
+      #type = "SPSO2011"
+      #p = 1
+      #w = 1
+      #s = 10
+      #w = 1,
+      #k = 3
+      #c.g = 5,
+      #reltol = 0.5,
+      #rand.order = TRUE,
+      #vectorize = TRUE,
+      #hybrid = "improved",
+      #type = "SPSO2011",
+      #hybrid.control = list(maxit = 1, factr = 1)
+    )
+    #control = psoptim_config
   )
   
   return(psoptim_result)

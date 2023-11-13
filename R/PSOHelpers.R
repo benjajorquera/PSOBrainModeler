@@ -17,14 +17,18 @@ extract_and_round_pso_params <-
   function(params,
            has_gamma = FALSE,
            n_lags = 1) {
-    cost <- round(params[1], digits = 2)
-    nu <- round(params[2], digits = 2)
+    #cat("Params before rounding: \n", params, "\n")
+    cost <- ifelse(params[1] >= 1,
+                   round(params[1], digits = 3),
+                   signif(params[1], digits = 3))
+    
+    nu <- round(params[2], digits = 3)
     
     if (has_gamma) {
       gamma <-
         ifelse(params[3] >= 1,
-               round(params[3], digits = 2),
-               signif(params[3], digits = 2))
+               round(params[3], digits = 3),
+               signif(params[3], digits = 5))
       lags_start <- 4
     } else {
       gamma <- NULL

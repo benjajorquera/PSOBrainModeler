@@ -48,10 +48,10 @@ blocked_cv <-
         block * validation_length
       
       # Extract validation data based on indices
-      validation_data <- data[start_idx:end_idx, ]
+      validation_data <- data[start_idx:end_idx,]
       
       # The training data is the remaining data after excluding the validation data
-      training_data <- data[-(start_idx:end_idx), ]
+      training_data <- data[-(start_idx:end_idx),]
       
       list(training = training_data, validation = validation_data)
     })
@@ -170,8 +170,17 @@ cross_validate_partition <-
       data_partitions_training <-
         do.call(generate_time_series_data, args_training)
       
+      # if (df_list == 1) {
+      #   print("Cross validation train and test data: ")
+      #   print(head(data_partitions_training, 6))
+      #   print(head(new_data_validation, 6))
+      # }
+      #
+      
+      #blocked_cv_svr_time <- Sys.time()
+      
       # Train SVR model
-      svr_model_pso <-
+      svr_model <-
         vsvr_model(
           data = data_partitions_training,
           response_var = vsvr_response,
@@ -181,30 +190,150 @@ cross_validate_partition <-
           tolerance = vsvr_tolerance
         )
       
-      # Make predictions
-      predictions_pso <- predict(svr_model_pso, new_data_validation)
+      #print(Sys.time() - blocked_cv_svr_time)
       
-      if (stats::sd(predictions_pso) == 0) {
+      # Make predictions
+      predictions <- predict(svr_model, new_data_validation)
+      
+      if (stats::sd(predictions) == 0) {
         if (!silent) {
           message(
-            "STANDARD DEVIATION OF 'PREDICTIONS PSO' IS ZERO: SVM TOLERANCE IS TOO HIGH FOR NUMBER OF LAGS USED"
+            "STANDARD DEVIATION OF 'PREDICTIONS' IS ZERO: SVM TOLERANCE IS TOO HIGH FOR NUMBER OF LAGS USED"
           )
         }
-        return(list(avg_cor = NA, avg_error = NA))
+        cors[df_list] <- NA
+        errors[df_list] <- NA
+        next
       }
       
       target_vals <-
         data_partitions[[df_list]][[validation_list_name]][[vsvr_response]]
       
       # Compute and save correlation and MSE
-      cors[df_list] <- stats::cor(predictions_pso, target_vals)
+      cors[df_list] <- stats::cor(predictions, target_vals)
       errors[df_list] <-
-        sqrt(mean((target_vals - predictions_pso) ^ 2))
+        sqrt(mean((target_vals - predictions) ^ 2))
     }
     
     return(list(
       avg_cor = mean(cors, na.rm = TRUE),
       avg_error = mean(errors, na.rm = TRUE)
     ))
+    
+  }
+
+
+parallel_cross_validate_partition <-
+  function(cost,
+           nu,
+           gamma = NULL,
+           data_partitions,
+           bcv_folds = 5,
+           signal_norm_names,
+           predictors_norm_names,
+           lagged_cols,
+           col_lags,
+           vsvr_response,
+           vsvr_tolerance = 1,
+           silent = FALSE,
+           training_list_name = "training",
+           validation_list_name = "validation") {
+    # Validate params
+    validate_pso_svr_params(list(
+      cost = cost,
+      nu = nu,
+      gamma = gamma,
+      lags = col_lags
+    ))
+    validate_character_vector_list(list(signal_norm_names, predictors_norm_names, lagged_cols))
+    validate_logical(silent, "silent")
+    validate_data_partitions(data_partitions = data_partitions, blocks = bcv_folds)
+    
+    if (!is.numeric(vsvr_tolerance) || length(vsvr_tolerance) != 1)
+      stop("The 'vsvr_tolerance' argument must be a single integer.")
+    
+    cors <- numeric(bcv_folds)
+    errors <- numeric(bcv_folds)
+    
+    # Common arguments for generate_time_series_data
+    common_args <- list(
+      data_cols = signal_norm_names,
+      predictor_cols = predictors_norm_names,
+      lagged_cols = lagged_cols,
+      lag_values = col_lags,
+      vsvr_response = vsvr_response
+    )
+    
+    blocked_cv_svr_time <- Sys.time()
+    
+    registerDoParallel(cores = detectCores() - 1)
+    
+    results <-
+      foreach(
+        df_list = seq_len(bcv_folds),
+        .packages = c("e1071", "dplyr"),
+        .combine = 'rbind'
+      ) %dopar% {
+        source("R/TimeSeries.R")
+        source("R/VSVMRegression.R")
+        
+        # Prepare data for validation
+        args_validation <-
+          utils::modifyList(list(input_df = data_partitions[[df_list]][[validation_list_name]],
+                                 is_training = FALSE),
+                            common_args)
+        new_data_validation <-
+          do.call(generate_time_series_data, args_validation)
+        
+        # Prepare data for training
+        args_training <-
+          utils::modifyList(list(input_df = data_partitions[[df_list]][[training_list_name]],
+                                 is_training = TRUE),
+                            common_args)
+        data_partitions_training <-
+          do.call(generate_time_series_data, args_training)
+        
+        # Train SVR model
+        svr_model <-
+          vsvr_model(
+            data = data_partitions_training,
+            response_var = vsvr_response,
+            cost = cost,
+            nu = nu,
+            gamma = gamma,
+            tolerance = vsvr_tolerance
+          )
+        
+        # Make predictions
+        predictions <- predict(svr_model, new_data_validation)
+        
+        if (stats::sd(predictions) == 0)
+          next
+        
+        target_vals <-
+          data_partitions[[df_list]][[validation_list_name]][[vsvr_response]]
+        
+        # Compute and save correlation and MSE
+        cors[df_list] <- stats::cor(predictions, target_vals)
+        errors[df_list] <-
+          sqrt(mean((target_vals - predictions) ^ 2))
+        
+        # Asegúrate de retornar los resultados que necesitas
+        c(cors = cors[df_list], errors = errors[df_list])
+      }
+    
+    stopImplicitCluster()
+    
+    print(Sys.time() - blocked_cv_svr_time)
+    
+    # Calcula el promedio de cada columna
+    average_results <- colMeans(results)
+    
+    # El promedio de 'cors' estará en la primera posición y 'errors' en la segunda
+    average_cors <- average_results["cors"]
+    average_errors <- average_results["errors"]
+    
+    return(list(avg_cor = average_cors,
+                avg_error = average_errors))
     
   }

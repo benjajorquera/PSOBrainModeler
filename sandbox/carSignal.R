@@ -244,4 +244,32 @@ max_diff_list <- function(vectors_list) {
   return(max(max_diffs, na.rm = TRUE))
 }
 
+# Definir una función que calcule la mínima diferencia entre puntos consecutivos de un vector
+min_diff <- function(vec) {
+  diffs <-
+    diff(vec)  # Calcular las diferencias entre puntos consecutivos
+  diffs <- diffs[diffs != 0]  # Eliminar las diferencias que son 0
+  if (length(diffs) == 0) {
+    # Si no hay diferencias distintas de cero
+    return(NA)                # Devolver NA
+  } else {
+    return(min(abs(diffs)))   # Devolver la mínima diferencia en valor absoluto
+  }
+}
+
+# Función para calcular la mínima diferencia en una lista de vectores
+min_diff_list <- function(vectors_list) {
+  # Calcular la mínima diferencia para cada vector en la lista
+  min_diffs <- sapply(vectors_list, min_diff)
+  min_diffs <-
+    min_diffs[!is.na(min_diffs)]  # Eliminar los valores NA
+  if (length(min_diffs) == 0) {
+    # Si todos los valores eran NA
+    return(NA)                               # Devolver NA
+  } else {
+    return(min(min_diffs))                   # Devolver la mínima diferencia de todas las diferencias calculadas
+  }
+}
+
 max_diff_result <- max_diff_list(y)
+min_diff_result <- min_diff_list(y)

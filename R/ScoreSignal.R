@@ -28,8 +28,8 @@ evaluate_signal_quality <-
            pressure_start_point = 3L,
            silent = FALSE) {
     # Constants
-    MIN_PEAK_VALUE <- 0
-    MAX_PEAK_VALUE <- 0.8
+    MIN_PEAK_VALUE <- -0.2
+    MAX_PEAK_VALUE <- 0.5
     VARIANCE_THRESHOLD <- 0.002
     MAX_SIGNAL_VALUE <- 1.2
     
@@ -48,7 +48,7 @@ evaluate_signal_quality <-
     peak_range <-
       signal[(pressure_start_point + 3):(pressure_start_point + 9)]
     stabilization_range <-
-      signal[(pressure_start_point + 20):(pressure_start_point + 35)]
+      signal[(pressure_start_point + 15):(pressure_start_point + 30)]
     drop_range <-
       signal[(pressure_start_point + 9):(pressure_start_point + 15)]
     
@@ -60,7 +60,23 @@ evaluate_signal_quality <-
     not_peak_range <-
       signal[-((pressure_start_point + 3):(pressure_start_point + 9))]
     
-    if (max_diff(signal) > 0.6) {
+    suppressWarnings({
+      signal_test <<- adf.test(signal, alternative = "stationary")
+    })
+    
+    
+    if (max_diff(signal) > 0.55) {
+      message("RESPONSE SIGNAL FAILED BASIC FILTER")
+      return(-10)
+    }
+    
+    if (!is.nan(signal_test$p.value)) {
+      if (signal_test$p.value >= 0.05) {
+        message("RESPONSE SIGNAL FAILED BASIC FILTER")
+        return(-10)
+      }
+    }
+    else {
       message("RESPONSE SIGNAL FAILED BASIC FILTER")
       return(-10)
     }

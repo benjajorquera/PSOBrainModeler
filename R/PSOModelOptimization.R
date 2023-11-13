@@ -41,7 +41,8 @@ pso_training_model <- function(cost,
                                silent = FALSE,
                                plot_response = TRUE,
                                initial_column_values = c(1),
-                               prediction_initial_value = 1) {
+                               prediction_initial_value = 1,
+                               bcv_folds = 5) {
   # Cross-validation
   results <- cross_validate_partition_helper(
     cost = cost,
@@ -49,15 +50,17 @@ pso_training_model <- function(cost,
     gamma = gamma,
     col_lags = c(col_lags, response_lags),
     data_list = data_list,
-    silent = silent
+    silent = silent,
+    bcv_folds = bcv_folds
   )
   
   avg_cor <- results$avg_cor
   avg_error <- results$avg_error
   
-  # Return early if any of the results is NA
-  if (is.na(avg_cor) || is.na(avg_error))
-    return (10)
+  # Return early if any of the results is NaN
+  if (is.nan(avg_cor) ||
+      is.nan(avg_error))
+    return (5)
   
   # Training with all data
   data_training <-
@@ -85,12 +88,8 @@ pso_training_model <- function(cost,
   signal_score <-
     evaluate_signal_quality(response_predictions[[vsvr_response]], silent = silent)
   
-  # Return early if signal score is less than or equal to zero
-  if (signal_score <= 0)
-    return(5)
-  
   # Plot response signal if plot_response is TRUE
-  if (plot_response) {
+  if (plot_response && signal_score > -10) {
     x_values <- 1:40
     plot(
       response_predictions[[vsvr_response]],
@@ -102,6 +101,10 @@ pso_training_model <- function(cost,
     # Configurar el eje x con un intervalo de 1 en 1
     axis(1, at = x_values, labels = x_values)
   }
+  
+  
+  if (avg_cor > max_cor)
+    max_cor <<- avg_cor
   
   if (!silent) {
     # Print optimization values
@@ -116,6 +119,16 @@ pso_training_model <- function(cost,
     )
   }
   
+  # Return early if signal score is less than or equal to zero
+  # if (signal_score <= 0)
+  #   return(5)
+  optim_score <- 0
+  if (signal_score > -10) {
+    optim_score <- 1
+    good_signal_count <<- good_signal_count + 1
+  }
+  
   # Return optimization value for minimization
-  return(2 - avg_cor + avg_error - (signal_score * 0.1))
+  #return(2 - avg_cor + avg_error - (signal_score * 0.1))
+  return(2 - avg_cor + avg_error - optim_score)
 }

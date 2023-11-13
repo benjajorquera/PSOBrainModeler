@@ -1,68 +1,345 @@
 svr_grid_search <- function(config,
                             data,
-                            model,
+                            kernel,
                             multi = FALSE,
                             signal_names,
-                            excluded_cols = NULL,
                             predictors_names,
                             vsvr_response,
+                            excluded_cols = NULL,
+                            col_lags = c(8),
+                            initial_pressure_value = c(1),
+                            response_lags = NULL,
+                            extra_col_name = NULL,
                             silent = FALSE,
                             plot_response = TRUE,
-                            initial_pressure_value = c(1)) {
+                            test = FALSE) {
   data_env_list <- configure_data_env(
-    config,
+    config = config,
     data = data,
     signal_names = signal_names,
-    excluded_cols = excluded_cols,
     predictors_names = predictors_names,
     vsvr_response = vsvr_response,
+    excluded_cols = excluded_cols,
     multi = multi,
-    extra_col_name = "etCO2",
-    initial_prediction_values = initial_pressure_value
+    extra_col_name = extra_col_name
   )
   
-  training_x <-
-    exclude_signals_dataframe(data_env_list$processed_data,
-                              data_env_list$NORM_VSVR_RESPONSE)
-  training_y <-
-    filter_signals_dataframe(data_env_list$processed_data,
-                             data_env_list$NORM_VSVR_RESPONSE)
+  data_partitions <- data_env_list$data_partitions
+  processed_data <- data_env_list$processed_data
   
-  if (model == 'FIR') {
-    nu <- seq(0.1, 0.9, 0.1)
-    cost <-
-      c(0.25, 0.5, 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096)
-    params_ranges <- list(cost = cost, nu = nu)
-    kernel <- 'linear'
-  }
-  if (model == 'NFIR') {
-    nu <- seq(0.1, 0.9, 0.1)
-    cost <-
-      c(0.25, 0.5, 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096)
-    sigma <- 2 ^ seq(-4, 10, 2)
-    gamma <- 1 / (2 * sigma ^ 2)
-    params_ranges <- list(cost = cost,
-                          nu = nu,
-                          gamma = gamma)
-    kernel <- 'radial'
-  }
-  
-  grid_search <- e1071::tune(
-    METHOD = 'svm',
-    train.x = training_x,
-    train.y = training_y,
-    ranges = params_ranges,
-    type = "nu-regression",
-    kernel = kernel,
-    tune.control = list(
-      random = FALSE,
-      cross = 5,
-      samping = 'cross',
-      best.model = TRUE
+  return(
+    main_grid_search(
+      data_env_list = data_env_list,
+      data_partitions = data_partitions,
+      bcv_folds = config$bcv_folds,
+      processed_data = processed_data,
+      norm_vsvr_response = data_env_list$NORM_VSVR_RESPONSE,
+      kernel = kernel,
+      col_lags = col_lags,
+      initial_column_values = data_env_list$INITIAL_PREDICTION_VALUES,
+      response_lags = response_lags,
+      tolerance = config$vsvr_tolerance,
+      test = test
     )
   )
-  
-  #### VARIAR PLIEGUES DE VALIDACIÓN CRUZADA EN PSO
-  
-  return(grid_search)
 }
+
+
+main_grid_search <-
+  function(data_env_list,
+           data_partitions,
+           bcv_folds = 5,
+           processed_data,
+           norm_vsvr_response,
+           kernel = "linear",
+           col_lags = c(8),
+           initial_column_values = c(1),
+           response_lags = NULL,
+           tolerance = 1,
+           test = FALSE,
+           validation_list_name = 'validation',
+           training_list_name = 'training') {
+    nu <- ifelse(test, seq(0.7, 0.8, 0.1), seq(0.1, 0.9, 0.1))
+    
+    model_params <- list(type = "nu-regression",
+                         tolerance = tolerance,
+                         kernel = kernel)
+    
+    main_loop_params <- list(
+      data_env_list = data_env_list,
+      processed_data = processed_data,
+      data_partitions = data_partitions,
+      bcv_folds = bcv_folds,
+      norm_vsvr_response = norm_vsvr_response,
+      col_lags = col_lags,
+      initial_column_values = initial_column_values,
+      response_lags = response_lags,
+      model_params = model_params,
+      nu = nu,
+      training_list_name = training_list_name,
+      validation_list_name = validation_list_name
+    )
+    
+    results <- list()
+    
+    if (kernel == "linear") {
+      cost <- ifelse(
+        test,
+        c(1178.1),
+        c(
+          0.25,
+          292.8,
+          585.36,
+          877.91,
+          1170.46,
+          1463.02,
+          1755.57,
+          2048.13,
+          2340.68,
+          2633.23,
+          2925.79,
+          3218.34,
+          3510.89,
+          3803.45,
+          4096
+        )
+      )
+      
+      main_loop_params$cost <- cost
+      results <-
+        append(results, c(do.call(
+          grid_search_main_loop, main_loop_params
+        )))
+    }
+    else {
+      if (test) {
+        cost <- c(0.25, 4096)
+        sigma <- 2 ^ seq(-4,-3, 1)
+        gamma <- 1 / (2 * sigma ^ 2)
+      }
+      else {
+        cost <-
+          c(0.25, 0.5, 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096)
+        sigma <- 2 ^ seq(-4, 10, 2)
+        gamma <- 1 / (2 * sigma ^ 2)
+      }
+      
+      main_loop_params$cost <- cost
+      
+      for (g in gamma) {
+        main_loop_params$model_params$gamma <- g
+        results <-
+          append(results, c(do.call(
+            grid_search_main_loop, main_loop_params
+          )))
+      }
+    }
+    
+    return(results)
+    
+  }
+
+grid_search_main_loop <-
+  function(data_env_list,
+           data_partitions,
+           bcv_folds,
+           processed_data,
+           norm_vsvr_response,
+           col_lags = c(8),
+           initial_column_values = c(1),
+           response_lags = NULL,
+           cost,
+           nu,
+           model_params,
+           training_list_name,
+           validation_list_name) {
+    results <- list()
+    for (c in cost) {
+      for (n in nu) {
+        gamma <- NULL
+        
+        if (model_params$kernel == "radial")
+          gamma <- model_params$gamma
+        
+        if (length(col_lags) == 1) {
+          for (i in 1:col_lags[1]) {
+            grid_col_lags <- c(i)
+            results <- append(results,
+                              c(
+                                grid_multi_col_eval(
+                                  cost = c,
+                                  nu = n,
+                                  gamma = gamma,
+                                  kernel = kernel,
+                                  grid_col_lags = grid_col_lags,
+                                  response_lags = response_lags,
+                                  data_env_list = data_env_list,
+                                  bcv_folds = bcv_folds,
+                                  processed_data = processed_data,
+                                  norm_vsvr_response = norm_vsvr_response,
+                                  initial_column_values = initial_column_values
+                                )
+                              ))
+          }
+        } else {
+          for (i in 1:col_lags[1]) {
+            for (j in 0:col_lags[2]) {
+              grid_col_lags <- c(i, j)
+              results <- append(results , c(
+                grid_multi_col_eval(
+                  cost = c,
+                  nu = n,
+                  gamma = gamma,
+                  kernel = kernel,
+                  grid_col_lags = grid_col_lags,
+                  response_lags = response_lags,
+                  data_env_list = data_env_list,
+                  bcv_folds = bcv_folds,
+                  processed_data = processed_data,
+                  norm_vsvr_response = norm_vsvr_response,
+                  initial_column_values = initial_column_values
+                )
+              ))
+            }
+          }
+        }
+      }
+    }
+    
+    return(results)
+  }
+
+grid_multi_col_eval <- function(cost,
+                                nu,
+                                gamma = NULL,
+                                kernel,
+                                grid_col_lags,
+                                response_lags = NULL,
+                                data_env_list,
+                                bcv_folds,
+                                processed_data,
+                                initial_column_values,
+                                norm_vsvr_response) {
+  if (!is.null(response_lags)) {
+    for (response_lag in 1:response_lags[1]) {
+      cat(
+        "Cost: ",
+        cost,
+        " Nu: ",
+        nu,
+        " Gamma: ",
+        gamma,
+        " Lags: ",
+        c(grid_col_lags, response_lag),
+        "\n"
+      )
+      results <- grid_signal_eval(
+        cost = cost,
+        nu = nu,
+        gamma = gamma,
+        kernel = kernel,
+        grid_col_lags = grid_col_lags,
+        response_lag = response_lag,
+        data_env_list = data_env_list,
+        bcv_folds = bcv_folds,
+        processed_data = processed_data,
+        norm_vsvr_response = norm_vsvr_response,
+        initial_column_values = initial_column_values
+      )
+    }
+  }
+  else {
+    cat("Cost: ",
+        cost,
+        " Nu: ",
+        nu,
+        " Gamma: ",
+        gamma,
+        " Lags: ",
+        grid_col_lags,
+        "\n")
+    results <- grid_signal_eval(
+      cost = cost,
+      nu = nu,
+      gamma = gamma,
+      kernel = kernel,
+      grid_col_lags = grid_col_lags,
+      data_env_list = data_env_list,
+      bcv_folds = bcv_folds,
+      processed_data = processed_data,
+      norm_vsvr_response = norm_vsvr_response,
+      initial_column_values = initial_column_values
+    )
+  }
+  
+  return(results)
+}
+
+grid_signal_eval <-
+  function(cost,
+           nu,
+           gamma = NULL,
+           kernel,
+           grid_col_lags,
+           response_lag = NULL,
+           data_env_list,
+           bcv_folds,
+           processed_data,
+           initial_column_values,
+           norm_vsvr_response) {
+    results <- list()
+    
+    cv_result <- cross_validate_partition_helper(
+      cost = cost,
+      nu = nu,
+      gamma = gamma,
+      col_lags = c(grid_col_lags, response_lag),
+      data_list = data_env_list,
+      bcv_folds = bcv_folds
+    )
+    
+    result_list <- list(avg_cor = cv_result$avg_cor,
+                        avg_error = cv_result$avg_error)
+    
+    #cat("Initial colums data: ", initial_column_values, "\n")
+    
+    response_predictions <-
+      generate_signal_response_predictions_helper(
+        data = processed_data,
+        col_lags = c(grid_col_lags),
+        response_lags = response_lag,
+        initial_column_values = initial_column_values,
+        prediction_initial_value = 1,
+        cost = cost,
+        nu = nu,
+        gamma = gamma,
+        data_list = data_env_list
+      )
+    
+    signal_score <-
+      evaluate_signal_quality(response_predictions[[norm_vsvr_response]])
+    
+    
+    result_list$score <- signal_score
+    
+    result_list$params <-
+      list(cost = cost,
+           nu = nu,
+           gamma = gamma)
+    
+    results <- append(results, list(c(result_list)))
+    
+    if (signal_score > -10) {
+      x_values <- 1:40
+      plot(
+        response_predictions[[norm_vsvr_response]],
+        type = "l",
+        main = "VSVR Response Signal",
+        ylab = "Response",
+        xlab = "Time/Instance"
+      )
+      axis(1, at = x_values, labels = x_values)
+    }
+    
+    return(results)
+  }

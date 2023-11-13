@@ -31,7 +31,8 @@ pso_model <-
            silent = FALSE,
            plot_response = TRUE,
            initial_response_value = 1,
-           model_parameters) {
+           model_parameters,
+           bcv_folds = 5) {
     # Validation
     validate_params(params, model_parameters, model)
     
@@ -74,7 +75,8 @@ pso_model <-
       silent = silent,
       plot_response = plot_response,
       initial_column_values = data_list$INITIAL_PREDICTION_VALUES,
-      prediction_initial_value = initial_response_value
+      prediction_initial_value = initial_response_value,
+      bcv_folds = bcv_folds
     )
     
     return(pso_training_model_result)

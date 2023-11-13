@@ -17,7 +17,8 @@ cross_validate_partition_helper <-
            gamma = NULL,
            col_lags,
            data_list,
-           silent = FALSE) {
+           silent = FALSE,
+           bcv_folds = 5) {
     params_list <- list(
       cost = cost,
       nu = nu,
@@ -28,7 +29,9 @@ cross_validate_partition_helper <-
       lagged_cols = data_list$NORM_PREDICTORS_NAMES,
       col_lags = col_lags,
       vsvr_response = data_list$NORM_VSVR_RESPONSE,
-      silent = silent
+      silent = silent,
+      bcv_folds = bcv_folds,
+      vsvr_tolerance = data_list$VSVR_TOL
     )
     return(do.call(cross_validate_partition, params_list))
   }
