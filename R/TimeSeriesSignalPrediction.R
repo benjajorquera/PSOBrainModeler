@@ -72,7 +72,7 @@
 generate_signal_response_predictions <- function(data,
                                                  pressure_signal_df,
                                                  pressure_start = 3,
-                                                 prediction_size = 40,
+                                                 prediction_size = 65,
                                                  column_names,
                                                  initial_columns_lags,
                                                  predicted_column_lags,
@@ -135,9 +135,6 @@ generate_signal_response_predictions <- function(data,
       initial_column_names <- initial_column_names[-zero_positions]
     }
   }
-  
-  # print("Pressure response training data: ")
-  # print(head(data_training, 6))
   
   SVR_model <-
     vsvr_model(data_training,

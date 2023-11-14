@@ -161,45 +161,31 @@ grid_search_main_loop <-
         if (model_params$kernel == "radial")
           gamma <- model_params$gamma
         
+        grid_eval_params <- list(
+          data_env_list = data_env_list,
+          processed_data = processed_data,
+          bcv_folds = bcv_folds,
+          norm_vsvr_response = norm_vsvr_response,
+          initial_column_values = initial_column_values,
+          response_lags = response_lags,
+          cost = c,
+          nu = n,
+          gamma = gamma,
+          kernel = kernel
+        )
+        
         if (length(col_lags) == 1) {
           for (i in 1:col_lags[1]) {
             grid_col_lags <- c(i)
-            results <- append(results,
-                              c(
-                                grid_multi_col_eval(
-                                  cost = c,
-                                  nu = n,
-                                  gamma = gamma,
-                                  kernel = kernel,
-                                  grid_col_lags = grid_col_lags,
-                                  response_lags = response_lags,
-                                  data_env_list = data_env_list,
-                                  bcv_folds = bcv_folds,
-                                  processed_data = processed_data,
-                                  norm_vsvr_response = norm_vsvr_response,
-                                  initial_column_values = initial_column_values
-                                )
-                              ))
+            grid_eval_params$grid_col_lags <- c(i)
+            results <- append(results, grid_eval(grid_eval_params))
           }
         } else {
           for (i in 1:col_lags[1]) {
             for (j in 0:col_lags[2]) {
-              grid_col_lags <- c(i, j)
-              results <- append(results , c(
-                grid_multi_col_eval(
-                  cost = c,
-                  nu = n,
-                  gamma = gamma,
-                  kernel = kernel,
-                  grid_col_lags = grid_col_lags,
-                  response_lags = response_lags,
-                  data_env_list = data_env_list,
-                  bcv_folds = bcv_folds,
-                  processed_data = processed_data,
-                  norm_vsvr_response = norm_vsvr_response,
-                  initial_column_values = initial_column_values
-                )
-              ))
+              grid_eval_params$grid_col_lags <- c(i, j)
+              results <-
+                append(results, grid_eval(grid_eval_params))
             }
           }
         }
@@ -209,84 +195,54 @@ grid_search_main_loop <-
     return(results)
   }
 
-grid_multi_col_eval <- function(cost,
-                                nu,
-                                gamma = NULL,
-                                kernel,
-                                grid_col_lags,
-                                response_lags = NULL,
-                                data_env_list,
-                                bcv_folds,
-                                processed_data,
-                                initial_column_values,
-                                norm_vsvr_response) {
+grid_eval <- function(params) {
+  response_lags <- params$response_lags
+  params$response_lags <- NULL
   if (!is.null(response_lags)) {
     for (response_lag in 1:response_lags[1]) {
-      cat(
-        "Cost: ",
-        cost,
-        " Nu: ",
-        nu,
-        " Gamma: ",
-        gamma,
-        " Lags: ",
-        c(grid_col_lags, response_lag),
-        "\n"
-      )
-      results <- grid_signal_eval(
-        cost = cost,
-        nu = nu,
-        gamma = gamma,
-        kernel = kernel,
-        grid_col_lags = grid_col_lags,
-        response_lag = response_lag,
-        data_env_list = data_env_list,
-        bcv_folds = bcv_folds,
-        processed_data = processed_data,
-        norm_vsvr_response = norm_vsvr_response,
-        initial_column_values = initial_column_values
-      )
+      display_grid_message(params$cost,
+                           params$nu,
+                           params$gamma,
+                           c(params$grid_col_lags, response_lag))
+      params$response_lag = response_lag
+      results <- do.call(grid_signal_eval, params)
     }
   }
   else {
-    cat("Cost: ",
-        cost,
-        " Nu: ",
-        nu,
-        " Gamma: ",
-        gamma,
-        " Lags: ",
-        grid_col_lags,
-        "\n")
-    results <- grid_signal_eval(
-      cost = cost,
-      nu = nu,
-      gamma = gamma,
-      kernel = kernel,
-      grid_col_lags = grid_col_lags,
-      data_env_list = data_env_list,
-      bcv_folds = bcv_folds,
-      processed_data = processed_data,
-      norm_vsvr_response = norm_vsvr_response,
-      initial_column_values = initial_column_values
-    )
+    display_grid_message(params$cost,
+                         params$nu,
+                         params$gamma,
+                         params$grid_col_lags)
+    results <- do.call(grid_signal_eval, params)
   }
   
   return(results)
 }
 
+display_grid_message <- function(cost, nu, gamma, lags) {
+  cat("Cost: ",
+      cost,
+      " Nu: ",
+      nu,
+      " Gamma: ",
+      gamma,
+      " Lags: ",
+      lags,
+      "\n")
+}
+
 grid_signal_eval <-
-  function(cost,
-           nu,
-           gamma = NULL,
-           kernel,
+  function(data_env_list,
+           processed_data,
+           bcv_folds,
+           norm_vsvr_response,
+           initial_column_values,
            grid_col_lags,
            response_lag = NULL,
-           data_env_list,
-           bcv_folds,
-           processed_data,
-           initial_column_values,
-           norm_vsvr_response) {
+           cost,
+           nu,
+           gamma = NULL,
+           kernel) {
     results <- list()
     
     cv_result <- cross_validate_partition_helper(
@@ -297,11 +253,6 @@ grid_signal_eval <-
       data_list = data_env_list,
       bcv_folds = bcv_folds
     )
-    
-    result_list <- list(avg_cor = cv_result$avg_cor,
-                        avg_error = cv_result$avg_error)
-    
-    #cat("Initial colums data: ", initial_column_values, "\n")
     
     response_predictions <-
       generate_signal_response_predictions_helper(
@@ -319,8 +270,16 @@ grid_signal_eval <-
     signal_score <-
       evaluate_signal_quality(response_predictions[[norm_vsvr_response]])
     
+    if (signal_score != 1)
+      return(NULL)
+    
+    result_list <- list(avg_cor = cv_result$avg_cor,
+                        avg_error = cv_result$avg_error)
     
     result_list$score <- signal_score
+    
+    result_list$response_signal <-
+      response_predictions[[norm_vsvr_response]]
     
     result_list$params <-
       list(cost = cost,
@@ -328,18 +287,6 @@ grid_signal_eval <-
            gamma = gamma)
     
     results <- append(results, list(c(result_list)))
-    
-    if (signal_score > -10) {
-      x_values <- 1:40
-      plot(
-        response_predictions[[norm_vsvr_response]],
-        type = "l",
-        main = "VSVR Response Signal",
-        ylab = "Response",
-        xlab = "Time/Instance"
-      )
-      axis(1, at = x_values, labels = x_values)
-    }
     
     return(results)
   }

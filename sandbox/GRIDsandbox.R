@@ -33,9 +33,9 @@ grid_search <- svr_grid_search(
   excluded_cols = c("Time", "CBFV.R", "etCO2"),
   predictors_names = c("MABP"),
   vsvr_response = "CBFV.L",
-  kernel = "linear",
-  test = FALSE,
-  col_lags = c(8),
+  kernel = "radial",
+  test = TRUE,
+  col_lags = c(1),
   response_lags = NULL,
   extra_col_name = NULL
 )
