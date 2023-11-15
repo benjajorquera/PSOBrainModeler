@@ -74,7 +74,7 @@ vsvr_model <-
       nu = nu,
       type = "nu-regression",
       tolerance = tolerance,
-      cache.size = 500
+      cache.size = 100
     )
     
     # Adjusting parameters based on the kernel choice

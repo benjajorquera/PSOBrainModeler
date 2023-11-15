@@ -17,7 +17,7 @@ extract_and_round_pso_params <-
   function(params,
            has_gamma = FALSE,
            n_lags = 1) {
-    #cat("Params before rounding: \n", params, "\n")
+
     cost <- ifelse(params[1] >= 1,
                    round(params[1], digits = 3),
                    signif(params[1], digits = 3))

@@ -59,7 +59,12 @@ main_grid_search <-
            test = FALSE,
            validation_list_name = 'validation',
            training_list_name = 'training') {
-    nu <- ifelse(test, seq(0.7, 0.8, 0.1), seq(0.1, 0.9, 0.1))
+    if (test) {
+      nu <- seq(0.7, 0.8, 0.1)
+    }
+    else {
+      nu <- seq(0.1, 0.9, 0.1)
+    }
     
     model_params <- list(type = "nu-regression",
                          tolerance = tolerance,
@@ -83,10 +88,11 @@ main_grid_search <-
     results <- list()
     
     if (kernel == "linear") {
-      cost <- ifelse(
-        test,
-        c(1178.1),
-        c(
+      if (test) {
+        cost <- c(1178.1)
+      }
+      else {
+        cost <- c(
           0.25,
           292.8,
           585.36,
@@ -103,7 +109,7 @@ main_grid_search <-
           3803.45,
           4096
         )
-      )
+      }
       
       main_loop_params$cost <- cost
       results <-
@@ -243,17 +249,6 @@ grid_signal_eval <-
            nu,
            gamma = NULL,
            kernel) {
-    results <- list()
-    
-    cv_result <- cross_validate_partition_helper(
-      cost = cost,
-      nu = nu,
-      gamma = gamma,
-      col_lags = c(grid_col_lags, response_lag),
-      data_list = data_env_list,
-      bcv_folds = bcv_folds
-    )
-    
     response_predictions <-
       generate_signal_response_predictions_helper(
         data = processed_data,
@@ -273,10 +268,24 @@ grid_signal_eval <-
     if (signal_score != 1)
       return(NULL)
     
+    results <- list()
+    
+    cv_result <- cross_validate_partition_helper(
+      cost = cost,
+      nu = nu,
+      gamma = gamma,
+      col_lags = c(grid_col_lags, response_lag),
+      data_list = data_env_list,
+      bcv_folds = bcv_folds
+    )
+    
+    advanced_signal_score <-
+      advanced_filter(response_predictions[[norm_vsvr_response]], 3L)
+    
     result_list <- list(avg_cor = cv_result$avg_cor,
                         avg_error = cv_result$avg_error)
     
-    result_list$score <- signal_score
+    result_list$score <- advanced_signal_score
     
     result_list$response_signal <-
       response_predictions[[norm_vsvr_response]]

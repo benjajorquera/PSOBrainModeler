@@ -38,29 +38,13 @@ pso_training_model <- function(cost,
                                response_lags = NULL,
                                vsvr_response,
                                data_list,
-                               silent = FALSE,
-                               plot_response = TRUE,
+                               silent = TRUE,
+                               plot_response = FALSE,
                                initial_column_values = c(1),
                                prediction_initial_value = 1,
-                               bcv_folds = 5) {
-  # Cross-validation
-  results <- cross_validate_partition_helper(
-    cost = cost,
-    nu = nu,
-    gamma = gamma,
-    col_lags = c(col_lags, response_lags),
-    data_list = data_list,
-    silent = silent,
-    bcv_folds = bcv_folds
-  )
-  
-  avg_cor <- results$avg_cor
-  avg_error <- results$avg_error
-  
-  # Return early if any of the results is NaN
-  if (is.nan(avg_cor) ||
-      is.nan(avg_error))
-    return (5)
+                               bcv_folds = 5,
+                               pso_env) {
+  pso_env[["function_count"]] <- pso_env[["function_count"]] + 1
   
   # Training with all data
   data_training <-
@@ -88,23 +72,63 @@ pso_training_model <- function(cost,
   signal_score <-
     evaluate_signal_quality(response_predictions[[vsvr_response]], silent = silent)
   
-  # Plot response signal if plot_response is TRUE
-  if (plot_response && signal_score > -10) {
-    x_values <- 1:40
-    plot(
-      response_predictions[[vsvr_response]],
-      type = "l",
-      main = "VSVR Response Signal",
-      ylab = "Response",
-      xlab = "Time/Instance"
-    )
-    # Configurar el eje x con un intervalo de 1 en 1
-    axis(1, at = x_values, labels = x_values)
+  # if (signal_score != 1) {
+  #   return(3)
+  # }
+  
+  # Cross-validation
+  results <- cross_validate_partition_helper(
+    cost = cost,
+    nu = nu,
+    gamma = gamma,
+    col_lags = c(col_lags, response_lags),
+    data_list = data_list,
+    silent = silent,
+    bcv_folds = bcv_folds
+  )
+  
+  avg_cor <- results$avg_cor
+  avg_error <- results$avg_error
+  
+  # Return early if any of the results is NaN
+  if (is.nan(avg_cor) ||
+      is.nan(avg_error))
+    return (3)
+  
+  
+  if (signal_score == 1) {
+    optim_score <-
+      advanced_filter(response_predictions[[vsvr_response]])
+    
+    if (avg_cor > pso_env[["max_cor"]])
+      pso_env[["max_cor"]] <- avg_cor
+    
+    new_data <-
+      c(
+        avg_cor = avg_cor,
+        avg_error = avg_error,
+        na_counts = results$na_count,
+        score = optim_score,
+        response_signal = list(response_predictions[[vsvr_response]]),
+        params = list(
+          c(
+            cost = cost,
+            nu =  nu,
+            gamma = gamma,
+            col_lags = col_lags,
+            response_lags = response_lags
+          )
+        )
+      )
+    pso_env[["data"]] <- c(pso_env[["data"]], list(new_data))
+    
+    if (plot_response) {
+      plot_response_signal(response_predictions[[vsvr_response]])
+    }
   }
-  
-  
-  if (avg_cor > max_cor)
-    max_cor <<- avg_cor
+  else {
+    optim_score <- -10
+  }
   
   if (!silent) {
     # Print optimization values
@@ -113,22 +137,14 @@ pso_training_model <- function(cost,
       round(avg_cor, digits = 2),
       "AVG MSE: ",
       round(avg_error, digits = 2),
-      "Signal score: ",
-      round(signal_score, digits = 2),
+      "Signal basic filter: ",
+      signal_score,
+      "Signal advance score: ",
+      round(optim_score, digits = 2),
       "\n"
     )
   }
   
-  # Return early if signal score is less than or equal to zero
-  # if (signal_score <= 0)
-  #   return(5)
-  optim_score <- 0
-  if (signal_score > -10) {
-    optim_score <- 1
-    good_signal_count <<- good_signal_count + 1
-  }
-  
   # Return optimization value for minimization
-  #return(2 - avg_cor + avg_error - (signal_score * 0.1))
-  return(2 - avg_cor + avg_error - optim_score)
+  return(3 - avg_cor + avg_error - (optim_score * 0.01) - signal_score)
 }

@@ -93,7 +93,8 @@ optimize_brain_model_with_PSO <- function(config,
                                           vsvr_response,
                                           silent = FALSE,
                                           plot_response = TRUE,
-                                          initial_pressure_value = c(1)) {
+                                          initial_pressure_value = c(1),
+                                          seed = 123) {
   # Call the validation function
   validate_inputs_main(
     data,
@@ -126,6 +127,13 @@ optimize_brain_model_with_PSO <- function(config,
   # Determine validation lengths and n_lags based on model
   model_parameters <- get_model_parameters(model, multi)
   
+  pso_env <<- new.env()
+  
+  pso_env[["data"]] <- list()
+  pso_env[["max_cor"]] <- -1
+  pso_env[["function_count"]] <- 0
+  pso_env[["time"]] <- Sys.time()
+  
   psoptim_result <- pso::psoptim(
     par = params_initial_values,
     fn = pso_model,
@@ -136,13 +144,14 @@ optimize_brain_model_with_PSO <- function(config,
     plot_response = plot_response,
     model_parameters = model_parameters,
     bcv_folds = config$bcv_folds,
+    pso_env = pso_env,
     lower = params_lower_bounds,
     upper = params_upper_bounds,
     control = list(
       trace = 1,
       REPORT = 1,
-      maxit = 50,
-      s = 8,
+      maxit = 10,
+      s = 5,
       w = 1,
       #p = 0.2,
       c.p = 2,
@@ -151,7 +160,7 @@ optimize_brain_model_with_PSO <- function(config,
       reltol = 0.5,
       hybrid = "improved",
       hybrid.control = list(maxit = 10),
-      maxit.stagnate = 30,
+      maxit.stagnate = 8,
       maxf = 8000
       #type = "SPSO2011"
       #p = 1
@@ -170,7 +179,11 @@ optimize_brain_model_with_PSO <- function(config,
     #control = psoptim_config
   )
   
-  return(psoptim_result)
+  pso_env[["time"]] <- pso_env[["time"]] - Sys.time()
+  
+  return(list(c(
+    psoptim_result = psoptim_result, pso_env = pso_env
+  )))
 }
 
 # Auxiliary function to get model parameters

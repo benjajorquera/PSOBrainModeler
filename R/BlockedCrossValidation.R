@@ -127,6 +127,7 @@ cross_validate_partition <-
            silent = FALSE,
            training_list_name = "training",
            validation_list_name = "validation") {
+    
     # Validate params
     validate_pso_svr_params(list(
       cost = cost,
@@ -143,6 +144,8 @@ cross_validate_partition <-
     
     cors <- numeric(bcv_folds)
     errors <- numeric(bcv_folds)
+    
+    na_count <- 0
     
     # Common arguments for generate_time_series_data
     common_args <- list(
@@ -203,6 +206,7 @@ cross_validate_partition <-
         }
         cors[df_list] <- NA
         errors[df_list] <- NA
+        na_count <- na_count + 1
         next
       }
       
@@ -217,9 +221,9 @@ cross_validate_partition <-
     
     return(list(
       avg_cor = mean(cors, na.rm = TRUE),
-      avg_error = mean(errors, na.rm = TRUE)
+      avg_error = mean(errors, na.rm = TRUE),
+      na_count = na_count
     ))
-    
   }
 
 
