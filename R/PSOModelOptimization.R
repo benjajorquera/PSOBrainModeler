@@ -43,8 +43,15 @@ pso_training_model <- function(cost,
                                initial_column_values = c(1),
                                prediction_initial_value = 1,
                                bcv_folds = 5,
-                               pso_env) {
+                               pso_env,
+                               seed = 123) {
   pso_env[["function_count"]] <- pso_env[["function_count"]] + 1
+  
+  # print(pso_env[["function_count"]])
+  # print(pso_env[["function_count_without_improvement"]])
+  
+  if (pso_env[["function_count"]] > 600)
+    return(10)
   
   # Training with all data
   data_training <-
@@ -76,6 +83,10 @@ pso_training_model <- function(cost,
   #   return(3)
   # }
   
+  if (seed != 123) {
+    set.seed(123)
+  }
+  
   # Cross-validation
   results <- cross_validate_partition_helper(
     cost = cost,
@@ -87,6 +98,10 @@ pso_training_model <- function(cost,
     bcv_folds = bcv_folds
   )
   
+  if (seed != 123) {
+    set.seed(seed)
+  }
+  
   avg_cor <- results$avg_cor
   avg_error <- results$avg_error
   
@@ -95,13 +110,17 @@ pso_training_model <- function(cost,
       is.nan(avg_error))
     return (3)
   
-  
   if (signal_score == 1) {
     optim_score <-
       advanced_filter(response_predictions[[vsvr_response]])
     
     if (avg_cor > pso_env[["max_cor"]])
       pso_env[["max_cor"]] <- avg_cor
+    
+    fitness <-
+      (3 - avg_cor + avg_error - (optim_score * 0.01) - signal_score)
+    if (fitness < pso_env[["best_fitness"]])
+      pso_env[["best_fitness"]] <- fitness
     
     new_data <-
       c(
@@ -110,6 +129,7 @@ pso_training_model <- function(cost,
         na_counts = results$na_count,
         score = optim_score,
         response_signal = list(response_predictions[[vsvr_response]]),
+        fitness_score = fitness,
         params = list(
           c(
             cost = cost,
@@ -127,22 +147,39 @@ pso_training_model <- function(cost,
     }
   }
   else {
-    optim_score <- -10
+    optim_score <- 0
   }
   
   if (!silent) {
     # Print optimization values
     cat(
       "AVG COR: ",
-      round(avg_cor, digits = 2),
+      avg_cor,
       "AVG MSE: ",
-      round(avg_error, digits = 2),
+      avg_error,
       "Signal basic filter: ",
       signal_score,
       "Signal advance score: ",
-      round(optim_score, digits = 2),
+      optim_score,
       "\n"
     )
+  }
+  
+  #print(round(avg_cor, digits = 3))
+  #print(round(pso_env[["max_global_cor"]], digits = 3))
+  
+  if (avg_cor > pso_env[["max_global_cor"]])
+    pso_env[["max_global_cor"]] <- avg_cor
+  
+  if (round(avg_cor, digits = 3) <= pso_env[["max_global_cor"]]) {
+    if (pso_env[["function_count_without_improvement"]] > 30) {
+      return(5)
+    }
+    pso_env[["function_count_without_improvement"]] <-
+      pso_env[["function_count_without_improvement"]] + 1
+  }
+  else {
+    pso_env[["function_count_without_improvement"]] <- 0
   }
   
   # Return optimization value for minimization

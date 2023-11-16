@@ -120,7 +120,7 @@ main_grid_search <-
     else {
       if (test) {
         cost <- c(0.25, 4096)
-        sigma <- 2 ^ seq(-4,-3, 1)
+        sigma <- 2 ^ seq(-4, -3, 1)
         gamma <- 1 / (2 * sigma ^ 2)
       }
       else {
@@ -270,6 +270,9 @@ grid_signal_eval <-
     
     results <- list()
     
+    advanced_signal_score <-
+      advanced_filter(response_predictions[[norm_vsvr_response]], 3L)
+    
     cv_result <- cross_validate_partition_helper(
       cost = cost,
       nu = nu,
@@ -279,11 +282,9 @@ grid_signal_eval <-
       bcv_folds = bcv_folds
     )
     
-    advanced_signal_score <-
-      advanced_filter(response_predictions[[norm_vsvr_response]], 3L)
-    
     result_list <- list(avg_cor = cv_result$avg_cor,
-                        avg_error = cv_result$avg_error)
+                        avg_error = cv_result$avg_error,
+                        na_count = cv_result$na_count)
     
     result_list$score <- advanced_signal_score
     
@@ -293,7 +294,9 @@ grid_signal_eval <-
     result_list$params <-
       list(cost = cost,
            nu = nu,
-           gamma = gamma)
+           gamma = gamma,
+           col_lags = grid_col_lags,
+           response_lag = response_lag)
     
     results <- append(results, list(c(result_list)))
     

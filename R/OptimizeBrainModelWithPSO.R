@@ -91,8 +91,8 @@ optimize_brain_model_with_PSO <- function(config,
                                           params_upper_bounds,
                                           params_initial_values = NULL,
                                           vsvr_response,
-                                          silent = FALSE,
-                                          plot_response = TRUE,
+                                          silent = TRUE,
+                                          plot_response = FALSE,
                                           initial_pressure_value = c(1),
                                           seed = 123) {
   # Call the validation function
@@ -127,12 +127,15 @@ optimize_brain_model_with_PSO <- function(config,
   # Determine validation lengths and n_lags based on model
   model_parameters <- get_model_parameters(model, multi)
   
-  pso_env <<- new.env()
+  pso_env <- new.env()
   
   pso_env[["data"]] <- list()
   pso_env[["max_cor"]] <- -1
+  pso_env[["best_fitness"]] <- 5
   pso_env[["function_count"]] <- 0
   pso_env[["time"]] <- Sys.time()
+  pso_env[["function_count_without_improvement"]] <- 0
+  pso_env[["max_global_cor"]] <- -1
   
   psoptim_result <- pso::psoptim(
     par = params_initial_values,
@@ -145,13 +148,14 @@ optimize_brain_model_with_PSO <- function(config,
     model_parameters = model_parameters,
     bcv_folds = config$bcv_folds,
     pso_env = pso_env,
+    seed = seed,
     lower = params_lower_bounds,
     upper = params_upper_bounds,
     control = list(
       trace = 1,
       REPORT = 1,
-      maxit = 10,
-      s = 5,
+      maxit = 100,
+      s = 8,
       w = 1,
       #p = 0.2,
       c.p = 2,
@@ -160,8 +164,8 @@ optimize_brain_model_with_PSO <- function(config,
       reltol = 0.5,
       hybrid = "improved",
       hybrid.control = list(maxit = 10),
-      maxit.stagnate = 8,
-      maxf = 8000
+      maxit.stagnate = 90,
+      maxf = 800
       #type = "SPSO2011"
       #p = 1
       #w = 1
@@ -179,7 +183,7 @@ optimize_brain_model_with_PSO <- function(config,
     #control = psoptim_config
   )
   
-  pso_env[["time"]] <- pso_env[["time"]] - Sys.time()
+  pso_env[["time"]] <- Sys.time() - pso_env[["time"]]
   
   return(list(c(
     psoptim_result = psoptim_result, pso_env = pso_env

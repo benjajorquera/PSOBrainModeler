@@ -33,7 +33,8 @@ pso_model <-
            initial_response_value = 1,
            model_parameters,
            bcv_folds = 5,
-           pso_env) {
+           pso_env,
+           seed = 123) {
     # Validation
     validate_params(params, model_parameters, model)
     
@@ -78,7 +79,8 @@ pso_model <-
       initial_column_values = data_list$INITIAL_PREDICTION_VALUES,
       prediction_initial_value = initial_response_value,
       bcv_folds = bcv_folds,
-      pso_env = pso_env
+      pso_env = pso_env,
+      seed = seed
     )
     
     return(pso_training_model_result)
