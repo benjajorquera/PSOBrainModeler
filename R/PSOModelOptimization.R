@@ -50,7 +50,7 @@ pso_training_model <- function(cost,
   # print(pso_env[["function_count"]])
   # print(pso_env[["function_count_without_improvement"]])
   
-  if (pso_env[["function_count"]] > 600)
+  if (pso_env[["function_count"]] > 1000)
     return(10)
   
   # Training with all data
@@ -79,9 +79,9 @@ pso_training_model <- function(cost,
   signal_score <-
     evaluate_signal_quality(response_predictions[[vsvr_response]], silent = silent)
   
-  # if (signal_score != 1) {
-  #   return(3)
-  # }
+  if (signal_score != 1) {
+    return(3)
+  }
   
   if (seed != 123) {
     set.seed(123)
@@ -168,11 +168,8 @@ pso_training_model <- function(cost,
   #print(round(avg_cor, digits = 3))
   #print(round(pso_env[["max_global_cor"]], digits = 3))
   
-  if (avg_cor > pso_env[["max_global_cor"]])
-    pso_env[["max_global_cor"]] <- avg_cor
-  
-  if (round(avg_cor, digits = 3) <= pso_env[["max_global_cor"]]) {
-    if (pso_env[["function_count_without_improvement"]] > 30) {
+  if (round(avg_cor, digits = 4) <= round(pso_env[["max_global_cor"]], digits = 4)) {
+    if (pso_env[["function_count_without_improvement"]] > 50) {
       return(5)
     }
     pso_env[["function_count_without_improvement"]] <-
@@ -181,6 +178,9 @@ pso_training_model <- function(cost,
   else {
     pso_env[["function_count_without_improvement"]] <- 0
   }
+  
+  if (avg_cor > pso_env[["max_global_cor"]])
+    pso_env[["max_global_cor"]] <- avg_cor
   
   # Return optimization value for minimization
   return(3 - avg_cor + avg_error - (optim_score * 0.01) - signal_score)

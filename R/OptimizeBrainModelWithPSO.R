@@ -154,7 +154,7 @@ optimize_brain_model_with_PSO <- function(config,
     control = list(
       trace = 1,
       REPORT = 1,
-      maxit = 100,
+      maxit = 125,
       s = 8,
       w = 1,
       #p = 0.2,
@@ -164,8 +164,8 @@ optimize_brain_model_with_PSO <- function(config,
       reltol = 0.5,
       hybrid = "improved",
       hybrid.control = list(maxit = 10),
-      maxit.stagnate = 90,
-      maxf = 800
+      maxit.stagnate = 110,
+      maxf = 1000
       #type = "SPSO2011"
       #p = 1
       #w = 1

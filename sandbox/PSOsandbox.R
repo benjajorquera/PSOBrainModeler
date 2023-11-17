@@ -135,14 +135,14 @@ grid_search <- svr_grid_search(
   multi = FALSE,
   signal_names = c("MABP", "CBFV.L"),
   excluded_cols = c("Time", "CBFV.R", "etCO2"),
-  predictors_names = c("MABP"),
+  predictors_names = c("MABP", "CBFV.L"),
   vsvr_response = "CBFV.L",
   kernel = "radial",
   test = FALSE,
   col_lags = c(8),
   # c(8)
   # c(8, 6)
-  response_lags = NULL,
+  response_lags = c(6),
   # c(8)
   extra_col_name = NULL #"etCO2" NULL
 )
