@@ -25,8 +25,8 @@
 evaluate_signal_quality <-
   function(signal,
            pressure_start_point = 3L,
-           silent = FALSE,
-           signal_size = 65L) {
+           silent = TRUE,
+           signal_size =70L) {
     # Ensure that the signal and pressure_start_point are numeric
     if (!is.numeric(signal) ||
         !is.numeric(pressure_start_point) ||
@@ -36,8 +36,10 @@ evaluate_signal_quality <-
     }
     
     if (max_diff(signal) > 0.55) {
-      message("RESPONSE SIGNAL FAILED BASIC FILTER: MAXIMUM DIFFERENCE GREATER THAN 0.55")
-      return(0)
+      if (!silent) {
+        message("RESPONSE SIGNAL FAILED BASIC FILTER: MAXIMUM DIFFERENCE GREATER THAN 0.55")
+      }
+      return("TEST 1 FAILED")
     }
     
     suppressWarnings({
@@ -46,13 +48,17 @@ evaluate_signal_quality <-
     
     if (!is.nan(signal_test$p.value)) {
       if (signal_test$p.value >= 0.05) {
-        message("RESPONSE SIGNAL FAILED BASIC FILTER: STATIONARY TEST FAILED")
-        return(0)
+        if (!silent) {
+          message("RESPONSE SIGNAL FAILED BASIC FILTER: STATIONARY TEST FAILED")
+        }
+        return("TEST 2 FAILED")
       }
     }
     else {
-      message("RESPONSE SIGNAL FAILED BASIC FILTER: STATIONARY TEST ERROR")
-      return(0)
+      if (!silent) {
+        message("RESPONSE SIGNAL FAILED BASIC FILTER: STATIONARY TEST ERROR")
+      }
+      return("TEST 3 FAILED")
     }
     
     # Constants
@@ -82,22 +88,28 @@ evaluate_signal_quality <-
     
     if ((min_peak > MAX_PEAK_VALUE) ||
         (min_peak < MIN_PEAK_VALUE)) {
-      message("RESPONSE SIGNAL FAILED BASIC FILTER: INCORRECT MIN PEAK VALUE")
-      return(0)
+      if (!silent) {
+        message("RESPONSE SIGNAL FAILED BASIC FILTER: INCORRECT MIN PEAK VALUE")
+      }
+      return("TEST 4 FAILED")
     }
     
     if (signal_range[1] <= MIN_PEAK_VALUE ||
         signal_range[2] >= MAX_SIGNAL_VALUE) {
-      message("RESPONSE SIGNAL FAILED BASIC FILTER: INCORRECT GLOBAL MAX AND MIN VALUES")
-      return(0)
+      if (!silent) {
+        message("RESPONSE SIGNAL FAILED BASIC FILTER: INCORRECT GLOBAL MAX AND MIN VALUES")
+      }
+      return("TEST 5 FAILED")
     }
     
     if (stats::var(stabilization_range) > VARIANCE_THRESHOLD) {
-      message("RESPONSE SIGNAL FAILED BASIC FILTER: INCORRECT STABILIZATION VARIANCE VALUE")
-      return(0)
+      if (!silent) {
+        message("RESPONSE SIGNAL FAILED BASIC FILTER: INCORRECT STABILIZATION VARIANCE VALUE")
+      }
+      return("TEST 6 FAILED")
     }
     
-    return(1)
+    return("TEST PASSED")
   }
 
 # Definir una función que calcule la máxima diferencia entre puntos consecutivos de un vector
@@ -107,74 +119,94 @@ max_diff <- function(vec) {
   return(max(abs(diffs), na.rm = TRUE))  # Devolver la máxima diferencia en valor absoluto
 }
 
-advanced_filter <- function(signal, pressure_start_point = 3L) {
-  message("ENTERING ADVANCED FILTER")
-  peak_range <-
-    signal[(pressure_start_point + 6):(pressure_start_point + 18)]
-  drop_range <-
-    signal[(pressure_start_point + 18):(pressure_start_point + 30)]
-  stabilization_range <-
-    signal[(pressure_start_point + 30):(pressure_start_point + 60)]
-  
-  
-  peak_min <- min(peak_range)
-  
-  # Initial score
-  score <- 10
-  
-  # Advanced filter checks:
-  # 1. Stabilization phase is not strictly increasing or decreasing,
-  # penalize with the slope of the signal, multiplied by 100
-  
-  # Calcula la pendiente de la regresión lineal en el rango de estabilización
-  stabilization_time <-
-    seq(from = 1, to = length(stabilization_range))
-  fit <- lm(stabilization_range ~ stabilization_time)
-  
-  # Obtiene la pendiente
-  slope <- coef(fit)[["stabilization_time"]]
-  
-  if ((abs(slope) * 100) > 0.0001) {
-    score <- score - (abs(slope) * 100)
-    message("STABILIZATION RANGE SLOPE PENALIZATION: ", (abs(slope) * 100))
+advanced_filter <-
+  function(signal,
+           pressure_start_point = 3L,
+           silent = TRUE) {
+    if (!silent) {
+      message("ENTERING ADVANCED FILTER")
+    }
+    
+    peak_range <-
+      signal[(pressure_start_point + 6):(pressure_start_point + 18)]
+    drop_range <-
+      signal[(pressure_start_point + 18):(pressure_start_point + 30)]
+    stabilization_range <-
+      signal[(pressure_start_point + 30):(pressure_start_point + 60)]
+    
+    peak_min <- min(peak_range)
+    
+    # Initial score
+    score <- 10
+    
+    penalization_results <- list()
+    
+    # Advanced filter checks:
+    # 1. Stabilization phase is not strictly increasing or decreasing,
+    # penalize with the slope of the signal, multiplied by 100
+    
+    # Calcula la pendiente de la regresión lineal en el rango de estabilización
+    stabilization_time <-
+      seq(from = 1, to = length(stabilization_range))
+    fit <- lm(stabilization_range ~ stabilization_time)
+    
+    # Obtiene la pendiente
+    slope <- coef(fit)[["stabilization_time"]]
+    
+    if ((abs(slope) * 100) > 0.0001) {
+      score <- score - (abs(slope) * 100)
+      if (!silent) {
+        message("STABILIZATION RANGE SLOPE PENALIZATION: ", (abs(slope) * 100))
+      }
+      penalization_results$slope <- (abs(slope) * 100)
+    }
+    
+    # 2. Drop before stabilization is at most 45% of the signal's rising section.
+    # If not met, penalize with a factor of 10.
+    
+    # Calcula el incremento máximo en el tramo de peak
+    incremento_maximo_peak <- max(peak_range) - min(peak_range)
+    
+    # Calcula la caída máxima en el tramo de drop
+    caida_maxima_drop <- max(drop_range) - min(drop_range)
+    
+    # Verifica si la caída es como máximo un 45% del incremento
+    limite = incremento_maximo_peak * 0.45
+    
+    if (caida_maxima_drop > limite) {
+      if (!silent) {
+        message(
+          "DROP MORE THAN 45% PEAK BEFORE STABILIZATION: PENALIZATION BY ",
+          (caida_maxima_drop * 10)
+        )
+      }
+      
+      score <- score - (caida_maxima_drop * 10)
+      penalization_results$drop <- (caida_maxima_drop * 10)
+    }
+    
+    # 3. Signal stabilization occurs at the same level as the drop peak.
+    # Penalize based on the distance between these two points with a factor of 10.
+    if (min(stabilization_range) < peak_min) {
+      if (!silent) {
+        message("STABILIZATION LEVEL BELOW PEAK: PENALIZATION BY ", ((
+          peak_min - min(stabilization_range)
+        ) * 10))
+      }
+      score <- score - ((peak_min - min(stabilization_range)) * 10)
+      penalization_results$level <-
+        ((peak_min - min(stabilization_range)) * 10)
+    }
+    
+    if (!silent) {
+      message("LEAVING ADVANCED FILTER")
+    }
+    
+    return(list(score = score, results = penalization_results))
   }
-  
-  # 2. Drop before stabilization is at most 45% of the signal's rising section.
-  # If not met, penalize with a factor of 10.
-  
-  # Calcula el incremento máximo en el tramo de peak
-  incremento_maximo_peak <- max(peak_range) - min(peak_range)
-  
-  # Calcula la caída máxima en el tramo de drop
-  caida_maxima_drop <- max(drop_range) - min(drop_range)
-  
-  # Verifica si la caída es como máximo un 45% del incremento
-  limite = incremento_maximo_peak * 0.45
-  
-  if (caida_maxima_drop > limite) {
-    message(
-      "DROP MORE THAN 45% PEAK BEFORE STABILIZATION: PENALIZATION BY ",
-      (caida_maxima_drop * 10)
-    )
-    score <- score - (caida_maxima_drop * 10)
-  }
-  
-  # 3. Signal stabilization occurs at the same level as the drop peak.
-  # Penalize based on the distance between these two points with a factor of 10.
-  if (min(stabilization_range) < peak_min) {
-    message("STABILIZATION LEVEL BELOW PEAK: PENALIZATION BY ", ((peak_min - min(
-      stabilization_range
-    )) * 10))
-    score <- score - ((peak_min - min(stabilization_range)) * 10)
-  }
-  
-  message("LEAVING ADVANCED FILTER")
-  
-  return(score)
-}
 
-plot_response_signal <- function(signal) {
-  x_values <- 1:65
+plot_vsvr_response_signal <- function(signal, points = 70) {
+  x_values <- 1:points
   plot(
     signal,
     type = "l",

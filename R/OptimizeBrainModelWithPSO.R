@@ -122,7 +122,8 @@ optimize_brain_model_with_PSO <- function(config,
     initial_prediction_values = initial_pressure_value
   )
   
-  message(model)
+  if (!silent)
+    message(model)
   
   # Determine validation lengths and n_lags based on model
   model_parameters <- get_model_parameters(model, multi)
@@ -157,7 +158,6 @@ optimize_brain_model_with_PSO <- function(config,
       maxit = 125,
       s = 8,
       w = 1,
-      #p = 0.2,
       c.p = 2,
       c.g = 5,
       vectorize = TRUE,
@@ -166,19 +166,6 @@ optimize_brain_model_with_PSO <- function(config,
       hybrid.control = list(maxit = 10),
       maxit.stagnate = 110,
       maxf = 1000
-      #type = "SPSO2011"
-      #p = 1
-      #w = 1
-      #s = 10
-      #w = 1,
-      #k = 3
-      #c.g = 5,
-      #reltol = 0.5,
-      #rand.order = TRUE,
-      #vectorize = TRUE,
-      #hybrid = "improved",
-      #type = "SPSO2011",
-      #hybrid.control = list(maxit = 1, factr = 1)
     )
     #control = psoptim_config
   )

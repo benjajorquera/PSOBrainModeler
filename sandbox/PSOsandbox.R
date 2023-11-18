@@ -68,7 +68,7 @@ resultados <-
     .packages = c('dplyr', 'tseries')
   ) %dopar% {
     brain_modeler_config <-
-      configure_pso_brain_modeler(vsvr_tolerance = 1, seed = 123)
+      configure_pso_brain_modeler(vsvr_tolerance = 0.01, seed = 123)
     
     psoptim_config <- configure_psoptim_control()
     
@@ -122,37 +122,36 @@ pso_avg_fitness <- mean(all_fitness)
 
 ###############################################################################
 
-start_time <- Sys.time()
-
 brain_modeler_config <-
-  configure_pso_brain_modeler(vsvr_tolerance = 1, seed = 123)
+  configure_pso_brain_modeler(vsvr_tolerance = 0.1, seed = 123)
 
 psoptim_config <- configure_psoptim_control()
 
 grid_search <- svr_grid_search(
   config = brain_modeler_config,
   data = mydata,
-  multi = FALSE,
-  signal_names = c("MABP", "CBFV.L"),
-  excluded_cols = c("Time", "CBFV.R", "etCO2"),
-  predictors_names = c("MABP", "CBFV.L"),
+  multi = TRUE,
+  signal_names = c("MABP", "etCO2", "CBFV.L"),
+  excluded_cols = c("Time", "CBFV.R"),
+  predictors_names = c("MABP", "etCO2"),
   vsvr_response = "CBFV.L",
   kernel = "radial",
-  test = FALSE,
-  col_lags = c(8),
-  # c(8)
-  # c(8, 6)
-  response_lags = c(6),
-  # c(8)
-  extra_col_name = NULL #"etCO2" NULL
+  test = TRUE,
+  col_lags = c(2, 2),
+  response_lags = NULL,
+  extra_col_name = "etCO2"
 )
-
-print(Sys.time() - start_time)
 
 cors_grid <- c()
 
-for (grid in grid_search) {
-  cors_grid <- c(cors_grid, grid$avg_cor)
+for (grid in grid_search$results) {
+  if (is.list(grid)) {
+    cors_grid <- c(cors_grid, grid$avg_cor)
+    if (grid$na_count != 0) {
+      return(TRUE)
+    }
+  }
 }
 
 grid_max_cors <- max(cors_grid)
+print(grid_max_cors)

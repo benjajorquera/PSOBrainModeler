@@ -72,7 +72,7 @@
 generate_signal_response_predictions <- function(data,
                                                  pressure_signal_df,
                                                  pressure_start = 3,
-                                                 prediction_size = 65,
+                                                 prediction_size = 70,
                                                  column_names,
                                                  initial_columns_lags,
                                                  predicted_column_lags,
