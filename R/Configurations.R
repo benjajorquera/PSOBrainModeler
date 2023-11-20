@@ -230,3 +230,11 @@ configure_psoptim_control <- function(pso_trace = 1,
   attr(options, "class") <- "PSOBrainModelerPSOPTIMConfig"
   return(options)
 }
+
+instalar_paquetes <- function(paquetes) {
+  paquetes_faltantes <-
+    paquetes[!paquetes %in% installed.packages()[, "Package"]]
+  if (length(paquetes_faltantes)) {
+    install.packages(paquetes_faltantes)
+  }
+}

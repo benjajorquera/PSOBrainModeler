@@ -17,8 +17,7 @@ source("R/GridSearchSVR.R")
 
 library(tseries)
 library(dplyr)
-library(foreach)
-library(doParallel)
+library(progress)
 
 mydata <- read.table("data-raw/Sujeto1.txt", header = TRUE)
 
@@ -42,9 +41,9 @@ grid_search <- svr_grid_search(
   extra_col_name = NULL
 )
 
-save(grid_search, file = "grid_search_results.RData")
+save(grid_search, file = "results/grid_search_results.RData")
 
-load("grid_search_results.RData")
+#load("results/grid_search_results.RData")
 
 # cors_grid <- c()
 #

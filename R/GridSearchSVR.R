@@ -80,6 +80,36 @@ main_grid_search <-
                          tolerance = tolerance,
                          kernel = kernel)
     
+    if (test) {
+      fun_count <- 2
+      if (kernel == "radial") {
+        fun_count <- fun_count * 4
+      }
+    }
+    else {
+      fun_count <- 9 * 15
+      if (kernel == "radial") {
+        fun_count <- fun_count * 8
+      }
+    }
+    if (length(col_lags) == 1) {
+      fun_count <- fun_count * col_lags[1]
+    }
+    else {
+      fun_count <- fun_count * col_lags[1] * col_lags[2]
+    }
+    if (!is.null(response_lags)) {
+      fun_count <- fun_count * response_lags[1]
+    }
+    
+    # Crear una barra de progreso
+    pb <- progress_bar$new(
+      format = "Progress: [:bar] :percent | Step :current/:total | Elapsed: :elapsed | Remaining: :eta | Rate: :rate ops/sec",
+      total = fun_count,
+      clear = FALSE,
+      width = 100
+    )
+    
     main_loop_params <- list(
       data_env_list = data_env_list,
       processed_data = processed_data,
@@ -95,7 +125,8 @@ main_grid_search <-
       training_list_name = training_list_name,
       validation_list_name = validation_list_name,
       silent = silent,
-      plot_response = plot_response
+      plot_response = plot_response,
+      pb = pb
     )
     
     results <- list()
@@ -175,7 +206,8 @@ grid_search_main_loop <-
            training_list_name,
            validation_list_name,
            silent = TRUE,
-           plot_response = FALSE) {
+           plot_response = FALSE,
+           pb) {
     results <- list()
     for (c in cost) {
       for (n in nu) {
@@ -206,7 +238,7 @@ grid_search_main_loop <-
             grid_eval_params$grid_col_lags <- c(i)
             results <-
               append(results,
-                     grid_eval(grid_eval_params, silent = silent))
+                     grid_eval(grid_eval_params, silent = silent, pb = pb))
           }
         } else {
           for (i in 1:col_lags[1]) {
@@ -214,7 +246,11 @@ grid_search_main_loop <-
               grid_eval_params$grid_col_lags <- c(i, j)
               results <-
                 append(results,
-                       grid_eval(grid_eval_params, silent = silent))
+                       grid_eval(
+                         grid_eval_params,
+                         silent = silent,
+                         pb = pb
+                       ))
             }
           }
         }
@@ -224,7 +260,7 @@ grid_search_main_loop <-
     return(results)
   }
 
-grid_eval <- function(params, silent = TRUE) {
+grid_eval <- function(params, silent = TRUE, pb) {
   response_lags <- params$response_lags
   params$response_lags <- NULL
   if (!is.null(response_lags)) {
@@ -239,6 +275,7 @@ grid_eval <- function(params, silent = TRUE) {
       }
       params$response_lag = response_lag
       results <- do.call(grid_signal_eval, params)
+      pb$tick()
     }
   }
   else {
@@ -249,6 +286,7 @@ grid_eval <- function(params, silent = TRUE) {
                            params$grid_col_lags)
     }
     results <- do.call(grid_signal_eval, params)
+    pb$tick()
   }
   
   return(results)
