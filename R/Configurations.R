@@ -93,14 +93,14 @@ configure_data_env <- function(config,
                                multi = FALSE) {
   set.seed(config$seed)
   
-  pressure_df <- add_pressure_step(
+  pressure_df <<- add_pressure_step(
     pressure_start = config$pressure_signal_start,
     signal_end = config$pressure_signal_response_size,
     butter_order = config$butter_filter_order,
     butter_fs = config$butter_filter_fs
   )
   
-  processed_data <- process_dataframe(
+  processed_data <<- process_dataframe(
     df = data,
     excluded_cols = excluded_cols,
     lags = config$max_lag_number,
@@ -108,7 +108,7 @@ configure_data_env <- function(config,
     lagged_signals = predictors_names
   )
   
-  data_partitions <- blocked_cv(
+  data_partitions <<- blocked_cv(
     data = processed_data,
     num_blocks = config$bcv_folds,
     validation_size = config$bcv_validation_size

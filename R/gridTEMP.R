@@ -31,7 +31,6 @@ svr_grid_search <- function(config,
                             exclude_columns = NULL,
                             lags_column = c(8),
                             lags_response = NULL,
-                            initial_column_value = c(1),
                             initial_prediction_value = 1,
                             extra_column_name = NULL,
                             should_plot_response = FALSE,
@@ -53,20 +52,20 @@ svr_grid_search <- function(config,
     vsvr_response = response_var,
     excluded_cols = exclude_columns,
     multi = is_multivariate,
-    extra_col_name = extra_column_name,
-    initial_prediction_values = initial_column_value
+    extra_col_name = extra_column_name
   )
   
   # Conduct main grid search
   return(
     main_grid_search(
       data_env = data_env,
+      data_partitions = data_env$data_partitions,
       bcv_folds = config$bcv_folds,
       processed_data = data_env$processed_data,
-      norm_response_var = data_env$NORM_VSVR_RESPONSE,
+      norm_response_var = data_env$norm_response_var,
       kernel_type = kernel_type,
       lags_column = lags_column,
-      initial_column_values = data_env$INITIAL_PREDICTION_VALUES,
+      initial_column_values = data_env$initial_prediction_values,
       lags_response = lags_response,
       initial_prediction_value = initial_prediction_value,
       tolerance = config$vsvr_tolerance,
@@ -101,31 +100,35 @@ svr_grid_search <- function(config,
 #' @examples
 #'
 #' \dontrun {
-#'   # Assuming 'data_env_list', 'processed_data', and 'norm_vsvr_response' are predefined
+#'   # Assuming 'data_env_list', 'data_partitions', 'processed_data', and 'norm_vsvr_response' are predefined
 #'   # Example with default parameters
 #'   results <- main_grid_search(
 #'     data_env_list = data_env_list,
+#'     data_partitions = data_partitions,
 #'     processed_data = processed_data,
 #'     norm_vsvr_response = norm_vsvr_response
 #'   )
 #' }
 #' @export
 main_grid_search <- function(data_env,
-                             bcv_folds = 5,
+                             bcv_folds,
                              processed_data,
                              norm_response_var,
                              kernel_type = "linear",
                              lags_column = c(8),
-                             initial_column_values = c(1),
+                             initial_column_values,
                              lags_response = NULL,
                              initial_prediction_value = 1,
-                             tolerance = 1,
+                             tolerance,
                              is_test_mode = FALSE,
                              is_silent_mode = TRUE,
-                             start_time = NULL,
+                             start_time,
                              should_plot_response = FALSE) {
   # Simple parameter validation
-  stopifnot(is.list(data_env), is.list(data_env$data_partitions))
+  if (!is.list(data_env))
+    stop("data_env must be a list")
+  if (!is.list(data_env$data_partitions))
+    stop("data_env$data_partitions must be a list")
   
   # Handle start time
   if (is.null(start_time)) {
@@ -136,14 +139,13 @@ main_grid_search <- function(data_env,
                        tolerance = tolerance,
                        kernel = kernel_type)
   
-  params <-
-    params_config(kernel_type = kernel_type, is_test_mode = is_test_mode)
+  params <- params_config(kernel = kernel_type, test = is_test_mode)
   
   progress_bar <- progressbar_config(
-    kernel_type = kernel_type,
-    is_test_mode = is_test_mode,
-    lags_column = lags_column,
-    lags_response = lags_response
+    kernel = kernel_type,
+    test = is_test_mode,
+    col_lags = lags_column,
+    response_lags = lags_response
   )
   
   main_loop_params <- list(
@@ -183,7 +185,7 @@ main_grid_search <- function(data_env,
     }
   }
   
-  return(list(results = results, time = (Sys.time() - start_time)))
+  return(list(results = results, start_time = start_time))
 }
 
 #' Configure Parameters for SVR
@@ -193,6 +195,7 @@ main_grid_search <- function(data_env,
 #' @param kernel_type The type of kernel to use in SVR. Valid options are "linear" and others (e.g., "radial").
 #' @param is_test_mode Logical flag indicating whether the function is in test mode.
 #' @return A list containing the parameters 'nu', 'cost', and 'gamma'.
+#' @importFrom stats seq
 #' @examples
 #'   params_config(kernel_type = "linear", is_test_mode = FALSE)
 #' @export
@@ -203,9 +206,9 @@ params_config <-
     stopifnot(is.character(kernel_type), is.logical(is_test_mode))
     
     if (is_test_mode) {
-      nu_values <- seq(0.7, 0.8, 0.1)
+      nu_values <- stats::seq(0.7, 0.8, 0.1)
     } else {
-      nu_values <- seq(0.1, 0.9, 0.1)
+      nu_values <- stats::seq(0.1, 0.9, 0.1)
     }
     
     if (kernel_type == "linear") {
@@ -237,7 +240,7 @@ params_config <-
           c(0.25, 4096)
       else
         c(0.25, 0.5, 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096)
-      sigma_values <- 2 ^ seq(-4, if (is_test_mode)
+      sigma_values <- 2 ^ stats::seq(-4, if (is_test_mode)
         - 3
         else
           10, 2)
@@ -271,19 +274,16 @@ progressbar_config <-
     stopifnot(is.character(kernel_type), is.logical(is_test_mode))
     
     # Calculate total steps
-    total_steps <- ifelse(is_test_mode, 2, 9 * 15)
+    total_steps <- ifelse(test, 2, 9 * 15)
     total_steps <-
-      ifelse(kernel_type == "radial", total_steps * 2, total_steps)
+      ifelse(kernel == "radial", total_steps * 4, total_steps)
     
     # Adjust total steps based on lags
-    if (!is.null(lags_column)) {
-      total_steps <- total_steps * lags_column[1]
-      if (!is.na(lags_column[2])) {
-        total_steps <- total_steps * (lags_column[2] + 1)
-      }
+    if (!is.null(color_lags)) {
+      total_steps <- total_steps * prod(color_lags)
     }
-    if (!is.null(lags_response)) {
-      total_steps <- total_steps * prod(lags_response)
+    if (!is.null(response_time_lags)) {
+      total_steps <- total_steps * prod(response_time_lags)
     }
     
     # Create a progress bar
@@ -332,7 +332,7 @@ progressbar_config <-
 grid_search_main_loop <- function(data_env,
                                   processed_data,
                                   data_partitions,
-                                  bcv_folds = 5,
+                                  bcv_folds,
                                   norm_response_var,
                                   lags_column = c(8),
                                   initial_column_values = c(1),
@@ -341,13 +341,14 @@ grid_search_main_loop <- function(data_env,
                                   model_params,
                                   nu,
                                   cost,
-                                  training_list_name = 'training',
-                                  validation_list_name = 'validation',
+                                  training_list_name,
+                                  validation_list_name,
                                   is_silent_mode = TRUE,
                                   should_plot_response = FALSE,
                                   progress_bar) {
   # Validation
   stopifnot(is.list(data_env),
+            is.numeric(bcv_folds),
             is.list(model_params))
   
   results <- list()
@@ -365,11 +366,12 @@ grid_search_main_loop <- function(data_env,
         bcv_folds = bcv_folds,
         norm_response_var = norm_response_var,
         initial_column_values = initial_column_values,
-        lag_response = lags_response,
+        lags_response = lags_response,
         initial_prediction_value = initial_prediction_value,
         cost = c,
         nu = n,
         gamma = gamma,
+        kernel = model_params$kernel,
         should_plot_response = should_plot_response,
         is_silent_mode = is_silent_mode
       )
@@ -408,11 +410,7 @@ grid_search_main_loop <- function(data_env,
 #'
 #' @param params A list containing the parameters for the grid evaluation.
 #' @param progress_bar A progress bar object for tracking progress. Optional.
-#' @examples
-#' \dontrun {
-#'   grid_eval(params, progress_bar)
-#' }
-#'
+#' @importFrom somePackage someFunction (if someFunction is used within the function)
 #' @export
 grid_eval <-
   function(params,
@@ -421,10 +419,8 @@ grid_eval <-
     stopifnot(is.list(params))
     
     # Extract and remove response_lags from params
-    lags_response <- params$lag_response
-    params$lag_response <- NULL
-    
-    results <- list()
+    lags_response <- params$lags_response
+    params$lags_response <- NULL
     
     # Main processing loop
     if (!is.null(lags_response)) {
@@ -438,8 +434,7 @@ grid_eval <-
           )
         }
         params$lag_response <- lag_response
-        results <-
-          append(results, do.call(grid_signal_eval, params))
+        results <- do.call(grid_signal_eval, params)
         if (!is.null(progress_bar))
           progress_bar$tick()
       }
@@ -468,16 +463,13 @@ grid_eval <-
 #' @param nu The nu parameter value.
 #' @param gamma The gamma parameter value.
 #' @param lags A vector of lag values.
-#' @examples
-#' display_grid_message(1, 1, 1, 1)
-#'
 #' @export
 display_grid_message <- function(cost, nu, gamma, lags) {
   # Basic parameter validations
   stopifnot(is.numeric(cost), is.numeric(nu))
   
   # Display message
-  cat("\nCost: ", cost,
+  cat("Cost: ", cost,
       " Nu: ", nu,
       " Gamma: ", gamma,
       " Lags: ", lags,
@@ -505,46 +497,42 @@ display_grid_message <- function(cost, nu, gamma, lags) {
 #' @param silent Boolean to control output verbosity. Default is TRUE.
 #' @param plot_response Boolean to control plotting of response signals. Default is FALSE.
 #' @return A list containing evaluation results.
-#' @examples
-#' \dontrun{
-#'   grid_signal_eval(data, ...)
-#' }
-#'
 #' @export
 grid_signal_eval <-
-  function(data_env,
+  function(data_env_list,
            processed_data,
-           bcv_folds = 5,
-           norm_response_var,
-           initial_column_values = c(1),
+           bcv_folds,
+           norm_vsvr_response,
+           initial_column_values,
            grid_col_lags,
-           lag_response = NULL,
-           initial_prediction_value = 1,
+           response_lag = NULL,
+           prediction_initial_value = 1,
            cost,
            nu,
            gamma = NULL,
-           is_silent_mode = TRUE,
-           should_plot_response = FALSE) {
+           kernel,
+           silent = TRUE,
+           plot_response = FALSE) {
     # Simple parameter validations
-    stopifnot(is.list(data_env), is.numeric(cost), is.numeric(nu))
+    stopifnot(is.list(data_env_list), is.numeric(cost), is.numeric(nu))
     
     # Signal prediction generation
     response_predictions <-
       generate_signal_response_predictions_helper(
         data = processed_data,
         col_lags = c(grid_col_lags),
-        response_lags = lag_response,
+        response_lags = response_lag,
         initial_column_values = initial_column_values,
-        prediction_initial_value = initial_prediction_value,
+        prediction_initial_value = prediction_initial_value,
         cost = cost,
         nu = nu,
         gamma = gamma,
-        data_list = data_env
+        data_list = data_env_list
       )
     
     # Signal quality evaluation
     signal_score <-
-      evaluate_signal_quality(response_predictions[[norm_response_var]], silent = is_silent_mode)
+      evaluate_signal_quality(response_predictions[[norm_vsvr_response]], silent = silent)
     if (signal_score != "TEST PASSED")
       return(signal_score)
     
@@ -553,8 +541,8 @@ grid_signal_eval <-
       cost = cost,
       nu = nu,
       gamma = gamma,
-      col_lags = c(grid_col_lags, lag_response),
-      data_list = data_env,
+      col_lags = c(grid_col_lags, response_lag),
+      data_list = data_env_list,
       bcv_folds = bcv_folds
     )
     if (is.nan(cv_result$avg_cor) ||
@@ -567,22 +555,22 @@ grid_signal_eval <-
       avg_cor = cv_result$avg_cor,
       avg_error = cv_result$avg_error,
       na_count = cv_result$na_count,
-      score = advanced_filter(response_predictions[[norm_response_var]], 3L, silent = is_silent_mode)$score,
-      advanced_score_results = advanced_filter(response_predictions[[norm_response_var]], 3L, silent = is_silent_mode)$results,
-      response_signal = response_predictions[[norm_response_var]],
+      score = advanced_filter(response_predictions[[norm_vsvr_response]], 3L, silent = silent)$score,
+      advanced_score_results = advanced_filter(response_predictions[[norm_vsvr_response]], 3L, silent = silent)$results,
+      response_signal = response_predictions[[norm_vsvr_response]],
       params = list(
         cost = cost,
         nu = nu,
         gamma = gamma,
         col_lags = grid_col_lags,
-        response_lag = lag_response
+        response_lag = response_lag
       )
     )
     results <- append(results, list(c(result_list)))
     
     # Plot response signal if required
-    if (should_plot_response) {
-      plot_vsvr_response_signal(response_predictions[[norm_response_var]])
+    if (plot_response) {
+      plot_vsvr_response_signal(response_predictions[[norm_vsvr_response]])
     }
     
     return(results)

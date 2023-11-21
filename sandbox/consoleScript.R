@@ -15,33 +15,32 @@ source("R/Helpers.R")
 source("R/Validators.R")
 source("R/GridSearchSVR.R")
 
-library(tseries)
-library(dplyr)
-library(progress)
+library(magrittr)
 
 mydata <- read.table("data-raw/Sujeto1.txt", header = TRUE)
 
 brain_modeler_config <-
   configure_pso_brain_modeler(vsvr_tolerance = 0.1, seed = 123)
 
-psoptim_config <- configure_psoptim_control()
-
 grid_search <- svr_grid_search(
   config = brain_modeler_config,
-  data = mydata,
-  multi = FALSE,
-  signal_names = c("MABP", "CBFV.L"),
-  excluded_cols = c("Time", "CBFV.R", "etCO2"),
-  predictors_names = c("MABP"),
-  vsvr_response = "CBFV.L",
-  kernel = "radial",
-  test = TRUE,
-  col_lags = c(2),
-  response_lags = NULL,
-  extra_col_name = NULL
+  dataset = mydata,
+  is_multivariate = TRUE,
+  signal_names = c("MABP", "etCO2", "CBFV.L"),
+  exclude_columns = c("Time", "CBFV.R"),
+  predictor_names = c("MABP", "etCO2", "CBFV.L"),
+  response_var = "CBFV.L",
+  kernel_type = "radial",
+  is_test_mode = TRUE,
+  lags_column = c(2, 2),
+  lags_response = c(2),
+  extra_column_name = "etCO2",
+  is_silent_mode = FALSE
 )
 
-save(grid_search, file = "results/grid_search_results.RData")
+file_name <- paste0("results/grid_search/Sujeto1", "_FIR", ".RData")
+
+save(grid_search, file = file_name)
 
 #load("results/grid_search_results.RData")
 
@@ -58,3 +57,85 @@ save(grid_search, file = "results/grid_search_results.RData")
 #
 # grid_max_cors <- max(cors_grid)
 # print(grid_max_cors)
+
+models <- c("FIR", "NFIR", "ARX", "NARX")
+multi_options <- c(FALSE, TRUE)
+
+brain_modeler_config <-
+  configure_pso_brain_modeler(vsvr_tolerance = 0.1, seed = 123)
+
+for (model in models) {
+  for (multi in multi_options) {
+    is_fir_family <- model == "FIR" || model == "NFIR"
+    is_arx_family <- model == "ARX" || model == "NARX"
+    
+    if (multi) {
+      signal_names <- c("MABP", "etCO2", "CBFV.L")
+      exclude_columns <- c("Time", "CBFV.R")
+      predictor_names <-
+        if (is_fir_family)
+          c("MABP", "etCO2")
+      else
+        signal_names
+      lags_column <- c(8, 6)
+      extra_column_name <- if (multi)
+        "etCO2"
+      else
+        NULL
+      lags_response <- if (is_arx_family)
+        c(6)
+      else
+        NULL
+    } else {
+      signal_names <- c("MABP", "CBFV.L")
+      exclude_columns <- c("Time", "etCO2", "CBFV.R")
+      predictor_names <-
+        if (is_fir_family)
+          c("MABP")
+      else
+        signal_names
+      lags_column <- c(8)
+      extra_column_name <- if (multi)
+        "etCO2"
+      lags_response <- if (is_arx_family)
+        c(6)
+      else
+        NULL
+    }
+    
+    kernel <-
+      if (model == "FIR" || model == "ARX")
+        "linear"
+    else
+      "radial"
+    
+    grid_search <- svr_grid_search(
+      config = brain_modeler_config,
+      dataset = mydata,
+      is_multivariate = multi,
+      signal_names = signal_names,
+      exclude_columns = exclude_columns,
+      predictor_names = predictor_names,
+      response_var = "CBFV.L",
+      kernel_type = kernel,
+      is_test_mode = TRUE,
+      lags_column = lags_column,
+      lags_response = lags_response,
+      extra_column_name = extra_column_name,
+      is_silent_mode = FALSE
+    )
+    
+    multi_text <- if (multi)
+      "_multi"
+    else
+      ""
+    
+    file_name <-
+      paste0("results/grid_search/Sujeto1_",
+             model,
+             multi_text,
+             ".RData")
+    
+    save(grid_search, file = file_name)
+  }
+}

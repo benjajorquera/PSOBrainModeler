@@ -49,7 +49,8 @@ normalize_signals_by_name <-
 #'  Signal2 = c(10, 5, 8, 3, 6, 9, 2, 7, 4, 1))
 #' normalized_df <- normalize_all_signals(df)
 #'
-#' @importFrom dplyr mutate across everything %>%
+#' @importFrom dplyr mutate across everything
+#' @importFrom magrittr %>%
 #' @export
 normalize_all_signals <- function(df = NULL) {
   # Validation

@@ -29,42 +29,17 @@ vsvr_model <-
            nu,
            gamma = NULL,
            tolerance) {
-    # 1. Validate data type
-    if (!is.data.frame(data))
-      stop("'data' must be a data.frame.")
-    
-    # 2. Validate response_var
-    if (!is.character(response_var) ||
-        length(response_var) != 1)
-      stop("'response_var' must be a single character string.")
-    if (!response_var %in% names(data))
-      stop(sprintf(
-        "The response variable '%s' is not found in the provided data.",
-        response_var
-      ))
-    
-    # 3. Validate cost, nu, and tolerance
-    if (!is.numeric(cost) ||
-        length(cost) != 1)
-      stop("'cost' must be a single numeric value.")
-    if (!is.numeric(nu) ||
-        length(nu) != 1 ||
-        nu <= 0 ||
-        nu >= 1)
-      stop("'nu' must be a single numeric value between 0 and 1.")
-    if (!is.numeric(tolerance) ||
-        length(tolerance) != 1)
-      stop("'tolerance' must be a single numeric value.")
-    
-    # 4. Validate gamma
-    if (!is.null(gamma) &&
-        (!is.numeric(gamma) ||
-         length(gamma) != 1))
-      stop("'gamma' must be a single numeric value or NULL.")
+    # Validations
+    stopifnot(
+      is.data.frame(data),
+      is.character(response_var),
+      length(response_var) == 1,
+      response_var %in% names(data)
+    )
     
     # Extracting response data
     response_data <- data[[response_var]]
-    predictor_data <- data[, !names(data) %in% c(response_var)]
+    predictor_data <- data[,!names(data) %in% c(response_var)]
     
     # Setting up the common parameters for the SVM model
     model_params <- list(
@@ -84,6 +59,9 @@ vsvr_model <-
       model_params$kernel <- "radial"
       model_params$gamma <- gamma
     }
+    
+    # print("SVR params")
+    # cat(cost, nu, gamma, tolerance, model_params$kernel, "\n")
     
     # Training the SVM model using the do.call function
     svm_model <- do.call(e1071::svm, model_params)

@@ -20,13 +20,14 @@
 #'
 #' @importFrom stats var
 #' @importFrom utils head
+#' @importFrom tseries adf.test
 #'
 #' @export
 evaluate_signal_quality <-
   function(signal,
            pressure_start_point = 3L,
            silent = TRUE,
-           signal_size =70L) {
+           signal_size = 70L) {
     # Ensure that the signal and pressure_start_point are numeric
     if (!is.numeric(signal) ||
         !is.numeric(pressure_start_point) ||
@@ -43,7 +44,7 @@ evaluate_signal_quality <-
     }
     
     suppressWarnings({
-      signal_test <- adf.test(signal, alternative = "stationary")
+      signal_test <- tseries::adf.test(signal, alternative = "stationary")
     })
     
     if (!is.nan(signal_test$p.value)) {
