@@ -39,7 +39,7 @@ vsvr_model <-
     
     # Extracting response data
     response_data <- data[[response_var]]
-    predictor_data <- data[,!names(data) %in% c(response_var)]
+    predictor_data <- data[, !names(data) %in% c(response_var)]
     
     # Setting up the common parameters for the SVM model
     model_params <- list(
@@ -68,3 +68,11 @@ vsvr_model <-
     
     return(svm_model)
   }
+
+# Definir la función que manejará el warning
+manejar_warning <- function(w) {
+  if (grepl("reaching max number of iterations", w$message)) {
+    contador_warnings <<- contador_warnings + 1
+  }
+  invokeRestart("muffleWarning")
+}

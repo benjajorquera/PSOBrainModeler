@@ -19,28 +19,28 @@ library(magrittr)
 
 mydata <- read.table("data-raw/Sujeto1.txt", header = TRUE)
 
-brain_modeler_config <-
-  configure_pso_brain_modeler(vsvr_tolerance = 0.1, seed = 123)
-
-grid_search <- svr_grid_search(
-  config = brain_modeler_config,
-  dataset = mydata,
-  is_multivariate = TRUE,
-  signal_names = c("MABP", "etCO2", "CBFV.L"),
-  exclude_columns = c("Time", "CBFV.R"),
-  predictor_names = c("MABP", "etCO2", "CBFV.L"),
-  response_var = "CBFV.L",
-  kernel_type = "radial",
-  is_test_mode = TRUE,
-  lags_column = c(2, 2),
-  lags_response = c(2),
-  extra_column_name = "etCO2",
-  is_silent_mode = FALSE
-)
-
-file_name <- paste0("results/grid_search/Sujeto1", "_FIR", ".RData")
-
-save(grid_search, file = file_name)
+# brain_modeler_config <-
+#   configure_pso_brain_modeler(vsvr_tolerance = 0.1, seed = 123)
+#
+# grid_search <- svr_grid_search(
+#   config = brain_modeler_config,
+#   dataset = mydata,
+#   is_multivariate = TRUE,
+#   signal_names = c("MABP", "etCO2", "CBFV.L"),
+#   exclude_columns = c("Time", "CBFV.R"),
+#   predictor_names = c("MABP", "etCO2", "CBFV.L"),
+#   response_var = "CBFV.L",
+#   kernel_type = "radial",
+#   is_test_mode = TRUE,
+#   lags_column = c(2, 2),
+#   lags_response = c(2),
+#   extra_column_name = "etCO2",
+#   is_silent_mode = TRUE
+# )
+#
+# file_name <- paste0("results/grid_search/Sujeto1", "_FIR", ".RData")
+#
+# save(grid_search, file = file_name)
 
 #load("results/grid_search_results.RData")
 
@@ -62,10 +62,17 @@ models <- c("FIR", "NFIR", "ARX", "NARX")
 multi_options <- c(FALSE, TRUE)
 
 brain_modeler_config <-
-  configure_pso_brain_modeler(vsvr_tolerance = 0.1, seed = 123)
+  configure_pso_brain_modeler(vsvr_tolerance = 0.01, seed = 123)
 
 for (model in models) {
   for (multi in multi_options) {
+    multi_text <- if (multi)
+      "_multi"
+    else
+      ""
+    
+    cat("\n", model, multi_text, "\n")
+    
     is_fir_family <- model == "FIR" || model == "NFIR"
     is_arx_family <- model == "ARX" || model == "NARX"
     
@@ -118,17 +125,12 @@ for (model in models) {
       predictor_names = predictor_names,
       response_var = "CBFV.L",
       kernel_type = kernel,
-      is_test_mode = TRUE,
+      is_test_mode = FALSE,
       lags_column = lags_column,
       lags_response = lags_response,
       extra_column_name = extra_column_name,
-      is_silent_mode = FALSE
+      is_silent_mode = TRUE
     )
-    
-    multi_text <- if (multi)
-      "_multi"
-    else
-      ""
     
     file_name <-
       paste0("results/grid_search/Sujeto1_",
@@ -139,3 +141,16 @@ for (model in models) {
     save(grid_search, file = file_name)
   }
 }
+# 
+# load("results/grid_search/Sujeto1_FIR_multi.RData")
+# 
+# cors_grid <- c()
+# 
+# for (grid in grid_search$results) {
+#   if (is.list(grid)) {
+#     cors_grid <- c(cors_grid, grid$avg_cor)
+#     if (grid$na_count != 0) {
+#       return(TRUE)
+#     }
+#   }
+# }
