@@ -27,7 +27,8 @@ configure_pso_brain_modeler <- function(seed = 123,
                                         butter_filter_order = 2L,
                                         butter_filter_fs = 0.2,
                                         max_lag_number = 8,
-                                        vsvr_tolerance = 1) {
+                                        vsvr_tolerance = 1,
+                                        svm_cache_size = 100) {
   options <- list(
     seed = seed,
     bcv_folds = bcv_folds,
@@ -37,7 +38,8 @@ configure_pso_brain_modeler <- function(seed = 123,
     butter_filter_order = butter_filter_order,
     butter_filter_fs = butter_filter_fs,
     max_lag_number = max_lag_number,
-    vsvr_tolerance = vsvr_tolerance
+    vsvr_tolerance = vsvr_tolerance,
+    svm_cache_size = svm_cache_size
   )
   
   attr(options, "class") <- "PSOBrainModelerConfig"
@@ -138,7 +140,8 @@ configure_data_env <- function(config,
       NORM_PREDICTORS_NAMES = paste0(predictors_names, "_norm"),
       NORM_VSVR_RESPONSE = paste0(vsvr_response, "_norm"),
       VSVR_TOL = config$vsvr_tolerance,
-      INITIAL_PREDICTION_VALUES = initial_prediction_values
+      INITIAL_PREDICTION_VALUES = initial_prediction_values,
+      svm_cache_size = config$svm_cache_size
     )
   )
 }

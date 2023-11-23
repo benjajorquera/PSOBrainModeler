@@ -31,7 +31,8 @@ cross_validate_partition_helper <-
       vsvr_response = data_list$NORM_VSVR_RESPONSE,
       silent = silent,
       bcv_folds = bcv_folds,
-      vsvr_tolerance = data_list$VSVR_TOL
+      vsvr_tolerance = data_list$VSVR_TOL,
+      svm_cache_size = data_list$svm_cache_size
     )
     return(do.call(cross_validate_partition, params_list))
   }
@@ -108,7 +109,8 @@ generate_signal_response_predictions_helper <-
       cost = cost,
       nu = nu,
       gamma = gamma,
-      tolerance = data_list$VSVR_TOL
+      tolerance = data_list$VSVR_TOL,
+      svm_cache_size = data_list$svm_cache_size
     )
     return(do.call(generate_signal_response_predictions, params_list))
   }

@@ -126,7 +126,8 @@ cross_validate_partition <-
            vsvr_tolerance = 1,
            silent = FALSE,
            training_list_name = "training",
-           validation_list_name = "validation") {
+           validation_list_name = "validation",
+           svm_cache_size = 100) {
     # Validate params
     validate_pso_svr_params(list(
       cost = cost,
@@ -154,6 +155,8 @@ cross_validate_partition <-
       lag_values = col_lags,
       vsvr_response = vsvr_response
     )
+    
+    svm_warnings <- 0
     
     for (df_list in seq_len(bcv_folds)) {
       # Prepare data for validation
@@ -186,11 +189,16 @@ cross_validate_partition <-
           cost = cost,
           nu = nu,
           gamma = gamma,
-          tolerance = vsvr_tolerance
+          tolerance = vsvr_tolerance,
+          cache_size = svm_cache_size
         )
       
+      svm_warnings <-
+        svm_warnings + svr_model$max_iterations_warnings
+      
       # Make predictions
-      predictions <- predict(svr_model, new_data_validation)
+      predictions <-
+        predict(svr_model$svm_model, new_data_validation)
       
       if (stats::sd(predictions) == 0) {
         if (!silent) {
@@ -216,6 +224,7 @@ cross_validate_partition <-
     return(list(
       avg_cor = mean(cors, na.rm = TRUE),
       avg_error = mean(errors, na.rm = TRUE),
-      na_count = na_count
+      na_count = na_count,
+      warnings = svm_warnings
     ))
   }

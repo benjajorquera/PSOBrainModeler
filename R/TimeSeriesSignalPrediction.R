@@ -85,7 +85,8 @@ generate_signal_response_predictions <- function(data,
                                                  cost,
                                                  nu,
                                                  gamma = NULL,
-                                                 tolerance) {
+                                                 tolerance,
+                                                 svm_cache_size = 100) {
   # Validations
   stopifnot(
     is.data.frame(data),
@@ -110,12 +111,15 @@ generate_signal_response_predictions <- function(data,
   # Remove zero lags and corresponding column names if there are multiple lags.
   
   SVR_model <-
-    vsvr_model(data_training,
-               prediction_col_name,
-               cost,
-               nu,
-               gamma,
-               tolerance)
+    vsvr_model(
+      data = data_training,
+      response_var = prediction_col_name,
+      cost = cost,
+      nu = nu,
+      gamma = gamma,
+      tolerance = tolerance,
+      cache_size = svm_cache_size
+    )
   
   # Create a dataframe for predicted values
   predicted_values <-
@@ -194,7 +198,7 @@ generate_signal_response_predictions <- function(data,
   process_pressure_count <- function(pressure_count) {
     # Create new_pressure dataframe with correct column name
     new_pressure <-
-      data.frame(name = pressure_signal_df[pressure_count,],
+      data.frame(name = pressure_signal_df[pressure_count, ],
                  stringsAsFactors = FALSE)
     
     if (length(initial_column_values) > 1) {
@@ -265,7 +269,7 @@ generate_signal_response_predictions <- function(data,
     
     # Perform prediction
     predictions_data_pressure <<-
-      stats::predict(SVR_model, pressure_df_model)
+      stats::predict(SVR_model$svm_model, pressure_df_model)
     
     # Save signal predicted value
     predicted_values <<-
@@ -279,5 +283,11 @@ generate_signal_response_predictions <- function(data,
   # Using lapply to iterate over pressure_count_seq and process each pressure_count
   invisible(lapply(pressure_count_seq, process_pressure_count))
   
-  return(predicted_values)
+  return(
+    list(
+      predicted_values = predicted_values,
+      warnings = SVR_model$max_iterations_warnings,
+      model = SVR_model$svm_model
+    )
+  )
 }

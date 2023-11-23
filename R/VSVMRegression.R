@@ -28,7 +28,10 @@ vsvr_model <-
            cost,
            nu,
            gamma = NULL,
-           tolerance) {
+           tolerance,
+           cache_size = 100) {
+    contador_warnings <- 0
+    
     # Validations
     stopifnot(
       is.data.frame(data),
@@ -39,7 +42,7 @@ vsvr_model <-
     
     # Extracting response data
     response_data <- data[[response_var]]
-    predictor_data <- data[, !names(data) %in% c(response_var)]
+    predictor_data <- data[,!names(data) %in% c(response_var)]
     
     # Setting up the common parameters for the SVM model
     model_params <- list(
@@ -49,7 +52,7 @@ vsvr_model <-
       nu = nu,
       type = "nu-regression",
       tolerance = tolerance,
-      cache.size = 100
+      cache.size = cache_size
     )
     
     # Adjusting parameters based on the kernel choice
@@ -63,16 +66,14 @@ vsvr_model <-
     # print("SVR params")
     # cat(cost, nu, gamma, tolerance, model_params$kernel, "\n")
     
-    # Training the SVM model using the do.call function
-    svm_model <- do.call(e1071::svm, model_params)
+    captured_output <- capture.output({
+      svm_model <- do.call(e1071::svm, model_params)
+    }, type = "message")
     
-    return(svm_model)
+    if (!identical(captured_output, character(0))) {
+      contador_warnings <- contador_warnings + 1
+    }
+    
+    return(list(svm_model = svm_model,
+                max_iterations_warnings = contador_warnings))
   }
-
-# Definir la función que manejará el warning
-manejar_warning <- function(w) {
-  if (grepl("reaching max number of iterations", w$message)) {
-    contador_warnings <<- contador_warnings + 1
-  }
-  invokeRestart("muffleWarning")
-}

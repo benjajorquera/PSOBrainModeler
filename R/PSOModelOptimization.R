@@ -77,7 +77,7 @@ pso_training_model <- function(cost,
   
   # Process response signal and score it
   signal_score <-
-    evaluate_signal_quality(response_predictions[[vsvr_response]], silent = silent)
+    evaluate_signal_quality(response_predictions$predicted_values[[vsvr_response]], silent = silent)
   
   if (signal_score != 1) {
     return(3)
@@ -112,7 +112,7 @@ pso_training_model <- function(cost,
   
   if (signal_score == 1) {
     optim_score <-
-      advanced_filter(response_predictions[[vsvr_response]])
+      advanced_filter(response_predictions$predicted_values[[vsvr_response]])
     
     if (avg_cor > pso_env[["max_cor"]])
       pso_env[["max_cor"]] <- avg_cor
@@ -128,7 +128,7 @@ pso_training_model <- function(cost,
         avg_error = avg_error,
         na_counts = results$na_count,
         score = optim_score,
-        response_signal = list(response_predictions[[vsvr_response]]),
+        response_signal = list(response_predictions$predicted_values[[vsvr_response]]),
         fitness_score = fitness,
         params = list(
           c(
@@ -138,12 +138,13 @@ pso_training_model <- function(cost,
             col_lags = col_lags,
             response_lags = response_lags
           )
-        )
+        ),
+        response_predictions_warnings = response_predictions$max_iterations_warnings
       )
     pso_env[["data"]] <- c(pso_env[["data"]], list(new_data))
     
     if (plot_response) {
-      plot_response_signal(response_predictions[[vsvr_response]])
+      plot_response_signal(response_predictions$predicted_values[[vsvr_response]])
     }
   }
   else {

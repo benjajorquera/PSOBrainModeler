@@ -69,7 +69,6 @@ svr_grid_search <- function(config,
       initial_column_values = data_env$INITIAL_PREDICTION_VALUES,
       lags_response = lags_response,
       initial_prediction_value = initial_prediction_value,
-      tolerance = config$vsvr_tolerance,
       is_test_mode = is_test_mode,
       is_silent_mode = is_silent_mode,
       start_time = start_time,
@@ -119,7 +118,6 @@ main_grid_search <- function(data_env,
                              initial_column_values = c(1),
                              lags_response = NULL,
                              initial_prediction_value = 1,
-                             tolerance = 1,
                              is_test_mode = FALSE,
                              is_silent_mode = TRUE,
                              start_time = NULL,
@@ -132,9 +130,7 @@ main_grid_search <- function(data_env,
     start_time <- Sys.time()
   }
   
-  model_params <- list(type = "nu-regression",
-                       tolerance = tolerance,
-                       kernel = kernel_type)
+  model_params <- list(kernel = kernel_type)
   
   params <-
     params_config(kernel_type = kernel_type, is_test_mode = is_test_mode)
@@ -183,7 +179,14 @@ main_grid_search <- function(data_env,
     }
   }
   
-  return(list(results = results, time = (Sys.time() - start_time)))
+  return(
+    list(
+      results = results,
+      time = (Sys.time() - start_time),
+      svm_tolerance = data_env$VSVR_TOL,
+      svm_cache_size = data_env$svm_cache_size
+    )
+  )
 }
 
 #' Configure Parameters for SVR
@@ -272,8 +275,14 @@ progressbar_config <-
     
     # Calculate total steps
     total_steps <- ifelse(is_test_mode, 2, 9 * 15)
-    total_steps <-
-      ifelse(kernel_type == "radial", total_steps * 2, total_steps)
+    if (is_test_mode) {
+      total_steps <-
+        ifelse(kernel_type == "radial", total_steps * 2, total_steps)
+    }
+    else {
+      total_steps <-
+        ifelse(kernel_type == "radial", total_steps * 8, total_steps)
+    }
     
     # Adjust total steps based on lags
     if (!is.null(lags_column)) {
@@ -542,11 +551,23 @@ grid_signal_eval <-
         data_list = data_env
       )
     
+    results <- list()
+    
     # Signal quality evaluation
     signal_score <-
-      evaluate_signal_quality(response_predictions[[norm_response_var]], silent = is_silent_mode)
-    if (signal_score != "TEST PASSED")
-      return(signal_score)
+      evaluate_signal_quality(response_predictions$predicted_values[[norm_response_var]], silent = is_silent_mode)
+    if (signal_score != "TEST PASSED") {
+      results <- append(results,
+                        list(
+                          c(
+                            test_result = signal_score,
+                            warnings = response_predictions$warnings,
+                            list(support_vectors = response_predictions$model$tot.nSV),
+                            list(signal_response = response_predictions$predicted_values[[norm_response_var]])
+                          )
+                        ))
+    }
+    return(results)
     
     # Cross-validation
     cv_result <- cross_validate_partition_helper(
@@ -557,32 +578,44 @@ grid_signal_eval <-
       data_list = data_env,
       bcv_folds = bcv_folds
     )
+    
     if (is.nan(cv_result$avg_cor) ||
         is.nan(cv_result$avg_error))
-      return ("CV FAILED")
+      return(append(results,
+                    list(
+                      c(
+                        test_result = "CV FAILED",
+                        prediction_warnings = response_predictions$warnings,
+                        cv_warnings = cv_result$warnings,
+                        list(support_vectors = response_predictions$model$tot.nSV),
+                        list(signal_response = response_predictions$predicted_values[[norm_response_var]])
+                      )
+                    )))
     
     # Result compilation
-    results <- list()
     result_list <- list(
       avg_cor = cv_result$avg_cor,
       avg_error = cv_result$avg_error,
       na_count = cv_result$na_count,
-      score = advanced_filter(response_predictions[[norm_response_var]], 3L, silent = is_silent_mode)$score,
-      advanced_score_results = advanced_filter(response_predictions[[norm_response_var]], 3L, silent = is_silent_mode)$results,
-      response_signal = response_predictions[[norm_response_var]],
+      cv_warnings = cv_result$warnings,
+      score = advanced_filter(response_predictions$predicted_values[[norm_response_var]], 3L, silent = is_silent_mode)$score,
+      advanced_score_results = advanced_filter(response_predictions$predicted_values[[norm_response_var]], 3L, silent = is_silent_mode)$results,
+      response_signal = response_predictions$predicted_values[[norm_response_var]],
       params = list(
         cost = cost,
         nu = nu,
         gamma = gamma,
         col_lags = grid_col_lags,
         response_lag = lag_response
-      )
+      ),
+      response_predictions_warnings = response_predictions$warnings,
+      support_vectors = response_predictions$model$tot.nSV
     )
     results <- append(results, list(c(result_list)))
     
     # Plot response signal if required
     if (should_plot_response) {
-      plot_vsvr_response_signal(response_predictions[[norm_response_var]])
+      plot_vsvr_response_signal(response_predictions$predicted_values[[norm_response_var]])
     }
     
     return(results)

@@ -61,11 +61,16 @@ mydata <- read.table("data-raw/Sujeto1.txt", header = TRUE)
 models <- c("FIR", "NFIR", "ARX", "NARX")
 multi_options <- c(FALSE, TRUE)
 
-brain_modeler_config <-
-  configure_pso_brain_modeler(vsvr_tolerance = 0.01, seed = 123)
+models_test <- c("NFIR", "ARX", "NARX")
+multi_test <- c(FALSE, TRUE)
 
-for (model in models) {
-  for (multi in multi_options) {
+brain_modeler_config <-
+  configure_pso_brain_modeler(vsvr_tolerance = 0.1,
+                              seed = 123,
+                              svm_cache_size = 1000)
+
+for (model in models_test) {
+  for (multi in multi_test) {
     multi_text <- if (multi)
       "_multi"
     else
@@ -125,7 +130,7 @@ for (model in models) {
       predictor_names = predictor_names,
       response_var = "CBFV.L",
       kernel_type = kernel,
-      is_test_mode = FALSE,
+      is_test_mode = TRUE,
       lags_column = lags_column,
       lags_response = lags_response,
       extra_column_name = extra_column_name,
@@ -141,11 +146,11 @@ for (model in models) {
     save(grid_search, file = file_name)
   }
 }
-# 
-# load("results/grid_search/Sujeto1_FIR_multi.RData")
-# 
+
+# load("results/grid_search/Sujeto1_FIR.RData")
+#
 # cors_grid <- c()
-# 
+#
 # for (grid in grid_search$results) {
 #   if (is.list(grid)) {
 #     cors_grid <- c(cors_grid, grid$avg_cor)
