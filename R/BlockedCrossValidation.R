@@ -48,10 +48,10 @@ blocked_cv <-
         block * validation_length
       
       # Extract validation data based on indices
-      validation_data <- data[start_idx:end_idx, ]
+      validation_data <- data[start_idx:end_idx,]
       
       # The training data is the remaining data after excluding the validation data
-      training_data <- data[-(start_idx:end_idx), ]
+      training_data <- data[-(start_idx:end_idx),]
       
       list(training = training_data, validation = validation_data)
     })
@@ -146,6 +146,7 @@ cross_validate_partition <-
     errors <- numeric(bcv_folds)
     
     na_count <- 0
+    svm_warnings <- 0
     
     # Common arguments for generate_time_series_data
     common_args <- list(
@@ -155,8 +156,6 @@ cross_validate_partition <-
       lag_values = col_lags,
       vsvr_response = vsvr_response
     )
-    
-    svm_warnings <- 0
     
     for (df_list in seq_len(bcv_folds)) {
       # Prepare data for validation

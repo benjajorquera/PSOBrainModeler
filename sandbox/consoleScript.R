@@ -61,7 +61,7 @@ mydata <- read.table("data-raw/Sujeto1.txt", header = TRUE)
 models <- c("FIR", "NFIR", "ARX", "NARX")
 multi_options <- c(FALSE, TRUE)
 
-models_test <- c("NFIR", "ARX", "NARX")
+models_test <- c("NFIR")
 multi_test <- c(FALSE, TRUE)
 
 brain_modeler_config <-
@@ -89,13 +89,13 @@ for (model in models_test) {
           c("MABP", "etCO2")
       else
         signal_names
-      lags_column <- c(8, 6)
+      lags_column <- c(2, 2)
       extra_column_name <- if (multi)
         "etCO2"
       else
         NULL
       lags_response <- if (is_arx_family)
-        c(6)
+        c(2)
       else
         NULL
     } else {
@@ -106,11 +106,11 @@ for (model in models_test) {
           c("MABP")
       else
         signal_names
-      lags_column <- c(8)
+      lags_column <- c(2)
       extra_column_name <- if (multi)
         "etCO2"
       lags_response <- if (is_arx_family)
-        c(6)
+        c(2)
       else
         NULL
     }
@@ -134,7 +134,7 @@ for (model in models_test) {
       lags_column = lags_column,
       lags_response = lags_response,
       extra_column_name = extra_column_name,
-      is_silent_mode = TRUE
+      is_silent_mode = FALSE
     )
     
     file_name <-
@@ -147,15 +147,15 @@ for (model in models_test) {
   }
 }
 
-# load("results/grid_search/Sujeto1_FIR.RData")
-#
-# cors_grid <- c()
-#
-# for (grid in grid_search$results) {
-#   if (is.list(grid)) {
-#     cors_grid <- c(cors_grid, grid$avg_cor)
-#     if (grid$na_count != 0) {
-#       return(TRUE)
-#     }
-#   }
-# }
+load("sandbox/gridModelsScripts/results/FIR_1.Rdata")
+
+cors_grid <- c()
+
+for (grid in grid_search$results) {
+  if (is.list(grid)) {
+    cors_grid <- c(cors_grid, grid$avg_cor)
+    if (grid$na_count != 0) {
+      return(TRUE)
+    }
+  }
+}

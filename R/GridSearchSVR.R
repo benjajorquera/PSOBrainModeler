@@ -206,7 +206,7 @@ params_config <-
     stopifnot(is.character(kernel_type), is.logical(is_test_mode))
     
     if (is_test_mode) {
-      nu_values <- seq(0.7, 0.8, 0.1)
+      nu_values <- seq(0.5, 0.8, 0.1)
     } else {
       nu_values <- seq(0.1, 0.9, 0.1)
     }
@@ -214,7 +214,7 @@ params_config <-
     if (kernel_type == "linear") {
       cost_values <-
         if (is_test_mode)
-          c(1178.1)
+          c(585.36, 2048.13, 3510.89)
       else
         c(
           0.25,
@@ -240,8 +240,8 @@ params_config <-
           c(0.25, 4096)
       else
         c(0.25, 0.5, 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096)
-      sigma_values <- 2 ^ seq(-4, if (is_test_mode)
-        - 3
+      sigma_values <- 2 ^ seq(-2, if (is_test_mode)
+        - 2
         else
           10, 2)
       gamma_values <- 1 / (2 * sigma_values ^ 2)
@@ -274,7 +274,7 @@ progressbar_config <-
     stopifnot(is.character(kernel_type), is.logical(is_test_mode))
     
     # Calculate total steps
-    total_steps <- ifelse(is_test_mode, 2, 9 * 15)
+    total_steps <- ifelse(is_test_mode, 12, 9 * 15)
     if (is_test_mode) {
       total_steps <-
         ifelse(kernel_type == "radial", total_steps * 2, total_steps)
@@ -556,18 +556,18 @@ grid_signal_eval <-
     # Signal quality evaluation
     signal_score <-
       evaluate_signal_quality(response_predictions$predicted_values[[norm_response_var]], silent = is_silent_mode)
+    
     if (signal_score != "TEST PASSED") {
-      results <- append(results,
-                        list(
-                          c(
-                            test_result = signal_score,
-                            warnings = response_predictions$warnings,
-                            list(support_vectors = response_predictions$model$tot.nSV),
-                            list(signal_response = response_predictions$predicted_values[[norm_response_var]])
-                          )
-                        ))
+      return(append(results,
+                    list(
+                      c(
+                        test_result = signal_score,
+                        warnings = response_predictions$warnings,
+                        list(support_vectors = response_predictions$model$tot.nSV),
+                        list(signal_response = response_predictions$predicted_values[[norm_response_var]])
+                      )
+                    )))
     }
-    return(results)
     
     # Cross-validation
     cv_result <- cross_validate_partition_helper(
@@ -580,7 +580,7 @@ grid_signal_eval <-
     )
     
     if (is.nan(cv_result$avg_cor) ||
-        is.nan(cv_result$avg_error))
+        is.nan(cv_result$avg_error)) {
       return(append(results,
                     list(
                       c(
@@ -591,6 +591,8 @@ grid_signal_eval <-
                         list(signal_response = response_predictions$predicted_values[[norm_response_var]])
                       )
                     )))
+    }
+    
     
     # Result compilation
     result_list <- list(

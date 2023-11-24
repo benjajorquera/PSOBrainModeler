@@ -15,12 +15,12 @@ source("R/Helpers.R")
 source("R/Validators.R")
 source("R/GridSearchSVR.R")
 
-library(tseries)
-library(dplyr)
+library(magrittr)
 library(foreach)
 library(doParallel)
 
-mydata <- read.table("data-raw/Sujeto1.txt", header = TRUE)
+mydata <-
+  read.table("data-raw/testing/2Hz/Sujeto1.txt", header = TRUE)
 
 ###############################################################################
 
@@ -30,8 +30,6 @@ brain_modeler_config <-
 psoptim_config <- configure_psoptim_control()
 
 start_time <- Sys.time()
-
-set.seed(127)
 
 result <- optimize_brain_model_with_PSO(
   config = brain_modeler_config,
@@ -48,7 +46,7 @@ result <- optimize_brain_model_with_PSO(
   vsvr_response = "CBFV.L",
   initial_pressure_value = c(1),
   silent = FALSE,
-  seed = 127
+  seed = 123
 )
 
 print(Sys.time() - start_time)
@@ -119,39 +117,3 @@ for (results in resultados) {
 }
 pso_avg_cors <- mean(all_max_cors)
 pso_avg_fitness <- mean(all_fitness)
-
-###############################################################################
-
-brain_modeler_config <-
-  configure_pso_brain_modeler(vsvr_tolerance = 0.1, seed = 123)
-
-psoptim_config <- configure_psoptim_control()
-
-grid_search <- svr_grid_search(
-  config = brain_modeler_config,
-  data = mydata,
-  multi = TRUE,
-  signal_names = c("MABP", "etCO2", "CBFV.L"),
-  excluded_cols = c("Time", "CBFV.R"),
-  predictors_names = c("MABP", "etCO2"),
-  vsvr_response = "CBFV.L",
-  kernel = "radial",
-  test = TRUE,
-  col_lags = c(2, 2),
-  response_lags = NULL,
-  extra_col_name = "etCO2"
-)
-
-cors_grid <- c()
-
-for (grid in grid_search$results) {
-  if (is.list(grid)) {
-    cors_grid <- c(cors_grid, grid$avg_cor)
-    if (grid$na_count != 0) {
-      return(TRUE)
-    }
-  }
-}
-
-grid_max_cors <- max(cors_grid)
-print(grid_max_cors)

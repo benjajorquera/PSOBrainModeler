@@ -79,7 +79,14 @@ pso_training_model <- function(cost,
   signal_score <-
     evaluate_signal_quality(response_predictions$predicted_values[[vsvr_response]], silent = silent)
   
-  if (signal_score != 1) {
+  if (signal_score != "TEST PASSED") {
+    new_data <- c(
+      test_result = signal_score,
+      warnings = response_predictions$warnings,
+      list(support_vectors = response_predictions$model$tot.nSV),
+      list(signal_response = response_predictions$predicted_values[[vsvr_response]])
+    )
+    pso_env[["data"]] <- c(pso_env[["data"]], list(new_data))
     return(3)
   }
   
@@ -107,48 +114,61 @@ pso_training_model <- function(cost,
   
   # Return early if any of the results is NaN
   if (is.nan(avg_cor) ||
-      is.nan(avg_error))
+      is.nan(avg_error)) {
+    new_data <- c(
+      test_result = "CV FAILED",
+      prediction_warnings = response_predictions$warnings,
+      cv_warnings = results$warnings,
+      list(support_vectors = response_predictions$model$tot.nSV),
+      list(signal_response = response_predictions$predicted_values[[vsvr_response]])
+    )
     return (3)
+  }
   
-  if (signal_score == 1) {
-    optim_score <-
-      advanced_filter(response_predictions$predicted_values[[vsvr_response]])
-    
-    if (avg_cor > pso_env[["max_cor"]])
-      pso_env[["max_cor"]] <- avg_cor
-    
-    fitness <-
-      (3 - avg_cor + avg_error - (optim_score * 0.01) - signal_score)
-    if (fitness < pso_env[["best_fitness"]])
-      pso_env[["best_fitness"]] <- fitness
-    
-    new_data <-
-      c(
-        avg_cor = avg_cor,
-        avg_error = avg_error,
-        na_counts = results$na_count,
-        score = optim_score,
-        response_signal = list(response_predictions$predicted_values[[vsvr_response]]),
-        fitness_score = fitness,
-        params = list(
-          c(
-            cost = cost,
-            nu =  nu,
-            gamma = gamma,
-            col_lags = col_lags,
-            response_lags = response_lags
-          )
-        ),
-        response_predictions_warnings = response_predictions$max_iterations_warnings
-      )
-    pso_env[["data"]] <- c(pso_env[["data"]], list(new_data))
-    
-    if (plot_response) {
-      plot_response_signal(response_predictions$predicted_values[[vsvr_response]])
-    }
+  optim_score <-
+    advanced_filter(response_predictions$predicted_values[[vsvr_response]])
+  
+  if (avg_cor > pso_env[["max_cor"]])
+    pso_env[["max_cor"]] <- avg_cor
+  
+  if (signal_score == "TEST PASSED") {
+    fitness_signal_score <- 1
   }
   else {
-    optim_score <- 0
+    fitness_signal_score <- 0
+  }
+  
+  fitness <-
+    (3 - avg_cor + avg_error - (optim_score$score * 0.01) - fitness_signal_score)
+  if (fitness < pso_env[["best_fitness"]])
+    pso_env[["best_fitness"]] <- fitness
+  
+  new_data <-
+    c(
+      avg_cor = avg_cor,
+      avg_error = avg_error,
+      na_counts = results$na_count,
+      cv_warnings = results$warnings,
+      score = optim_score$score,
+      advanced_score_results = optim_score$results,
+      response_signal = list(response_predictions$predicted_values[[vsvr_response]]),
+      fitness_score = fitness,
+      params = list(
+        c(
+          cost = cost,
+          nu =  nu,
+          gamma = gamma,
+          col_lags = col_lags,
+          response_lags = response_lags
+        )
+      ),
+      response_predictions_warnings = response_predictions$warnings,
+      support_vectors = response_predictions$model$tot.nSV
+    )
+  pso_env[["data"]] <- c(pso_env[["data"]], list(new_data))
+  
+  if (plot_response) {
+    plot_response_signal(response_predictions$predicted_values[[vsvr_response]])
   }
   
   if (!silent) {
@@ -161,7 +181,7 @@ pso_training_model <- function(cost,
       "Signal basic filter: ",
       signal_score,
       "Signal advance score: ",
-      optim_score,
+      optim_score$score,
       "\n"
     )
   }
@@ -184,5 +204,5 @@ pso_training_model <- function(cost,
     pso_env[["max_global_cor"]] <- avg_cor
   
   # Return optimization value for minimization
-  return(3 - avg_cor + avg_error - (optim_score * 0.01) - signal_score)
+  return(3 - avg_cor + avg_error - (optim_score$score * 0.01) - fitness_signal_score)
 }

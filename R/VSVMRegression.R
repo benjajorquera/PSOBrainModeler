@@ -42,7 +42,7 @@ vsvr_model <-
     
     # Extracting response data
     response_data <- data[[response_var]]
-    predictor_data <- data[,!names(data) %in% c(response_var)]
+    predictor_data <- data[, !names(data) %in% c(response_var)]
     
     # Setting up the common parameters for the SVM model
     model_params <- list(
