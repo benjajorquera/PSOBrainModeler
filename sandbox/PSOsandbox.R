@@ -15,7 +15,6 @@ source("R/Helpers.R")
 source("R/Validators.R")
 source("R/GridSearchSVR.R")
 
-library(magrittr)
 library(foreach)
 library(doParallel)
 
