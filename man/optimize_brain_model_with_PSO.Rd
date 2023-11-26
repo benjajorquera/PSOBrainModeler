@@ -8,17 +8,25 @@ optimize_brain_model_with_PSO(
   config,
   psoptim_config,
   data,
-  model,
+  model = "FIR",
   multi = FALSE,
   signal_names,
   excluded_cols = NULL,
   predictors_names,
+  max_function_count = 1000,
   params_lower_bounds,
   params_upper_bounds,
-  params_initial_values,
+  params_initial_values = NULL,
   vsvr_response,
-  silent = FALSE,
-  plot_response = TRUE
+  extra_col_name = NULL,
+  silent = TRUE,
+  plot_response = FALSE,
+  initial_pressure_value = c(1),
+  initial_response_value = 1,
+  seed = 123,
+  generate_response_predictions_cv = FALSE,
+  basic_filter_check_cv = TRUE,
+  fn_count_treshold = 30
 )
 }
 \arguments{
@@ -29,88 +37,92 @@ optimize_brain_model_with_PSO(
 \item{data}{A data frame containing the dataset to be optimized.}
 
 \item{model}{Character string specifying the type of model to be optimized.
-Should be one of "FIR", "NFIR", "ARX", or "NARX".}
+Should be one of "FIR", "NFIR", "ARX", or "NARX". Defaults to "FIR".}
 
 \item{multi}{(Optional) Logical indicating if the model should be multivariate.
-If TRUE, optimizes with two input variables; if FALSE, optimizes with one input variable.
-Defaults to FALSE.}
+If TRUE, optimizes with two input variables; if FALSE, optimizes with one
+input variable. Defaults to FALSE.}
 
 \item{signal_names}{Vector of names representing signal columns.}
 
-\item{excluded_cols}{(Optional) Vector of column names that should be excluded from optimization.
-Defaults to NULL.}
+\item{excluded_cols}{(Optional) Vector of column names that should be excluded
+from optimization. Defaults to NULL.}
 
 \item{predictors_names}{Vector of predictor names for the model.}
 
-\item{params_lower_bounds}{Vector of lower bounds for model optimization parameters.}
+\item{max_function_count}{(Optional) Maximum number of function evaluations.
+Default is 1000.}
 
-\item{params_upper_bounds}{Vector of upper bounds for model optimization parameters.}
+\item{params_lower_bounds}{Vector of lower bounds for model optimization
+parameters.}
 
-\item{params_initial_values}{Vector of initial values for model optimization parameters.
-Length should be equal for all parameter vectors.}
+\item{params_upper_bounds}{Vector of upper bounds for model optimization
+parameters.}
+
+\item{params_initial_values}{(Optional) Vector of initial values for model
+optimization parameters.
+If provided, length should be equal for all parameter vectors. Defaults to
+ NULL.}
 
 \item{vsvr_response}{Name of the column representing the VSVR response.}
 
-\item{silent}{(Optional) A logical indicating if the function should run silently. Default is TRUE.}
+\item{extra_col_name}{(Optional) Additional column name to be included.
+Defaults to NULL.}
 
-\item{plot_response}{(Optional) A logical to decide whether to plot the response signal. Defaults to TRUE.}
+\item{silent}{(Optional) A logical indicating if the function should run
+silently. Defaults to TRUE.}
+
+\item{plot_response}{(Optional) A logical to decide whether to plot the
+response signal. Defaults to FALSE.}
+
+\item{initial_pressure_value}{(Optional) Initial pressure value for the
+optimization. Defaults to c(1).}
+
+\item{initial_response_value}{Initial value set for the response variable in
+the optimization process. Defaults to 1.}
+
+\item{seed}{(Optional) Seed value for random number generation. Defaults to
+123.}
+
+\item{generate_response_predictions_cv}{Logical flag to determine if response
+predictions should be generated. Defaults to FALSE.}
+
+\item{basic_filter_check_cv}{Logical flag indicating whether a basic filter
+check is performed. Defaults to TRUE.}
+
+\item{fn_count_treshold}{Integer threshold for a specific function count
+condition, affecting the optimization flow. Defaults to 30.}
 }
 \value{
-An object with results from the psoptim optimization.
+Returns a list containing two elements:
+  - `psoptim_result`: The result from the psoptim optimization process.
+  - `pso_env`: The environment or context in which the psoptim optimization
+      was performed.
 }
 \description{
-Utilizing blocked k-fold cross-validation, the package
- conducts hyperparameter optimization through PSO. Models generated
- include FIR, NFIR, ARX, and NARX. These models can be univariate or multivariate.
+This function implements blocked k-fold cross-validation for
+ conducting hyperparameter optimization using Particle Swarm Optimization (PSO).
+ It supports the creation of various model types, including FIR, NFIR, ARX,
+ and NARX, which can be either univariate or multivariate. The function has
+ been enhanced with the integration of a progress bar to provide visual
+ feedback during the optimization process. Additionally, it utilizes an
+ environment (env) for improved management and tracking of optimization
+ parameters and results.
 }
 \details{
 This function offers a comprehensive toolkit for the analysis and
 modeling of biological signal data specific to individual patients.
 It facilitates the training of SVR models to represent and predict
 cerebral autoregulation phenomena.
-
-
-This function depends on:
-\itemize{
-  \item Internal package functions:
-  \itemize{
-    \item \code{\link{configure_pso_brain_modeler}}: Configure the Brain Modeler for PSO
-    \item \code{\link{configure_psoptim_control}}: Configure the control parameters for psoptim
-    \item \code{\link{configure_data_env}}: Configure the data environment for modeling
-    \item \code{\link{validate_inputs_main}}: Validate Main Inputs
-    \item \code{\link{pso_model}}: PSO Model Function
-  }
-  \item External package function:
-  \itemize{
-    \item \code{psoptim}
-  }
-}
 }
 \examples{
 
 \dontrun{
- mydata <-   data.frame(
-  Feature1 = rnorm(100),
-  Feature2 = rnorm(100),
-  Feature3 = rnorm(100),
-  Feature4 = rnorm(100)
-  )
  brain_modeler_config <- configure_pso_brain_modeler()
  psoptim_config <- configure_psoptim_control()
 
  optimize_brain_model_with_PSO(config = brain_modeler_config,
-   psoptim_config = psoptim_config,
-   data = mydata,
-   model = "FIR",
-   multi = FALSE,
-   signal_names = c("Feature1", "Feature2"),
-   excluded_cols = c("Feature3", "Feature4"),
-   predictors_names = c("Feature1"),
-   params_lower_bounds = c(1, 0.1, 1),
-   params_upper_bounds = c(10, 0.5, 3),
-   params_initial_values = c(NA, NA, NA),
-   vsvr_response = "Feature2",
-   silent = TRUE)
+   psoptim_config = psoptim_config, ... )
 }
 
 }

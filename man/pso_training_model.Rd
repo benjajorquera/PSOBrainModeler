@@ -2,9 +2,10 @@
 % Please edit documentation in R/PSOModelOptimization.R
 \name{pso_training_model}
 \alias{pso_training_model}
-\title{Model training function using PSO optimization}
+\title{Particle Swarm Optimization (PSO) Training Model Function}
 \usage{
 pso_training_model(
+  max_function_count = 1000,
   cost,
   nu,
   gamma = NULL,
@@ -12,48 +13,80 @@ pso_training_model(
   response_lags = NULL,
   vsvr_response,
   data_list,
-  silent = FALSE,
-  plot_response = TRUE
+  silent = TRUE,
+  plot_response = FALSE,
+  initial_column_values = c(1),
+  prediction_initial_value = 1,
+  bcv_folds = 5,
+  pso_env,
+  seed = 123,
+  progress_bar,
+  generate_response_predictions_cv = FALSE,
+  basic_filter_check_cv = TRUE,
+  fn_count_treshold = 30
 )
 }
 \arguments{
-\item{cost}{A numeric value for the cost parameter.}
+\item{max_function_count}{Maximum number of function evaluations, defaults
+to 1000.}
 
-\item{nu}{A numeric value for the nu parameter.}
+\item{cost}{Cost parameter for the model.}
 
-\item{gamma}{(Optional) A numeric value for the gamma parameter. Defaults to NULL.}
+\item{nu}{Nu parameter for the model.}
 
-\item{col_lags}{Numeric vector indicating the lags for the columns.}
+\item{gamma}{Gamma parameter for the model, if applicable.}
 
-\item{response_lags}{(Optional) Numeric vector indicating the response lags. Defaults to NULL.}
+\item{col_lags}{Column lag values for the model.}
 
-\item{vsvr_response}{Name of the column representing the VSVR response.}
+\item{response_lags}{Response lag values for the model, if applicable.}
 
-\item{data_list}{A list containing various data configurations.}
+\item{vsvr_response}{VSVR response name in the data.}
 
-\item{silent}{(Optional) A logical for run the function silently (without printouts). Defaults to FALSE.}
+\item{data_list}{List containing the data required for the model.}
 
-\item{plot_response}{(Optional) A logical to decide whether to plot the response signal. Defaults to TRUE.}
+\item{silent}{Flag to control verbosity during the training process.}
+
+\item{plot_response}{Flag to enable or disable plotting the response.}
+
+\item{initial_column_values}{Initial column values for the model.}
+
+\item{prediction_initial_value}{Initial prediction value for the model.}
+
+\item{bcv_folds}{Number of folds for blocked cross-validation.}
+
+\item{pso_env}{PSO environment settings.}
+
+\item{seed}{Seed for random number generation.}
+
+\item{progress_bar}{Progress bar for visualization of the optimization
+process.}
+
+\item{generate_response_predictions_cv}{Flag to generate response predictions.}
+
+\item{basic_filter_check_cv}{Flag to enable basic filtering of the data.}
+
+\item{fn_count_treshold}{Threshold for function count in optimization.}
 }
 \value{
-A numeric value that represents the optimization result for minimization.
+Depending on the stage and result of the optimization, it can return
+ different values, including early termination or the current optimization
+ score.
 }
 \description{
-This function handles the training process for a model based on given parameters
-using Particle Swarm Optimization (PSO). It performs cross-validation, response
-predictions, and signal evaluation. The function returns an optimization value for
-minimization, calculated based on the average correlation, average error, and signal score.
+Conducts PSO training with a given set of parameters, data, and environmental
+settings.
+It includes functionality for progress tracking, data processing, response
+prediction generation,
+signal scoring, and optimization. This function is designed to handle various
+aspects of PSO training,
+including parameter tuning, cross-validation, and response evaluation.
 }
-\details{
-The function conducts the following steps:
-1. Cross-validation using the provided parameters.
-2. Training with all the provided data.
-3. Generate response predictions based on the training.
-4. Evaluate the quality of the signal response.
+\examples{
+\dontrun{
+result <- pso_training_model(cost = 0.5, nu = 0.1, col_lags = c(3),
+                            vsvr_response = "response",
+                            data_list = my_data_list, pso_env = my_pso_env,
+                            progress_bar = my_progress_bar)
+}
 
-This function depends on the following internal package functions:
-- \code{\link{cross_validate_partition_helper}}: Helper function for cross-validation of partitions
-- \code{\link{generate_time_series_data_helper}}: Helper function to generate time series data
-- \code{\link{generate_signal_response_predictions_helper}}: Helper function to generate signal response predictions
-- \code{\link{evaluate_signal_quality}}: Evaluate Signal Quality
 }

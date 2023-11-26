@@ -2,26 +2,35 @@
 % Please edit documentation in R/PSOHelpers.R
 \name{extract_and_round_pso_params}
 \alias{extract_and_round_pso_params}
-\title{Extract and Round Parameters from PSO Optimization}
+\title{Extract and Round PSO Parameters}
 \usage{
 extract_and_round_pso_params(params, has_gamma = FALSE, n_lags = 1)
 }
 \arguments{
-\item{params}{A numeric vector with the optimization parameters.}
+\item{params}{Numeric vector containing the parameters to be extracted.}
 
-\item{has_gamma}{(Optional) A logical indicating if the gamma parameter is included. Defaults to FALSE.}
+\item{has_gamma}{Logical indicating whether the gamma parameter is present.}
 
-\item{n_lags}{(Optional) An integer for the number of lags being optimized. Defaults to 1.}
+\item{n_lags}{Integer specifying the number of lag parameters to extract.}
 }
 \value{
-A list containing the rounded parameters including cost, nu, gamma (if applicable), and lags.
+A list containing the extracted parameters:
+  - `cost`: The cost parameter, rounded or significant based on its value.
+  - `nu`: The nu parameter, rounded to 3 decimal places.
+  - `lags`: A vector of lag parameters, each rounded to the nearest integer.
+  If `has_gamma` is TRUE, the list also includes:
+  - `gamma`: The gamma parameter, rounded or significant based on its value.
 }
 \description{
-This function takes a numeric vector of parameters, rounds them as necessary,
-and structures them in a list for easier use in subsequent processes.
+This function extracts parameters from a PSO optimization result, rounding
+or applying significance as necessary.
+It is designed to handle parameters including cost, nu, gamma (optional),
+and lags.
 }
 \examples{
-params <- c(1.234, 0.5678, 0.00089, 2.345)
-PSOBrainModeler:::extract_and_round_pso_params(params, has_gamma = TRUE, n_lags = 1)
+extract_and_round_pso_params(c(1.234, 2.345, 0.456, 3, 4, 5),
+ has_gamma = TRUE, n_lags = 3)
+extract_and_round_pso_params(c(0.234, 2.345, 3, 4), has_gamma = FALSE,
+ n_lags = 2)
 
 }

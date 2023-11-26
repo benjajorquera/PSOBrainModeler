@@ -1,26 +1,50 @@
 #' Perform a Grid Search for Support Vector Regression
 #'
-#' @param config Configuration settings for the grid search
-#' @param dataset Data to be used in the grid search
-#' @param kernel_type Type of kernel to be used in SVR
-#' @param is_multivariate Logical indicating if multivariate analysis is to be performed
-#' @param signal_names Names of signal variables
-#' @param predictor_names Names of predictor variables
-#' @param response_var Name of the response variable for SVR
-#' @param exclude_columns Columns to be excluded from the analysis
-#' @param lags_column Number of lags for the columns
-#' @param lags_response Number of lags for the response
-#' @param initial_prediction_value Initial value for prediction
-#' @param extra_column_name Name of an extra column to be included
-#' @param should_plot_response Logical indicating if the response should be plotted
-#' @param is_test_mode Logical indicating if the function is in test mode
-#' @param is_silent_mode Logical indicating if the function should run in silent mode
-#' @return Results of the grid search
+#' This function performs a grid search to find the optimal parameters for a
+#' Support Vector Regression (SVR) model. It allows for various configurations
+#' and settings, facilitating extensive testing and optimization of the SVR model.
+#'
+#' @param config List of configuration settings for the grid search.
+#' @param dataset Dataframe containing the data to be used in the grid search.
+#' @param kernel_type Character string specifying the type of kernel to be used
+#'  in SVR.
+#' @param is_multivariate Logical flag indicating if a multivariate analysis is
+#'  to be performed.
+#' @param signal_names Character vector naming the signal variables.
+#' @param predictor_names Character vector naming the predictor variables.
+#' @param response_var Character string naming the response variable for SVR.
+#' @param exclude_columns Character vector specifying columns to be excluded
+#'  from the analysis. Defaults to NULL.
+#' @param lags_column Integer or vector specifying the number of lags for the
+#'  columns. Defaults to c(8).
+#' @param lags_response Integer or vector specifying the number of lags for the
+#'  response. Defaults to NULL.
+#' @param initial_column_value Numeric value or vector providing initial values
+#'  for columns. Defaults to c(1).
+#' @param initial_prediction_value Numeric value providing the initial value
+#'  for prediction. Defaults to 1.
+#' @param extra_column_name Character string specifying the name of an extra
+#'  column to be included. Defaults to NULL.
+#' @param should_plot_response Logical flag indicating if the response should
+#'  be plotted. Defaults to FALSE.
+#' @param is_test_mode Logical flag indicating if the function is in test mode.
+#'  Defaults to FALSE.
+#' @param is_silent_mode Logical flag indicating if the function should run in
+#'  silent mode, minimizing output. Defaults to TRUE.
+#' @param generate_response_predictions_cv Logical flag indicating if response
+#'  predictions should be generated. Defaults to FALSE.
+#' @param basic_filter_check_cv Logical flag indicating if a basic filter check
+#'  should be applied. Defaults to TRUE.
+#'
+#' @return A list containing the results of the grid search, potentially
+#'  including the best model parameters, performance metrics, and any generated response predictions.
+#'
 #' @examples
-#' \dontrun {
+#' \dontrun{
 #'   svr_grid_search(my_config, my_data, "linear", ...)
 #' }
 #' @export
+#'
 svr_grid_search <- function(config,
                             dataset,
                             kernel_type,
@@ -36,7 +60,9 @@ svr_grid_search <- function(config,
                             extra_column_name = NULL,
                             should_plot_response = FALSE,
                             is_test_mode = FALSE,
-                            is_silent_mode = TRUE) {
+                            is_silent_mode = TRUE,
+                            generate_response_predictions_cv = FALSE,
+                            basic_filter_check_cv = TRUE) {
   # Validate parameters
   stopifnot(is.list(config),
             is.data.frame(dataset),
@@ -72,35 +98,57 @@ svr_grid_search <- function(config,
       is_test_mode = is_test_mode,
       is_silent_mode = is_silent_mode,
       start_time = start_time,
-      should_plot_response = should_plot_response
+      should_plot_response = should_plot_response,
+      generate_response_predictions_cv = generate_response_predictions_cv,
+      basic_filter_check_cv = basic_filter_check_cv
     )
   )
 }
 
 #' Main Grid Search Function
 #'
-#' This function performs a grid search over specified parameters for a given model.
-#' It supports both linear and non-linear kernels.
+#' This function performs a comprehensive grid search over specified parameters
+#' for a given model, supporting both linear and non-linear kernels. It is
+#' designed to optimize models by testing various combinations of parameters
+#' and evaluating their performance.
 #'
-#' @param data_env Data environment containing the datasets and parameters.
-#' @param bcv_folds Number of folds for cross-validation.
-#' @param processed_data Processed data set for modeling.
-#' @param norm_response_var Normalized response variable.
-#' @param kernel_type Type of kernel to use, default is "linear".
-#' @param lags_column Column lags.
-#' @param initial_column_values Initial values for columns.
-#' @param lags_response Response lags.
-#' @param initial_prediction_value Initial value for prediction.
-#' @param tolerance Tolerance level for VSVR.
-#' @param is_test_mode Boolean for testing mode.
-#' @param is_silent_mode Boolean for silent mode.
-#' @param start_time Start time for the function.
-#' @param should_plot_response Boolean to determine if response should be plotted.
-#' @return A list containing the results of the grid search and the time taken.
+#' @param data_env Data environment object containing datasets, model
+#'  parameters, and other settings for the grid search.
+#' @param bcv_folds Integer specifying the number of folds for cross-validation,
+#'  defaults to 5.
+#' @param processed_data Dataframe of processed data set to be used in the
+#'  model.
+#' @param norm_response_var Normalized response variable used in the model.
+#' @param kernel_type Character string indicating the type of kernel to use,
+#'  default is "linear".
+#' @param lags_column Integer or vector specifying the number of lags for the
+#'  columns, defaults to c(8).
+#' @param initial_column_values Numeric or vector providing initial values for
+#'  columns, defaults to c(1).
+#' @param lags_response Integer or vector specifying the number of lags for the
+#'  response, defaults to NULL.
+#' @param initial_prediction_value Numeric value indicating the initial value
+#'  for prediction, defaults to 1.
+#' @param is_test_mode Logical flag indicating if the function is running in
+#'  test mode, defaults to FALSE.
+#' @param is_silent_mode Logical flag indicating if the function should operate
+#'  in silent mode, suppressing messages and output, defaults to TRUE.
+#' @param start_time POSIXct time object indicating the start time of the
+#'  function, defaults to NULL.
+#' @param should_plot_response Logical flag indicating whether the response
+#'  variable should be plotted, defaults to FALSE.
+#' @param generate_response_predictions_cv Logical flag indicating if response
+#'  predictions should be generated, defaults to FALSE.
+#' @param basic_filter_check_cv Logical flag indicating if basic filters should
+#'  be applied, defaults to TRUE.
+#'
+#' @return A list containing the results of the grid search, time taken for the
+#'  execution, and additional model parameters such as SVM tolerance and cache size.
+#'
 #' @examples
-#'
-#' \dontrun {
-#'   # Assuming 'data_env_list', 'processed_data', and 'norm_vsvr_response' are predefined
+#' \dontrun{
+#'   # Assuming 'data_env_list', 'processed_data', and 'norm_vsvr_response'
+#'   # are predefined
 #'   # Example with default parameters
 #'   results <- main_grid_search(
 #'     data_env_list = data_env_list,
@@ -109,6 +157,7 @@ svr_grid_search <- function(config,
 #'   )
 #' }
 #' @export
+#'
 main_grid_search <- function(data_env,
                              bcv_folds = 5,
                              processed_data,
@@ -121,7 +170,9 @@ main_grid_search <- function(data_env,
                              is_test_mode = FALSE,
                              is_silent_mode = TRUE,
                              start_time = NULL,
-                             should_plot_response = FALSE) {
+                             should_plot_response = FALSE,
+                             generate_response_predictions_cv = FALSE,
+                             basic_filter_check_cv = TRUE) {
   # Simple parameter validation
   stopifnot(is.list(data_env), is.list(data_env$data_partitions))
   
@@ -159,7 +210,9 @@ main_grid_search <- function(data_env,
     validation_list_name = "validation",
     is_silent_mode = is_silent_mode,
     should_plot_response = should_plot_response,
-    progress_bar = progress_bar
+    progress_bar = progress_bar,
+    generate_response_predictions_cv = generate_response_predictions_cv,
+    basic_filter_check_cv = basic_filter_check_cv
   )
   
   results <- list()
@@ -179,6 +232,8 @@ main_grid_search <- function(data_env,
     }
   }
   
+  progress_bar$close()
+  
   return(
     list(
       results = results,
@@ -191,14 +246,18 @@ main_grid_search <- function(data_env,
 
 #' Configure Parameters for SVR
 #'
-#' This function configures the parameters for Support Vector Regression (SVR) based on the kernel type and test mode.
+#' This function configures the parameters for Support Vector Regression (SVR)
+#' based on the kernel type and test mode.
 #'
-#' @param kernel_type The type of kernel to use in SVR. Valid options are "linear" and others (e.g., "radial").
-#' @param is_test_mode Logical flag indicating whether the function is in test mode.
+#' @param kernel_type The type of kernel to use in SVR. Valid options are
+#'  "linear" and others (e.g., "radial").
+#' @param is_test_mode Logical flag indicating whether the function is in
+#'  test mode.
 #' @return A list containing the parameters 'nu', 'cost', and 'gamma'.
 #' @examples
 #'   params_config(kernel_type = "linear", is_test_mode = FALSE)
 #' @export
+#'
 params_config <-
   function(kernel_type = "linear",
            is_test_mode = FALSE) {
@@ -254,9 +313,10 @@ params_config <-
 #' Progress Bar Configuration
 #'
 #' Configures a progress bar for a process with adjustable parameters.
-#' @param kernel_type A string indicating the type of kernel. Valid options are "linear" and "radial".
+#' @param kernel_type A string indicating the type of kernel. Valid options
+#'  are "linear" and "radial".
 #' @param is_test_mode A boolean indicating whether this is a test scenario.
-#' @param lags_column Numeric vector indicating the lags in color processing.
+#' @param lags_column Numeric vector indicating the lags in column processing.
 #' @param lags_response Numeric vector indicating the lags in response time.
 #' @return A configured progress bar object.
 #' @importFrom progress progress_bar
@@ -308,27 +368,48 @@ progressbar_config <-
 
 #' Grid Search Main Loop
 #'
-#' This function executes the main loop of the grid search process.
-#' It iterates over different combinations of cost and nu parameters.
+#' This function executes the main loop of the grid search process for Support
+#' Vector Regression.
+#' It iterates over different combinations of cost and nu parameters, evaluating
+#' the model's performance for each combination.
 #'
-#' @param data_env Data environment containing datasets and parameters.
-#' @param processed_data Processed data set for modeling.
-#' @param data_partitions Data partitions for cross-validation.
-#' @param bcv_folds Number of folds for cross-validation.
-#' @param norm_response_var Normalized response variable.
-#' @param lags_column Column lags.
-#' @param initial_column_values Initial values for columns.
-#' @param lags_response Response lags.
-#' @param initial_prediction_value Initial value for prediction.
-#' @param model_params Model parameters including kernel type.
-#' @param nu Nu parameter for the model.
-#' @param cost Cost parameter for the model.
-#' @param training_list_name Name of the training list.
-#' @param validation_list_name Name of the validation list.
-#' @param is_silent_mode Boolean for silent mode.
-#' @param should_plot_response Boolean to determine if response should be plotted.
-#' @param progress_bar Progress bar configuration.
-#' @return A list containing the results of each iteration of the grid search.
+#' @param data_env Data environment object containing datasets and parameters
+#'  for the grid search.
+#' @param processed_data Dataframe of processed data set to be used in the model.
+#' @param data_partitions Data partitions object for cross-validation.
+#' @param bcv_folds Integer specifying the number of folds for cross-validation,
+#'  defaults to 5.
+#' @param norm_response_var Normalized response variable used in the model.
+#' @param lags_column Integer or vector specifying the number of lags for the
+#'  columns, defaults to c(8).
+#' @param initial_column_values Numeric or vector providing initial values for
+#'  columns, defaults to c(1).
+#' @param lags_response Integer or vector specifying the number of lags for the
+#'  response, defaults to NULL.
+#' @param initial_prediction_value Numeric value indicating the initial value
+#'  for prediction, defaults to 1.
+#' @param model_params List of model parameters including kernel type.
+#' @param nu Numeric value representing the nu parameter for the SVR model.
+#' @param cost Numeric value representing the cost parameter for the SVR model.
+#' @param training_list_name Character string naming the list of training data,
+#'  defaults to 'training'.
+#' @param validation_list_name Character string naming the list of validation
+#'  data, defaults to 'validation'.
+#' @param is_silent_mode Logical flag indicating if the function should operate
+#'  in silent mode, suppressing messages and output, defaults to TRUE.
+#' @param should_plot_response Logical flag indicating whether the response
+#'  variable should be plotted, defaults to FALSE.
+#' @param progress_bar Progress bar object configured for the grid search
+#'  process.
+#' @param generate_response_predictions_cv Logical flag indicating if response
+#'  predictions should be generated, defaults to FALSE.
+#' @param basic_filter_check_cv Logical flag indicating if basic filters should
+#'  be applied, defaults to TRUE.
+#'
+#' @return A list containing the results of each iteration of the grid search,
+#'  including model performance metrics and potentially the generated response
+#'  predictions.
+#'
 #' @examples
 #' \dontrun{
 #' # Assuming 'data_env', 'processed_data', and 'model_params' are predefined
@@ -338,6 +419,7 @@ progressbar_config <-
 #'   data_partitions = data_env$data_partitions, ...)
 #' }
 #' @export
+#'
 grid_search_main_loop <- function(data_env,
                                   processed_data,
                                   data_partitions,
@@ -354,7 +436,9 @@ grid_search_main_loop <- function(data_env,
                                   validation_list_name = 'validation',
                                   is_silent_mode = TRUE,
                                   should_plot_response = FALSE,
-                                  progress_bar) {
+                                  progress_bar,
+                                  generate_response_predictions_cv = FALSE,
+                                  basic_filter_check_cv = TRUE) {
   # Validation
   stopifnot(is.list(data_env),
             is.list(model_params))
@@ -380,7 +464,9 @@ grid_search_main_loop <- function(data_env,
         nu = n,
         gamma = gamma,
         should_plot_response = should_plot_response,
-        is_silent_mode = is_silent_mode
+        is_silent_mode = is_silent_mode,
+        generate_response_predictions_cv = generate_response_predictions_cv,
+        basic_filter_check_cv = basic_filter_check_cv
       )
       
       if (length(lags_column) == 1) {
@@ -411,18 +497,21 @@ grid_search_main_loop <- function(data_env,
 
 #' Evaluate a grid of parameters
 #'
-#' This function evaluates a grid of parameters for signal processing. It iterates over response lags,
-#' displays a message (if not silent), and calls a function to evaluate the signal on the grid.
+#' This function evaluates a grid of parameters for signal processing. It
+#' iterates over response lags,
+#' displays a message (if not silent), and calls a function to evaluate the
+#' signal on the grid.
 #' It supports a progress bar update after each iteration.
 #'
 #' @param params A list containing the parameters for the grid evaluation.
 #' @param progress_bar A progress bar object for tracking progress. Optional.
 #' @examples
-#' \dontrun {
+#' \dontrun{
 #'   grid_eval(params, progress_bar)
 #' }
 #'
 #' @export
+#'
 grid_eval <-
   function(params,
            progress_bar = NULL) {
@@ -470,7 +559,8 @@ grid_eval <-
 
 #' Display Grid Message
 #'
-#' This function displays a message on the console, showing the values of cost, nu, gamma, and lags.
+#' This function displays a message on the console, showing the values of cost,
+#' nu, gamma, and lags.
 #' It's used for logging purposes during grid evaluation.
 #'
 #' @param cost The cost parameter value.
@@ -496,30 +586,45 @@ display_grid_message <- function(cost, nu, gamma, lags) {
 
 #' Grid Signal Evaluation
 #'
-#' This function evaluates the quality of signals on a grid of parameters. It generates signal predictions,
-#' evaluates signal quality, performs cross-validation, and returns results including advanced signal scores.
+#' This function evaluates the quality of signals on a grid of parameters.
+#' It generates signal predictions,
+#' evaluates signal quality, performs cross-validation, and returns results
+#' including advanced signal scores.
 #'
-#' @param data_env_list List of data environments for signal processing.
+#' @param data_env Data environment containing datasets and parameters for
+#'  signal processing.
 #' @param processed_data Preprocessed data used for generating predictions.
-#' @param bcv_folds Number of folds for cross-validation.
-#' @param norm_vsvr_response Normalized response variable.
-#' @param initial_column_values Initial values for columns in the dataset.
-#' @param grid_col_lags Column lags for the grid.
-#' @param response_lag The lag of the response. Default is NULL.
-#' @param prediction_initial_value Initial value for prediction. Default is 1.
-#' @param cost Cost parameter for the model.
-#' @param nu Nu parameter for the model.
-#' @param gamma Gamma parameter for the model. Default is NULL.
-#' @param kernel Kernel type for the model.
-#' @param silent Boolean to control output verbosity. Default is TRUE.
-#' @param plot_response Boolean to control plotting of response signals. Default is FALSE.
-#' @return A list containing evaluation results.
+#' @param bcv_folds Number of folds for cross-validation, defaults to 5.
+#' @param norm_response_var Normalized response variable used in the evaluation.
+#' @param initial_column_values Numeric or vector providing initial values for
+#'  columns in the dataset, defaults to c(1).
+#' @param grid_col_lags Integer or vector specifying column lags for the grid.
+#' @param lag_response Integer or vector specifying the lag of the response,
+#'  defaults to NULL.
+#' @param initial_prediction_value Numeric value indicating the initial value
+#'  for prediction, defaults to 1.
+#' @param cost Numeric value representing the cost parameter for the SVR model.
+#' @param nu Numeric value representing the nu parameter for the SVR model.
+#' @param gamma Numeric value (optional) representing the gamma parameter for
+#'  the SVR model, defaults to NULL.
+#' @param is_silent_mode Logical flag indicating if the function should operate
+#'  in silent mode, suppressing messages and output, defaults to TRUE.
+#' @param should_plot_response Logical flag indicating whether the response
+#'  variable should be plotted, defaults to FALSE.
+#' @param generate_response_predictions_cv Logical flag indicating if response
+#'  predictions should be generated, defaults to FALSE.
+#' @param basic_filter_check_cv Logical flag indicating if basic filters should
+#'  be applied, defaults to TRUE.
+#'
+#' @return A list containing the evaluation results, including signal quality
+#'  metrics and potentially generated response predictions.
+#'
 #' @examples
 #' \dontrun{
-#'   grid_signal_eval(data, ...)
+#'   grid_signal_eval(data_env, processed_data, ...)
 #' }
-#'
 #' @export
+#'
 grid_signal_eval <-
   function(data_env,
            processed_data,
@@ -533,7 +638,9 @@ grid_signal_eval <-
            nu,
            gamma = NULL,
            is_silent_mode = TRUE,
-           should_plot_response = FALSE) {
+           should_plot_response = FALSE,
+           generate_response_predictions_cv = FALSE,
+           basic_filter_check_cv = TRUE) {
     # Simple parameter validations
     stopifnot(is.list(data_env), is.numeric(cost), is.numeric(nu))
     
@@ -555,13 +662,15 @@ grid_signal_eval <-
     
     # Signal quality evaluation
     signal_score <-
-      evaluate_signal_quality(response_predictions$predicted_values[[norm_response_var]], silent = is_silent_mode)
+      evaluate_signal_quality(response_predictions$predicted_values[[norm_response_var]],
+                              silent = is_silent_mode)
     
-    if (signal_score != "TEST PASSED") {
+    if (signal_score$result != "TEST PASSED" &&
+        basic_filter_check_cv) {
       return(append(results,
                     list(
                       c(
-                        test_result = signal_score,
+                        test_result = signal_score$result,
                         warnings = response_predictions$warnings,
                         list(support_vectors = response_predictions$model$tot.nSV),
                         list(signal_response = response_predictions$predicted_values[[norm_response_var]])
@@ -574,9 +683,14 @@ grid_signal_eval <-
       cost = cost,
       nu = nu,
       gamma = gamma,
-      col_lags = c(grid_col_lags, lag_response),
+      combined_col_lags = c(grid_col_lags, lag_response),
       data_list = data_env,
-      bcv_folds = bcv_folds
+      bcv_folds = bcv_folds,
+      col_lags = grid_col_lags,
+      response_lags = lag_response,
+      initial_column_values = initial_column_values,
+      prediction_initial_value = initial_prediction_value,
+      generate_response_predictions_cv = generate_response_predictions_cv
     )
     
     if (is.nan(cv_result$avg_cor) ||
@@ -611,7 +725,8 @@ grid_signal_eval <-
         response_lag = lag_response
       ),
       response_predictions_warnings = response_predictions$warnings,
-      support_vectors = response_predictions$model$tot.nSV
+      support_vectors = response_predictions$model$tot.nSV,
+      cv_predictions = cv_result$cv_predictions
     )
     results <- append(results, list(c(result_list)))
     

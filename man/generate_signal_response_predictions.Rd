@@ -8,7 +8,7 @@ generate_signal_response_predictions(
   data,
   pressure_signal_df,
   pressure_start = 3,
-  prediction_size = 40,
+  prediction_size = 70,
   column_names,
   initial_columns_lags,
   predicted_column_lags,
@@ -20,14 +20,16 @@ generate_signal_response_predictions(
   cost,
   nu,
   gamma = NULL,
-  tolerance
+  tolerance,
+  svm_cache_size = 100,
+  included_model = NULL
 )
 }
 \arguments{
 \item{data}{A dataframe containing the training data for the SVR model.}
 
-\item{pressure_signal_df}{A dataframe that encapsulates the pressure signal. The signal
-should align with the prediction size. Each row represents a
+\item{pressure_signal_df}{A dataframe that encapsulates the pressure signal.
+The signal should align with the prediction size. Each row represents a
 time step and contains the signal's value.}
 
 \item{pressure_start}{An integer specifying the starting point of the pressure signal
@@ -67,22 +69,30 @@ predictive variable.}
 \item{gamma}{A numeric value (optional) indicating the gamma parameter of the SVR model.}
 
 \item{tolerance}{Numeric. SVM tolerance for stopping criterion.}
+
+\item{svm_cache_size}{Numeric. The size of the cache for the SVM algorithm.}
+
+\item{included_model}{(Optional) An existing SVR model that can be included for the prediction.
+If NULL, a new model is trained. Defaults to NULL.}
 }
 \value{
-A dataframe containing the predicted signal. Each row corresponds to a time step,
-        and the dataframe includes the predicted values from `pressure_start` up to
-        `prediction_size`.
+A list containing three elements: `predicted_values` - a dataframe with the predicted signal,
+        where each row corresponds to a time step from `pressure_start` up to `prediction_size`;
+        `warnings` - any warnings generated during the max iterations of the SVR model;
+        and `model` - the SVR model object used for prediction.
 }
 \description{
-This function trains a Support Vector Regression (SVR) model with the provided data and then utilizes
-it to generate predictions for a response signal in the context of a time series setup.
+This function trains a Support Vector Regression (SVR) model with the
+provided data and then utilizes
+it to generate predictions for a response signal in the context of a time
+series setup. All character variables must end with "_norm".
 }
 \examples{
 pressure_signal_df <- data.frame(feature1_norm = rnorm(50))
 prediction <- generate_signal_response_predictions(
                     data = data.frame(feature1_norm = rnorm(100),
                                       feature2_norm = rnorm(100),
-                                     feature1_norm_1 = rnorm(100),
+                                      feature1_norm_1 = rnorm(100),
                                       feature2_norm_1 = rnorm(100)),
                     pressure_signal_df = pressure_signal_df,
                     column_names = c("feature1_norm", "feature2_norm"),

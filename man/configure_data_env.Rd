@@ -2,58 +2,68 @@
 % Please edit documentation in R/Configurations.R
 \name{configure_data_env}
 \alias{configure_data_env}
-\title{Configure the data environment for modeling}
+\title{Configure Data Environment for PSO Modeling}
 \usage{
 configure_data_env(
   config,
   data,
-  excluded_cols,
+  excluded_cols = NULL,
   signal_names,
   predictors_names,
-  vsvr_response
+  vsvr_response,
+  extra_col_name = NULL,
+  initial_prediction_values = c(1),
+  multi = FALSE
 )
 }
 \arguments{
-\item{config}{A list of configuration options.}
+\item{config}{A list of configuration options for the brain modeler.}
 
-\item{data}{A data frame containing the dataset to be processed.}
+\item{data}{A data frame containing the dataset to be optimized.}
 
-\item{excluded_cols}{Vector of column names that should be excluded from processing.}
+\item{excluded_cols}{(Optional) Vector of column names to be excluded from
+the optimization. Defaults to NULL.}
 
-\item{signal_names}{Vector of names representing signal columns. The resulting normalized signal names
-in the processed data will have a "_norm" suffix.}
+\item{signal_names}{Vector of names representing signal columns.}
 
-\item{predictors_names}{Vector of predictor names for the model. The resulting normalized predictor names
-in the processed data will have a "_norm" suffix.}
+\item{predictors_names}{Vector of predictor names for the model.}
 
-\item{vsvr_response}{Name of the column representing the VSVR response. The resulting normalized name
-in the processed data will have a "_norm" suffix.}
+\item{vsvr_response}{Name of the column representing the VSVR response.}
+
+\item{extra_col_name}{(Optional) Additional column name to be included. Only
+used if `multi` is TRUE. Defaults to NULL.}
+
+\item{initial_prediction_values}{(Optional) Initial prediction values for the
+model. Defaults to c(1).}
+
+\item{multi}{(Optional) Logical indicating if the model should be multivariate.
+If TRUE, additional processing is performed for the extra column. Defaults
+to FALSE.}
 }
 \value{
-A list containing various data configurations including the processed data with normalized signal names.
+A list containing the following elements:
+  - `pressure_df`: Data frame with pressure step added.
+  - `processed_data`: The processed data frame.
+  - `data_partitions`: Data partitions created by blocked cross-validation.
+  - `NORM_SIGNAL_NAMES`: Normalized signal names.
+  - `NORM_PREDICTORS_NAMES`: Normalized predictor names.
+  - `NORM_VSVR_RESPONSE`: Normalized VSVR response name.
+  - `VSVR_TOL`: VSVR tolerance from the configuration.
+  - `INITIAL_PREDICTION_VALUES`: Initial prediction values,
+      adjusted if `multi` is TRUE.
+  - `svm_cache_size`: SVM cache size from the configuration.
 }
 \description{
-This function prepares the data environment required for modeling. The signals in the resulting data
-are normalized and the signal names have a "_norm" suffix to indicate this normalization.
-}
-\details{
-This function depends on:
-\itemize{
-  \item Internal package functions:
-  \itemize{
-    \item \code{\link{add_pressure_step}}: Generate a dataframe for the smoothed negative
-   pressure step response with a Butterworth filter.
-    \item \code{\link{process_dataframe}}: Exclude, Normalize, and Lag Signals of Data Frame.
-The normalization will append a "_norm" suffix to the signal names.
-    \item \code{\link{blocked_cv}}: Perform k-folded blocked cross-validation.
-  }
-}
+This function prepares the data environment for PSO modeling.
+It processes the input data and sets up the necessary components and
+configurations based on the provided parameters. It handles the addition of
+a pressure step, processing of the data frame, and blocked cross-validation
+partitioning. It also normalizes signal names and handles additional
+configurations for multivariate models.
 }
 \examples{
-config <- PSOBrainModeler:::configure_pso_brain_modeler()
-data <- data.frame(feature1 = rnorm(10), feature2 = rnorm(10))
-PSOBrainModeler:::configure_data_env(config = config, data = data, excluded_cols = NULL,
-  signal_names = c("feature1", "feature2"), predictors_names = c("feature1"),
-  vsvr_response = "feature2")
+\dontrun{
+  configure_data_env(...)
+}
 
 }

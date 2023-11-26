@@ -1,30 +1,48 @@
-#' PSO Model Function
+#' Particle Swarm Optimization (PSO) Model Function
 #'
-#' This function performs the Particle Swarm Optimization (PSO) model based on the provided parameters and model.
+#' Executes PSO modeling using provided parameters and configurations.
+#' This function is tailored for both univariate and multivariate models and
+#' offers options for silent operation, response plotting, and integrates
+#' various model parameters and PSO environment settings.
 #'
-#' @param params A numeric vector of parameters.
-#' @param model A character string specifying the model. Valid values are "FIR", "NFIR", "ARX", and "NARX".
-#' @param multi A logical indicating whether multi-response is used. Defaults to FALSE.
-#' @param data_list A list containing various data configurations.
-#' @param silent A logical for run the function silently (without printouts). Defaults to FALSE.
-#' @param plot_response (Optional) A logical to decide whether to plot the response signal. Defaults to TRUE.
+#' @param params Parameter list for the PSO model.
+#' @param max_function_count Maximum number of function evaluations. Defaults
+#'  to 1000.
+#' @param multi Boolean flag to indicate if the model is multivariate. Defaults
+#'  to FALSE.
+#' @param data_list A list containing processed data relevant to the model.
+#' @param model The model type to be optimized.
+#' @param silent Flag to control the display of messages during execution.
+#'  Defaults to FALSE.
+#' @param plot_response Flag to enable or disable plotting the response.
+#'  Defaults to TRUE.
+#' @param initial_response_value Initial value for the response variable.
+#'  Defaults to 1.
+#' @param model_parameters List of specific model parameters.
+#' @param bcv_folds Number of folds for blocked cross-validation. Defaults to 5.
+#' @param pso_env PSO environment configuration.
+#' @param seed Seed for random number generation. Defaults to 123.
+#' @param progress_bar Progress bar configuration for the optimization process.
+#' @param generate_response_predictions_cv Flag to generate response
+#'  predictions. Defaults to FALSE.
+#' @param basic_filter_check_cv Flag to enable basic filtering of the data.
+#'  Defaults to TRUE.
+#' @param fn_count_treshold Threshold for function count in optimization.
+#'  Defaults to 30.
 #'
-#' @return The result of the `pso_training_model`.
-#'
-#' @details
-#' This function depends on the following internal package functions:
-#' - \code{\link{extract_and_round_pso_params}}: Extract and Round Parameters from PSO Optimization
-#' - \code{\link{pso_training_model}}: Model training function using PSO optimization
+#' @return The result of the PSO training model function, including any metrics,
+#'         model parameters, and performance indicators.
 #'
 #' @examples
 #' \dontrun{
-#'  pso_model(params = c(cost = 1, nu = 0.5, lags = c(1)),
-#'    model = "FIR", multi = FALSE, data_list = list())
+#'   pso_model(params, data_list = my_data_list, model = "my_model")
 #' }
 #'
 #' @export
+#'
 pso_model <-
   function(params,
+           max_function_count = 1000,
            multi = FALSE,
            data_list,
            model,
@@ -34,44 +52,27 @@ pso_model <-
            model_parameters,
            bcv_folds = 5,
            pso_env,
-           seed = 123) {
-    # Validation
-    validate_params(params, model_parameters, model)
-    
-    # Get other parameters and extract them
-    has_gamma <-
-      length(params) == max(model_parameters$valid_lengths)
-    params_list <- extract_and_round_pso_params(params,
-                                                has_gamma = has_gamma,
-                                                n_lags = model_parameters$n_lags)
-    
-    # More parameter extraction
-    col_lags <- params_list$lags[1]
-    response_lags <-
-      if (model_parameters$n_lags >= 2)
-        params_list$lags[2]
-    else
-      NULL
-    
-    # Additional extraction if multi is TRUE
-    if (multi && model_parameters$n_lags >= 2) {
-      col_lags <- c(params_list$lags[1], params_list$lags[2])
-      response_lags <- if (length(params_list$lags) >= 3) {
-        params_list$lags[3]
-      } else {
-        NULL
-      }
-    }
+           seed = 123,
+           progress_bar,
+           generate_response_predictions_cv = FALSE,
+           basic_filter_check_cv = TRUE,
+           fn_count_treshold = 30) {
+    params_list <-
+      extract_params_list(params = params,
+                          model_parameters = model_parameters,
+                          multi = multi)
     
     # Display message
-    display_message(params_list, silent)
+    if (!silent && pso_env[["function_count"]] < max_function_count)
+      display_params_message(params_list)
     
     pso_training_model_result <- pso_training_model(
+      max_function_count = max_function_count,
       cost = params_list$cost,
       nu = params_list$nu,
       gamma = params_list$gamma,
-      col_lags = col_lags,
-      response_lags = response_lags,
+      col_lags = params_list$col_lags,
+      response_lags = params_list$response_lags,
       vsvr_response = data_list$NORM_VSVR_RESPONSE,
       data_list = data_list,
       silent = silent,
@@ -80,44 +81,12 @@ pso_model <-
       prediction_initial_value = initial_response_value,
       bcv_folds = bcv_folds,
       pso_env = pso_env,
-      seed = seed
+      seed = seed,
+      progress_bar = progress_bar,
+      generate_response_predictions_cv = generate_response_predictions_cv,
+      basic_filter_check_cv = basic_filter_check_cv,
+      fn_count_treshold = fn_count_treshold
     )
     
     return(pso_training_model_result)
   }
-
-
-# Display message function
-display_message <- function(params_list, silent) {
-  if (!silent) {
-    message <- paste(
-      "Cost: ",
-      params_list$cost,
-      "Nu: ",
-      params_list$nu,
-      if (!is.null(params_list$gamma))
-        paste("Gamma: ", params_list$gamma),
-      "Lags: ",
-      paste(params_list$lags, collapse = ", "),
-      "\n"
-    )
-    cat(message)
-  }
-}
-
-# Validation function
-validate_params <- function(params, model_parameters, model) {
-  valid_lengths <- model_parameters$valid_lengths
-  
-  if (!is.numeric(params)) {
-    stop(sprintf("params should be a numeric vector for model %s.", model))
-  }
-  
-  if (!(length(params) %in% valid_lengths)) {
-    stop(sprintf(
-      "params should be a numeric vector of length %s for model %s.",
-      paste(valid_lengths, collapse = " or "),
-      model
-    ))
-  }
-}

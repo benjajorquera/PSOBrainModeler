@@ -9,11 +9,19 @@ filter_signals_dataframe(df, signal_names)
 \arguments{
 \item{df}{A data frame to filter.}
 
-\item{signal_names}{A character vector specifying the names of the columns to include in the output.}
+\item{signal_names}{A character vector specifying the names of the columns
+to include in the output.}
 }
 \value{
 A data frame containing only the specified columns.
 }
 \description{
-This function returns a subset of the given data frame containing only the specified columns.
+This function returns a subset of the given data frame containing only the
+specified columns.
+}
+\examples{
+data_sample <- data.frame(a = 1:5, b = 6:10, c = 11:15)
+filtered_data <- filter_signals_dataframe(data_sample, c("a", "c"))
+# The `filtered_data` will contain only columns `a` and `c`.
+
 }

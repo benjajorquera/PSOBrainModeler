@@ -1,97 +1,248 @@
-#' Extract and Round Parameters from PSO Optimization
+#' Extract and Round PSO Parameters
 #'
-#' This function takes a numeric vector of parameters, rounds them as necessary,
-#' and structures them in a list for easier use in subsequent processes.
+#' This function extracts parameters from a PSO optimization result, rounding
+#' or applying significance as necessary.
+#' It is designed to handle parameters including cost, nu, gamma (optional),
+#' and lags.
 #'
-#' @param params A numeric vector with the optimization parameters.
-#' @param has_gamma (Optional) A logical indicating if the gamma parameter is included. Defaults to FALSE.
-#' @param n_lags (Optional) An integer for the number of lags being optimized. Defaults to 1.
+#' @param params Numeric vector containing the parameters to be extracted.
+#' @param has_gamma Logical indicating whether the gamma parameter is present.
+#' @param n_lags Integer specifying the number of lag parameters to extract.
 #'
-#' @return A list containing the rounded parameters including cost, nu, gamma (if applicable), and lags.
+#' @return A list containing the extracted parameters:
+#'   - `cost`: The cost parameter, rounded or significant based on its value.
+#'   - `nu`: The nu parameter, rounded to 3 decimal places.
+#'   - `lags`: A vector of lag parameters, each rounded to the nearest integer.
+#'   If `has_gamma` is TRUE, the list also includes:
+#'   - `gamma`: The gamma parameter, rounded or significant based on its value.
 #'
 #' @examples
-#' params <- c(1.234, 0.5678, 0.00089, 2.345)
-#' PSOBrainModeler:::extract_and_round_pso_params(params, has_gamma = TRUE, n_lags = 1)
+#' extract_and_round_pso_params(c(1.234, 2.345, 0.456, 3, 4, 5),
+#'  has_gamma = TRUE, n_lags = 3)
+#' extract_and_round_pso_params(c(0.234, 2.345, 3, 4), has_gamma = FALSE,
+#'  n_lags = 2)
+#'
+#' @export
 #'
 extract_and_round_pso_params <-
   function(params,
            has_gamma = FALSE,
            n_lags = 1) {
-
-    cost <- ifelse(params[1] >= 1,
-                   round(params[1], digits = 3),
-                   signif(params[1], digits = 3))
+    round_or_signif <-
+      function(x,
+               threshold = 1,
+               round_digits = 3,
+               signif_digits = 3) {
+        if (x >= threshold) {
+          round(x, digits = round_digits)
+        } else {
+          signif(x, digits = signif_digits)
+        }
+      }
     
+    cost <- round_or_signif(params[1], round_digits = 2)
     nu <- round(params[2], digits = 3)
+    lags_start <- if (has_gamma)
+      4
+    else
+      3
+    lags <- round(params[lags_start:(lags_start + n_lags - 1)])
+    
+    params_list <- list(cost = cost, nu = nu, lags = lags)
     
     if (has_gamma) {
       gamma <-
-        ifelse(params[3] >= 1,
-               round(params[3], digits = 3),
-               signif(params[3], digits = 5))
-      lags_start <- 4
-    } else {
-      gamma <- NULL
-      lags_start <- 3
-    }
-    
-    lags <- round(params[lags_start:(lags_start - 1 + n_lags)])
-    params_list <- list(cost = cost, nu = nu, lags = lags)
-    
-    if (!is.null(gamma)) {
+        round_or_signif(params[3],
+                        signif_digits = 5)
       params_list$gamma <- gamma
     }
     
-    validate_pso_svr_params(params_list)
     return(params_list)
   }
 
-#' Validate Parameters for PSO-SVR
+
+#' Auxiliary Function to Get Model Parameters
 #'
-#' This function validates the parameters for the Particle Swarm Optimization
-#' Support Vector Regression (PSO-SVR) model. It checks if the provided
-#' parameters 'cost', 'nu', 'gamma', and 'lags' meet the expected criteria.
+#' This function retrieves the valid parameter lengths and number of lags for
+#'  different model types.
+#' It supports both univariate and multivariate cases for FIR, NFIR, ARX, and
+#'  NARX models.
 #'
-#' @param list A list containing the parameters to be validated. The list can
-#'             include 'cost', 'nu', 'gamma', and 'lags'.
+#' @param model Character string specifying the type of model.
+#'  Should be one of "FIR", "NFIR", "ARX", or "NARX".
+#' @param multi (Optional) Logical indicating if the model is multivariate.
+#'  Defaults to FALSE.
 #'
-#' @return Invisible NULL. If any of the parameters fail validation, the function
-#'         stops with an error message.
-#'
-#' @details
-#' The function expects the following parameters in the list:
-#' - 'cost': A positive numeric value.
-#' - 'nu': A numeric value between 0 (exclusive) and 1 (inclusive).
-#' - 'gamma': (Optional) A positive numeric value.
-#' - 'lags': A numeric vector. The function validates only the first value, which
-#'           should be a positive integer.
+#' @return A list containing two elements:
+#'   - `valid_lengths`: Vector of valid parameter lengths for the specified model.
+#'   - `n_lags`: Number of lags to be used for the model.
 #'
 #' @examples
-#' parameters <- list(cost = 1.5, nu = 0.5, gamma = 0.01, lags = c(2, 3, 4))
-#' PSOBrainModeler:::validate_pso_svr_params(parameters)
+#' get_model_parameters("FIR", TRUE)
+#' get_model_parameters("ARX", FALSE)
 #'
-validate_pso_svr_params <- function(list) {
-  # Validate 'cost'
-  if (!is.numeric(list$cost) || list$cost <= 0) {
-    stop("Invalid value for 'cost'. It should be a positive number.")
-  }
+#' @export
+#'
+get_model_parameters <- function(model, multi = FALSE) {
+  is_fir_nfir <- model %in% c("FIR", "NFIR")
+  is_arx_narx <- model %in% c("ARX", "NARX")
   
-  # Validate 'nu'
-  if (!is.numeric(list$nu) ||
-      list$nu <= 0 || list$nu > 1) {
-    stop("Invalid value for 'nu'. It should be between 0 (exclusive) and 1 (inclusive).")
-  }
+  valid_lengths <-
+    if (is_fir_nfir)
+      c(3, 4)
+  else if (is_arx_narx)
+    c(4, 5)
+  valid_multi_lengths <- valid_lengths + 1
+  n_lags <- if (is_fir_nfir)
+    1
+  else if (is_arx_narx)
+    2
+  n_multi_lags <- n_lags + 1
   
-  # Validate 'gamma', if it exists
-  if (!is.null(list$gamma)) {
-    if (!is.numeric(list$gamma) || list$gamma <= 0) {
-      stop("Invalid value for 'gamma'. It should be a positive number.")
+  if (multi) {
+    return(list(valid_lengths = valid_multi_lengths, n_lags = n_multi_lags))
+  }
+  return(list(valid_lengths = valid_lengths, n_lags = n_lags))
+}
+
+
+#' Display Formatted Message Based on Parameters List
+#'
+#' This function constructs and displays a message detailing the values of the
+#' parameters in the provided list. It specifically formats and includes
+#' information about cost, nu, gamma (if not NULL), and lags.
+#'
+#' @param params_list A list containing parameters including cost, nu, gamma,
+#'  column lags, and response lags.
+#'
+#' @examples
+#' params_list <- list(cost = 1.23, nu = 0.45, gamma = NULL, col_lags = 1:3,
+#'  response_lags = 4:5)
+#' display_params_message(params_list)
+#'
+#' @export
+#'
+display_params_message <- function(params_list) {
+  gamma_message <-
+    if (!is.null(params_list$gamma))
+      paste("Gamma:", params_list$gamma)
+  else
+    ""
+  lags <-
+    paste(c(params_list$col_lags, params_list$response_lags),
+          collapse = ", ")
+  
+  message <-
+    paste(
+      "Cost:",
+      params_list$cost,
+      "Nu:",
+      params_list$nu,
+      gamma_message,
+      "Lags:",
+      lags,
+      sep = " "
+    )
+  cat(message, "\n")
+}
+
+#' Extract and Format Parameters List for PSO Modeling
+#'
+#' This function extracts parameters necessary for PSO modeling from a given
+#' list, adjusts for the presence of a gamma parameter, and formats them
+#' accordingly. It also handles adjustments for multivariate models.
+#'
+#' @param params A vector of parameters for PSO modeling.
+#' @param model_parameters A list of model parameters, including valid lengths
+#'  and number of lags.
+#' @param multi Logical indicating if the model is multivariate. Defaults to
+#'  FALSE.
+#'
+#' @return A list of formatted parameters, including cost, nu,
+#'  gamma (if applicable), response lags, and column lags.
+#'
+#' @examples
+#' params <- c(1, 2, 3, 4, 5)
+#' model_parameters <- list(valid_lengths = c(4, 5), n_lags = 2)
+#' extract_params_list(params, model_parameters)
+#'
+#' @export
+#'
+extract_params_list <-
+  function(params, model_parameters, multi = FALSE) {
+    has_gamma <- length(params) == max(model_parameters$valid_lengths)
+    params_list <-
+      extract_and_round_pso_params(params, has_gamma = has_gamma,
+                                   n_lags = model_parameters$n_lags)
+    
+    col_lags <- params_list$lags[1]
+    response_lags <-
+      if (model_parameters$n_lags >= 2)
+        params_list$lags[2]
+    else
+      NULL
+    
+    if (multi && model_parameters$n_lags >= 2) {
+      col_lags <- params_list$lags[1:2]
+      response_lags <-
+        if (length(params_list$lags) >= 3)
+          params_list$lags[3]
+      else
+        NULL
     }
+    
+    return(
+      list(
+        cost = params_list$cost,
+        nu = params_list$nu,
+        gamma = params_list$gamma,
+        response_lags = response_lags,
+        col_lags = col_lags
+      )
+    )
   }
-  
-  # Validate 'lags'
-  if (!all(is.numeric(list$lags)) || list$lags[1] < 1) {
-    stop("Invalid first value for lags")
-  }
-  
+
+#' Display PSO Message
+#'
+#' This function displays a message with various statistical measures and
+#' signal filter scores.
+#' It is designed to output the average correlation (AVG COR), average mean
+#' squared error (AVG MSE), basic filter signal score, and advanced filter
+#' signal score.
+#'
+#' @param cor A numeric value or vector representing the average correlation.
+#'             This parameter should provide the average correlation scores
+#'             calculated
+#'             by your process or model.
+#' @param err A numeric value or vector representing the average mean squared
+#'            error (MSE).
+#'            This parameter should contain the average MSE values calculated
+#'            by your process or model.
+#' @param basic A numeric or character value representing the basic filter
+#'              signal score.
+#'              This score or flag indicates the result of a basic filtering
+#'              process or evaluation.
+#' @param advanced A numeric or character value representing the advanced filter
+#'                 signal score.
+#'                 This score or flag indicates the result of an advanced
+#'                 filtering process or evaluation.
+#'
+#' @return This function does not return a value. It prints the input parameters
+#'  in a formatted manner to the R console.
+#' @examples
+#' display_pso_message(0.85, 0.02, "Pass", "High")
+#'
+#' @export
+display_pso_message <- function(cor, err, basic, advanced) {
+  cat(
+    "\nAVG COR: ",
+    cor,
+    "AVG MSE: ",
+    err,
+    "Signal basic filter: ",
+    basic,
+    "Signal advance score: ",
+    advanced,
+    "\n"
+  )
 }

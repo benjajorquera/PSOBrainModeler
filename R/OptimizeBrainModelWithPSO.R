@@ -9,124 +9,123 @@
 #' @param psoptim_config A list of configuration options for psoptim.
 #' @param data A data frame containing the dataset to be optimized.
 #' @param model Character string specifying the type of model to be optimized.
-#'  Should be one of "FIR", "NFIR", "ARX", or "NARX".
+#'  Should be one of "FIR", "NFIR", "ARX", or "NARX". Defaults to "FIR".
 #' @param multi (Optional) Logical indicating if the model should be multivariate.
-#'  If TRUE, optimizes with two input variables; if FALSE, optimizes with one input variable.
-#'  Defaults to FALSE.
+#'  If TRUE, optimizes with two input variables; if FALSE, optimizes with one
+#'  input variable. Defaults to FALSE.
 #' @param signal_names Vector of names representing signal columns.
-#' @param excluded_cols (Optional) Vector of column names that should be excluded from optimization.
-#'  Defaults to NULL.
+#' @param excluded_cols (Optional) Vector of column names that should be excluded
+#'  from optimization. Defaults to NULL.
 #' @param predictors_names Vector of predictor names for the model.
-#' @param params_lower_bounds Vector of lower bounds for model optimization parameters.
-#' @param params_upper_bounds Vector of upper bounds for model optimization parameters.
-#' @param params_initial_values Vector of initial values for model optimization parameters.
-#'  Length should be equal for all parameter vectors.
+#' @param max_function_count (Optional) Maximum number of function evaluations.
+#'  Default is 1000.
+#' @param params_lower_bounds Vector of lower bounds for model optimization
+#'  parameters.
+#' @param params_upper_bounds Vector of upper bounds for model optimization
+#'  parameters.
+#' @param params_initial_values (Optional) Vector of initial values for model
+#'  optimization parameters.
+#'  If provided, length should be equal for all parameter vectors. Defaults to
+#'   NULL.
 #' @param vsvr_response Name of the column representing the VSVR response.
-#' @param silent (Optional) A logical indicating if the function should run silently. Default is TRUE.
-#' @param plot_response (Optional) A logical to decide whether to plot the response signal. Defaults to TRUE.
+#' @param extra_col_name (Optional) Additional column name to be included.
+#'  Defaults to NULL.
+#' @param silent (Optional) A logical indicating if the function should run
+#'  silently. Defaults to TRUE.
+#' @param plot_response (Optional) A logical to decide whether to plot the
+#'  response signal. Defaults to FALSE.
+#' @param initial_pressure_value (Optional) Initial pressure value for the
+#'  optimization. Defaults to c(1).
+#' @param initial_response_value Initial value set for the response variable in
+#'  the optimization process. Defaults to 1.
+#' @param seed (Optional) Seed value for random number generation. Defaults to
+#'  123.
+#' @param generate_response_predictions_cv Logical flag to determine if response
+#'  predictions should be generated. Defaults to FALSE.
+#' @param basic_filter_check_cv Logical flag indicating whether a basic filter
+#'  check is performed. Defaults to TRUE.
+#' @param fn_count_treshold Integer threshold for a specific function count
+#'  condition, affecting the optimization flow. Defaults to 30.
 #'
-#' @return An object with results from the psoptim optimization.
+#' @return Returns a list containing two elements:
+#'   - `psoptim_result`: The result from the psoptim optimization process.
+#'   - `pso_env`: The environment or context in which the psoptim optimization
+#'       was performed.
 #'
-#' @description Utilizing blocked k-fold cross-validation, the package
-#'  conducts hyperparameter optimization through PSO. Models generated
-#'  include FIR, NFIR, ARX, and NARX. These models can be univariate or multivariate.
-#'
-#' @details
-#' This function depends on:
-#' \itemize{
-#'   \item Internal package functions:
-#'   \itemize{
-#'     \item \code{\link{configure_pso_brain_modeler}}: Configure the Brain Modeler for PSO
-#'     \item \code{\link{configure_psoptim_control}}: Configure the control parameters for psoptim
-#'     \item \code{\link{configure_data_env}}: Configure the data environment for modeling
-#'     \item \code{\link{validate_inputs_main}}: Validate Main Inputs
-#'     \item \code{\link{pso_model}}: PSO Model Function
-#'   }
-#'   \item External package function:
-#'   \itemize{
-#'     \item \code{psoptim}
-#'   }
-#' }
+#' @description This function implements blocked k-fold cross-validation for
+#'  conducting hyperparameter optimization using Particle Swarm Optimization (PSO).
+#'  It supports the creation of various model types, including FIR, NFIR, ARX,
+#'  and NARX, which can be either univariate or multivariate. The function has
+#'  been enhanced with the integration of a progress bar to provide visual
+#'  feedback during the optimization process. Additionally, it utilizes an
+#'  environment (env) for improved management and tracking of optimization
+#'  parameters and results.
 #'
 #' @examples
 #'
 #' \dontrun{
-#'  mydata <-   data.frame(
-#'   Feature1 = rnorm(100),
-#'   Feature2 = rnorm(100),
-#'   Feature3 = rnorm(100),
-#'   Feature4 = rnorm(100)
-#'   )
 #'  brain_modeler_config <- configure_pso_brain_modeler()
 #'  psoptim_config <- configure_psoptim_control()
 #'
 #'  optimize_brain_model_with_PSO(config = brain_modeler_config,
-#'    psoptim_config = psoptim_config,
-#'    data = mydata,
-#'    model = "FIR",
-#'    multi = FALSE,
-#'    signal_names = c("Feature1", "Feature2"),
-#'    excluded_cols = c("Feature3", "Feature4"),
-#'    predictors_names = c("Feature1"),
-#'    params_lower_bounds = c(1, 0.1, 1),
-#'    params_upper_bounds = c(10, 0.5, 3),
-#'    params_initial_values = c(NA, NA, NA),
-#'    vsvr_response = "Feature2",
-#'    silent = TRUE)
+#'    psoptim_config = psoptim_config, ... )
 #' }
 #'
 #' @importFrom pso psoptim
+#' @importFrom progress progress_bar
 #'
 #' @export
 #'
 optimize_brain_model_with_PSO <- function(config,
                                           psoptim_config,
                                           data,
-                                          model,
+                                          model = "FIR",
                                           multi = FALSE,
                                           signal_names,
                                           excluded_cols = NULL,
                                           predictors_names,
+                                          max_function_count = 1000,
                                           params_lower_bounds,
                                           params_upper_bounds,
                                           params_initial_values = NULL,
                                           vsvr_response,
+                                          extra_col_name = NULL,
                                           silent = TRUE,
                                           plot_response = FALSE,
                                           initial_pressure_value = c(1),
-                                          seed = 123) {
-  # Call the validation function
-  validate_inputs_main(
-    data,
-    model,
-    signal_names,
-    predictors_names,
-    vsvr_response,
-    excluded_cols,
-    multi,
-    silent,
-    params_lower_bounds,
-    params_upper_bounds,
-    params_initial_values
-  )
+                                          initial_response_value = 1,
+                                          seed = 123,
+                                          generate_response_predictions_cv = FALSE,
+                                          basic_filter_check_cv = TRUE,
+                                          fn_count_treshold = 30) {
+  stopifnot(is.data.frame(data))
   
   data_env_list <- configure_data_env(
-    config,
+    config = config,
     data = data,
     signal_names = signal_names,
     excluded_cols = excluded_cols,
     predictors_names = predictors_names,
     vsvr_response = vsvr_response,
     multi = multi,
-    extra_col_name = "etCO2",
+    extra_col_name = extra_col_name,
     initial_prediction_values = initial_pressure_value
   )
+  
+  if (psoptim_config$maxf < max_function_count) {
+    max_function_count <- psoptim_config$maxf
+  }
+  
+  if (psoptim_config$maxit * psoptim_config$s < max_function_count) {
+    max_function_count <- psoptim_config$maxit * psoptim_config$s
+  }
   
   if (!silent)
     message(model)
   
   # Determine validation lengths and n_lags based on model
-  model_parameters <- get_model_parameters(model, multi)
+  model_parameters <-
+    get_model_parameters(model = model, multi = multi)
   
   pso_env <- new.env()
   
@@ -138,60 +137,41 @@ optimize_brain_model_with_PSO <- function(config,
   pso_env[["function_count_without_improvement"]] <- 0
   pso_env[["max_global_cor"]] <- -1
   
+  progress_bar <- progress::progress_bar$new(
+    format = "Progress: [:bar] :percent | Step :current/:total | Elapsed: :elapsed | Remaining: :eta | Rate :rate ops/sec",
+    total = max_function_count,
+    clear = FALSE,
+    width = 100
+  )
+  
   psoptim_result <- pso::psoptim(
     par = params_initial_values,
     fn = pso_model,
+    max_function_count = max_function_count,
     model = model,
     multi = multi,
     data_list = data_env_list,
+    initial_response_value = initial_response_value,
     silent = silent,
+    generate_response_predictions_cv = generate_response_predictions_cv,
+    basic_filter_check_cv = basic_filter_check_cv,
     plot_response = plot_response,
     model_parameters = model_parameters,
     bcv_folds = config$bcv_folds,
     pso_env = pso_env,
     seed = seed,
+    fn_count_treshold = fn_count_treshold,
+    progress_bar = progress_bar,
     lower = params_lower_bounds,
     upper = params_upper_bounds,
-    control = list(
-      trace = 1,
-      REPORT = 1,
-      maxit = 125,
-      s = 8,
-      w = 1,
-      c.p = 2,
-      c.g = 5,
-      vectorize = TRUE,
-      reltol = 0.5,
-      hybrid = "improved",
-      hybrid.control = list(maxit = 10),
-      maxit.stagnate = 110,
-      maxf = 1000
-    )
-    #control = psoptim_config
+    control = psoptim_config
   )
+  
+  while (!progress_bar$finished) {
+    progress_bar$tick()
+  }
   
   pso_env[["time"]] <- Sys.time() - pso_env[["time"]]
   
-  return(list(c(
-    psoptim_result = psoptim_result, pso_env = pso_env
-  )))
-}
-
-# Auxiliary function to get model parameters
-get_model_parameters <- function(model, multi) {
-  if (model %in% c("FIR", "NFIR")) {
-    valid_lengths <- c(3, 4)
-    valid_multi_lengths <- c(4, 5)
-    n_lags <- 1
-    n_multi_lags <- 2
-  } else if (model %in% c("ARX", "NARX")) {
-    valid_lengths <- c(4, 5)
-    valid_multi_lengths <- c(5, 6)
-    n_lags <- 2
-    n_multi_lags <- 3
-  }
-  if (multi) {
-    return(list(valid_lengths = valid_multi_lengths, n_lags = n_multi_lags))
-  }
-  return(list(valid_lengths = valid_lengths, n_lags = n_lags))
+  return(c(list(psoptim_result = psoptim_result), pso_env = pso_env))
 }

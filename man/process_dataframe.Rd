@@ -13,44 +13,42 @@ process_dataframe(
 )
 }
 \arguments{
-\item{df}{(Optional) A data frame containing the signals to be processed. Defaults to an empty data frame.}
+\item{df}{A data frame containing the signals to be processed. Providing an
+empty data frame is not practical for processing; hence, it's recommended
+ to always provide this argument.}
 
-\item{excluded_cols}{(Optional) A character vector specifying the columns to be excluded. Defaults to NULL.}
+\item{excluded_cols}{A character vector specifying the columns to be excluded.
+Defaults to NULL, meaning no columns are excluded if not specified.}
 
-\item{lags}{(Optional) An integer specifying the number of lags to add for each signal. Defaults to NULL.}
+\item{lags}{An integer specifying the number of lags to add for each signal.
+Defaults to NULL, implying no lags are added unless specified.}
 
-\item{signals}{A character vector specifying the signals to be excluded after normalization.}
+\item{signals}{A character vector specifying the signals to be normalized.
+This argument is mandatory.}
 
-\item{lagged_signals}{(Optional) A character vector specifying the signals to be lagged.
-If NULL, all signals will be lagged. Defaults to NULL.}
+\item{lagged_signals}{A character vector specifying the signals to be lagged.
+If NULL, all signals will be lagged. Defaults to NULL. The function appends
+a '_norm' suffix to the signal names if not already present, assuming
+normalized signals follow this naming convention.}
 }
 \value{
-A new data frame with specified columns excluded, all columns normalized,
-        and lagged versions of the signals added. Rows with resulting NA values
-        from lags are omitted.
+A new data frame with specified columns excluded, selected columns
+ normalized, and lagged versions of the signals added. Rows with resulting
+ NA values from lags are not explicitly handled and should be managed in
+ subsequent steps of analysis.
 }
 \description{
 This function processes a given data frame to exclude specified columns,
-normalize all columns, and add lagged versions of the signals.
-}
-\details{
-This function depends on:
-\itemize{
-  \item Internal package functions:
-  \itemize{
-    \item \code{\link{exclude_signals_dataframe}}: Exclude Columns in a Data Frame by Names
-    \item \code{\link{normalize_signals_by_name}}: Normalize Selected Columns in a Data Frame Using Min-Max Scaling
-    \item \code{\link{lag_all_signals}}: Add Lagged Columns to All Normalized Columns in a Data Frame
-    \item \code{\link{lag_normalized_signals}}: Add Lagged Columns to a Normalized Data Frame
-  }
-}
+normalize selected columns, and add lagged versions of the signals. It first
+excludes specified columns, then normalizes the signals, and finally adds
+lagged versions. Note: The exclusion of signals post-normalization might be
+redundant and is subject to review in future updates.
 }
 \examples{
 df <- data.frame(Time = 1:10, A = c(2, 4, 6, 8, 10, 5, 3, 7, 9, 1),
- B = c(10, 5, 8, 3, 6, 9, 2, 7, 4, 1))
+                 B = c(10, 5, 8, 3, 6, 9, 2, 7, 4, 1))
 processed_df <- process_dataframe(df = df,
                                   excluded_cols = c("Time"),
                                   lags = 2,
                                   signals = c("A", "B"))
-
 }

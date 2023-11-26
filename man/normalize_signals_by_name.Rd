@@ -9,17 +9,23 @@ normalize_signals_by_name(df = NULL, signal_names = NULL)
 \arguments{
 \item{df}{Data frame containing the columns to be normalized.}
 
-\item{signal_names}{Character vector specifying which columns should be normalized.}
+\item{signal_names}{Character vector specifying which columns should be
+normalized.}
 }
 \value{
-Data frame with normalized columns added.
+Data frame with normalized columns added, retaining the original
+ columns.
 }
 \description{
-Normalize Selected Columns in a Data Frame Using Min-Max Scaling
+This function normalizes specified columns in a data frame using Min-Max scaling.
+The normalized values are added as new columns with "_norm" appended to the
+original column names.
 }
 \examples{
-df <- data.frame(Time = 1:10, Signal1 = c(2, 4, 6, 8, 10, 5, 3, 7, 9, 1),
- Signal2 = c(10, 5, 8, 3, 6, 9, 2, 7, 4, 1))
+df <- data.frame(Time = 1:10,
+                 Signal1 = c(2, 4, 6, 8, 10, 5, 3, 7, 9, 1),
+                 Signal2 = c(10, 5, 8, 3, 6, 9, 2, 7, 4, 1))
 normalized_df <- normalize_signals_by_name(df, c("Signal1", "Signal2"))
+# `normalized_df` will now include 'Signal1_norm' and 'Signal2_norm'.
 
 }

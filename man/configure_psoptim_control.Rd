@@ -2,88 +2,40 @@
 % Please edit documentation in R/Configurations.R
 \name{configure_psoptim_control}
 \alias{configure_psoptim_control}
-\title{Configure the control parameters for psoptim}
+\title{Configure Control Parameters for PSO Optimization}
 \usage{
-configure_psoptim_control(
-  pso_trace = 1,
-  pso_fnscale = 1,
-  pso_max_iterations = 100,
-  pso_max_fn_calls = 200,
-  pso_abstol = -Inf,
-  pso_restart_tolerance = 0.5,
-  pso_report = 1,
-  pso_trace_stats = TRUE,
-  pso_swarm_size = 5,
-  pso_informants = 3,
-  pso_informed_swarm = 0.5,
-  pso_exploitation_const = (1/(2 * log(2))),
-  pso_local_exp_const = (5 + log(2)),
-  pso_global_exp_const = 10,
-  pso_rand_order = TRUE,
-  pso_max_restart = Inf,
-  pso_maxit_without_improvement = 50,
-  pso_hybrid_type = "improved",
-  pso_type = "SPSO2011",
-  pso_vectorization = TRUE,
-  pso_hybrid_control = list(maxit = 1)
-)
+configure_psoptim_control(...)
 }
 \arguments{
-\item{pso_trace}{(Optional) Non-negative integer for tracing optimization progress. Defaults to 1.}
-
-\item{pso_fnscale}{(Optional) Scaling for the fn value. If negative, optimization becomes a maximization problem.
-Defaults to 1.}
-
-\item{pso_max_iterations}{(Optional) Max number of PSO iterations. Defaults to 100.}
-
-\item{pso_max_fn_calls}{(Optional) Max function calls for PSO. Defaults to 200.}
-
-\item{pso_abstol}{(Optional) Absolute convergence tolerance. Converges when fitness is <= abstol.
-Defaults to -Inf.}
-
-\item{pso_restart_tolerance}{(Optional) Tolerance for PSO restarting. Defaults to 0.5.}
-
-\item{pso_report}{(Optional) Frequency for reporting if trace is positive. Defaults to 1.}
-
-\item{pso_trace_stats}{(Optional) Logical; if TRUE, collects statistics at each reporting step.
-Defaults to TRUE.}
-
-\item{pso_swarm_size}{(Optional) Swarm size. Defaults to 5.}
-
-\item{pso_informants}{(Optional) Exponent for calculating informants. Defaults to 3.}
-
-\item{pso_informed_swarm}{(Optional) Proportion of swarm to inform. Defaults to 0.5.}
-
-\item{pso_exploitation_const}{(Optional) Exploitation constant. A vector of length 1 or 2.
-Changes from w[1] to w[2] as iterations increase. Defaults to 1/(2*log(2)).}
-
-\item{pso_local_exp_const}{(Optional) Local exploration constant. Defaults to .5+log(2).}
-
-\item{pso_global_exp_const}{(Optional) Global expansion constant. Defaults to 10.}
-
-\item{pso_rand_order}{(Optional) Logical; if TRUE, particles are processed randomly.
-Ignored if vectorize is TRUE. Defaults to TRUE.}
-
-\item{pso_max_restart}{(Optional) Maximum restarts allowed. Defaults to Inf.}
-
-\item{pso_maxit_without_improvement}{(Optional) Iterations allowed without improvement.
-Defaults to 50.}
-
-\item{pso_hybrid_type}{(Optional) Hybrid method type. Defaults to "improved".}
-
-\item{pso_type}{(Optional) PSO method type. Defaults to "SPSO2011".}
-
-\item{pso_vectorization}{(Optional) Logical; if TRUE, PSO is vectorized. Defaults to TRUE.}
-
-\item{pso_hybrid_control}{(Optional) Control parameters for hybrid method.}
+\item{...}{Optional parameters to override the default settings. These include:
+- `maxit`: Maximum number of iterations. Default is 125.
+- `s`: Swarm size. Default is 8.
+- `w`: Inertia weight. Default is 1.
+- `c.p`: Personal acceleration coefficient. Default is 2.
+- `c.g`: Global acceleration coefficient. Default is 5.
+- `vectorize`: Boolean indicating if vectorized calculations should be used.
+    Default is TRUE.
+- `reltol`: Relative tolerance. Default is 0.5.
+- `hybrid`: Type of hybrid algorithm to use. Default is "improved".
+- `hybrid.control`: Control parameters for the hybrid algorithm. Defaults
+    to `list(maxit = 10)`.
+- `maxit.stagnate`: Maximum iterations for stagnation. Default is 110.
+- `maxf`: Maximum number of function evaluations. Default is 1000.}
 }
 \value{
-A list containing the psoptim configuration with class "PSOBrainModelerPSOPTIMConfig".
+A list of control parameters for PSO optimization, combining the
+ default settings with any user-specified overrides.
 }
 \description{
-Sets the configuration for the psoptim optimizer.
+This function sets up control parameters for Particle Swarm Optimization (PSO)
+by providing default values and allowing customization through user-specified
+arguments.
 }
 \examples{
+# Use default control parameters
 configure_psoptim_control()
+
+# Customize some parameters
+configure_psoptim_control(maxit = 150, s = 10)
 
 }

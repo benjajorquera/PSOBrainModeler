@@ -1,44 +1,35 @@
 #' Generate and Add a Smoothed Pressure Step to a Signal
 #'
-#' This function creates a smoothed pressure step using a Butterworth filter
-#' and returns the result as a data frame. The output signal starts with a zero value
-#' up to `pressure_start` and then steps down to -1, smoothed using the Butterworth filter.
+#' This function generates a smoothed pressure step using a Butterworth filter.
+#' The output signal begins with a value of zero up to `pressure_start` and then
+#' transitions to -1, which is then smoothed using the Butterworth filter.
+#' The smoothed pressure step is adjusted to start from 1 after filtering.
 #'
-#' @param pressure_start (Optional) Integer indicating the index at which the pressure step starts. Defaults to 3L.
-#' @param signal_end (Optional) Integer indicating the index at which the pressure step ends. Defaults to 40L.
-#' @param butter_order (Optional) Integer representing the order of the Butterworth filter. Defaults to 2L.
-#' @param butter_fs (Optional) Numeric value representing the sampling frequency for the Butterworth filter. Defaults to 0.2.
+#' @param pressure_start (Optional) Integer indicating the index at which the
+#'  pressure step starts. Defaults to 3L.
+#' @param signal_end (Optional) Integer indicating the length of the signal,
+#'  including the pressure step. Defaults to 40L.
+#' @param butter_order (Optional) Integer representing the order of the
+#'  Butterworth filter. Defaults to 2L.
+#' @param butter_fs (Optional) Numeric value representing the sampling frequency
+#'  for the Butterworth filter. Defaults to 0.2.
 #'
-#' @return A data frame containing a single column, `signal`, with the smoothed pressure step.
+#' @return A data frame containing a single column, `signal`,
+#'  with the smoothed pressure step.
 #'
 #' @examples
 #' pressure_step <- add_pressure_step(pressure_start = 10L, signal_end = 100L,
 #'                                    butter_order = 2L, butter_fs = 0.2)
+#' plot(pressure_step$signal, type = 'l', main = 'Smoothed Pressure Step')
 #'
 #' @importFrom signal butter filter
 #' @export
+#'
 add_pressure_step <-
   function(pressure_start = 3L,
            signal_end = 40L,
            butter_order = 2L,
            butter_fs = 0.2) {
-    # Validation
-    if (!is.integer(pressure_start) || pressure_start < 0) {
-      stop("pressure_start should be a non-negative integer.")
-    }
-    
-    if (!is.integer(signal_end) || signal_end <= pressure_start) {
-      stop("signal_end should be an integer value greater than pressure_start.")
-    }
-    
-    if (!is.integer(butter_order) || butter_order < 1) {
-      stop("butter_order should be a positive integer.")
-    }
-    
-    if (!is.numeric(butter_fs) || butter_fs <= 0) {
-      stop("butter_fs should be a positive numeric value.")
-    }
-    
     # Generate the pressure step
     pressure <-
       c(rep(0, pressure_start), rep(-1, signal_end - pressure_start))
@@ -58,40 +49,39 @@ add_pressure_step <-
 
 #' Generate Time-series Model Data
 #'
-#' This function constructs a dataset tailored for training or predicting with a time-series model.
-#' It selects specified columns and incorporates their lagged values.
+#' This function constructs a dataset tailored for training or predicting with
+#' a time-series model.
+#' It selects specified columns and incorporates their lagged values based on
+#' the training or prediction requirement.
 #'
 #' @param input_df Dataframe containing the raw data.
-#' @param data_cols Character vector of column names to include in the training set.
-#' @param predictor_cols Character vector of column names to include in the prediction set.
-#' @param lagged_cols Character vector specifying which columns should have lagged values.
-#' @param lag_values Integer vector specifying the number of lags for each lagged column.
-#'  Should be in the same order as 'lagged_cols'.
-#' @param is_training Boolean indicating whether the data is for training (TRUE) or prediction (FALSE).
-#' @param vsvr_response Character. Response column name for the SVR model.
+#' @param data_cols Character vector of column names to include in the training
+#'  set.
+#' @param predictor_cols Character vector of column names to include in the
+#'  prediction set.
+#' @param lagged_cols Character vector specifying which columns should have
+#'  lagged values.
+#' @param lag_values Integer vector specifying the number of lags for each
+#'  lagged column.
+#'                   Should be in the same order as 'lagged_cols'.
+#' @param is_training Boolean indicating whether the data is for training (TRUE)
+#'  or prediction (FALSE).
+#' @param vsvr_response Character representing the response column name for the
+#'  SVR model.
 #'
-#' @return Dataframe containing the specified columns and their lagged values.
+#' @return Dataframe containing the specified columns and their lagged values,
+#'  adjusted for training or prediction.
 #'
 #' @examples
+#' \dontrun{
+#'   generate_time_series_data(...)
+#' }
 #'
-#' my_df <- data.frame(feature1 = c(1:10), feature2 = c(1:10), feature3 = c(1:10),
-#' feature4 = c(1:10), feature1_1 = c(2:11), feature2_1 = c(2:11),
-#' feature3_1 = c(2:11), feature4_1 = c(2:11), feature1_2 = c(3:12),
-#' feature2_2 = c(3:12), feature3_2 = c(3:12), feature4_2 = c(3:12))
-#'
-#' # Generate training set
-#' training_data <- generate_time_series_data(input_df = my_df, data_cols = c("feature1", "feature2"),
-#'  predictor_cols = NULL, lagged_cols = c("feature1", "feature2"), lag_values = c(2, 2),
-#'  is_training = TRUE, vsvr_response = "feature2")
-#'
-#' # Generate prediction set
-#' prediction_data <- generate_time_series_data(input_df = my_df, data_cols = NULL,
-#'  predictor_cols = c("feature3", "feature4"), lagged_cols = c("feature3", "feature4"),
-#'  lag_values = c(2, 2), is_training = FALSE, vsvr_response = "feature3")
-#'
-#' @importFrom dplyr select bind_cols all_of %>%
+#' @importFrom dplyr select bind_cols all_of
+#' @importFrom magrittr %>%
 #'
 #' @export
+#'
 generate_time_series_data <-
   function(input_df,
            data_cols,
@@ -101,18 +91,7 @@ generate_time_series_data <-
            is_training,
            vsvr_response) {
     # Validation checks
-    if (is.null(input_df))
-      stop("The input dataframe cannot be NULL.")
-    if (is_training &&
-        is.null(data_cols))
-      stop("Please specify target columns for training.")
-    if (!is_training &&
-        is.null(predictor_cols))
-      stop("Please specify predictor columns for prediction.")
-    if (is.null(lagged_cols))
-      stop("Please specify lagged columns.")
-    if (length(lagged_cols) != length(lag_values))
-      stop("The lengths of 'lagged_cols' and 'lag_values' must match.")
+    stopifnot(is.data.frame(input_df))
     
     # Create a new dataframe based on whether it is for training or prediction
     new_df <- if (is_training) {
@@ -146,40 +125,39 @@ generate_time_series_data <-
 #' Process a Data Frame to Exclude, Normalize, and Lag Signals
 #'
 #' This function processes a given data frame to exclude specified columns,
-#' normalize all columns, and add lagged versions of the signals.
+#' normalize selected columns, and add lagged versions of the signals. It first
+#' excludes specified columns, then normalizes the signals, and finally adds
+#' lagged versions. Note: The exclusion of signals post-normalization might be
+#' redundant and is subject to review in future updates.
 #'
-#' @param df (Optional) A data frame containing the signals to be processed. Defaults to an empty data frame.
-#' @param excluded_cols (Optional) A character vector specifying the columns to be excluded. Defaults to NULL.
-#' @param lags (Optional) An integer specifying the number of lags to add for each signal. Defaults to NULL.
-#' @param signals A character vector specifying the signals to be excluded after normalization.
-#' @param lagged_signals (Optional) A character vector specifying the signals to be lagged.
-#'  If NULL, all signals will be lagged. Defaults to NULL.
+#' @param df A data frame containing the signals to be processed. Providing an
+#'  empty data frame is not practical for processing; hence, it's recommended
+#'   to always provide this argument.
+#' @param excluded_cols A character vector specifying the columns to be excluded.
+#'  Defaults to NULL, meaning no columns are excluded if not specified.
+#' @param lags An integer specifying the number of lags to add for each signal.
+#'  Defaults to NULL, implying no lags are added unless specified.
+#' @param signals A character vector specifying the signals to be normalized.
+#'  This argument is mandatory.
+#' @param lagged_signals A character vector specifying the signals to be lagged.
+#'  If NULL, all signals will be lagged. Defaults to NULL. The function appends
+#'  a '_norm' suffix to the signal names if not already present, assuming
+#'  normalized signals follow this naming convention.
 #'
-#' @return A new data frame with specified columns excluded, all columns normalized,
-#'         and lagged versions of the signals added. Rows with resulting NA values
-#'         from lags are omitted.
-#'
-#' @details
-#' This function depends on:
-#' \itemize{
-#'   \item Internal package functions:
-#'   \itemize{
-#'     \item \code{\link{exclude_signals_dataframe}}: Exclude Columns in a Data Frame by Names
-#'     \item \code{\link{normalize_signals_by_name}}: Normalize Selected Columns in a Data Frame Using Min-Max Scaling
-#'     \item \code{\link{lag_all_signals}}: Add Lagged Columns to All Normalized Columns in a Data Frame
-#'     \item \code{\link{lag_normalized_signals}}: Add Lagged Columns to a Normalized Data Frame
-#'   }
-#' }
+#' @return A new data frame with specified columns excluded, selected columns
+#'  normalized, and lagged versions of the signals added. Rows with resulting
+#'  NA values from lags are not explicitly handled and should be managed in
+#'  subsequent steps of analysis.
 #'
 #' @examples
 #' df <- data.frame(Time = 1:10, A = c(2, 4, 6, 8, 10, 5, 3, 7, 9, 1),
-#'  B = c(10, 5, 8, 3, 6, 9, 2, 7, 4, 1))
+#'                  B = c(10, 5, 8, 3, 6, 9, 2, 7, 4, 1))
 #' processed_df <- process_dataframe(df = df,
 #'                                   excluded_cols = c("Time"),
 #'                                   lags = 2,
 #'                                   signals = c("A", "B"))
-#'
 #' @export
+#'
 
 process_dataframe <-
   function(df = data.frame(),
@@ -188,13 +166,7 @@ process_dataframe <-
            signals,
            lagged_signals = NULL) {
     # Validate input arguments
-    if (!is.data.frame(df) || ncol(df) < 1) {
-      stop("Input 'df' should be a non-empty data frame.")
-    }
-    
-    if (!is.null(lags) && (!is.numeric(lags) || lags <= 0)) {
-      stop("Input 'lags' should be a positive integer.")
-    }
+    stopifnot(is.data.frame(df))
     
     # Exclude specified columns
     new_df <-

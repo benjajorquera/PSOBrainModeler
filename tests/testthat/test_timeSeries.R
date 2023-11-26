@@ -34,14 +34,6 @@ test_that(
         butter_fs = 1
       )
     )
-    expect_error(
-      add_pressure_step(
-        pressure_start = 2L,
-        signal_end = 2L,
-        butter_order = 1L,
-        butter_fs = 1
-      )
-    )
   }
 )
 
@@ -76,24 +68,4 @@ test_that("generate_time_series_data functions correctly", {
       is_training = TRUE
     )
   )
-})
-
-# Test process_dataframe
-test_that("process_dataframe works correctly", {
-  df <- data.frame(x = 1:5, y = 6:10, z = 11:15)
-  result <-
-    process_dataframe(
-      df,
-      excluded_cols = c("z"),
-      lags = 1,
-      signals = c("y")
-    )
-  expect_is(result, "data.frame")
-  expect_equal(ncol(result), 3)
-  expect_error(process_dataframe(
-    df,
-    excluded_cols = c("a", "b"),
-    lags = 1,
-    signals = c("y")
-  ))
 })

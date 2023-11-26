@@ -9,20 +9,19 @@ blocked_cv(data, num_blocks = 5, validation_size = 0.2)
 \arguments{
 \item{data}{Dataframe. The dataset to partition.}
 
-\item{num_blocks}{(Optional) Integer. The number of blocks to divide the dataset into. Defaults to 5.}
+\item{num_blocks}{(Optional) Integer. The number of blocks to divide the
+dataset into. Defaults to 5.}
 
-\item{validation_size}{(Optional) Numeric (between 0 and 1). Proportion of data to be used
+\item{validation_size}{(Optional) Numeric (between 0 and 1). Proportion of
+data to be used
 for validation in each partition. Defaults to 0.2.}
 }
 \value{
-A list of partitions, each containing a training set and a validation set.
+A list of partitions, each containing a training set and a validation
+ set.
 }
 \description{
 Generate Data Partitions for Blocked K-fold Cross-Validation
-}
-\details{
-The function employs several auxiliary validation functions to ensure inputs adhere to expected criteria:
-- \code{\link{validate_data}}: Ensures provided data is non-empty dataframe.
 }
 \examples{
 data <- data.frame(x = 1:100, y = 101:200)

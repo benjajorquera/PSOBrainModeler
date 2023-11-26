@@ -29,11 +29,10 @@ brain_modeler_config <-
 
 psoptim_config <- configure_psoptim_control()
 
-start_time <- Sys.time()
-
 result <- optimize_brain_model_with_PSO(
   config = brain_modeler_config,
   psoptim_config = psoptim_config,
+  max_function_count = 1000,
   data = mydata,
   model = "NFIR",
   multi = FALSE,
@@ -44,12 +43,11 @@ result <- optimize_brain_model_with_PSO(
   params_upper_bounds = c(4096, 0.9, (1 / (2 * 0.0625 ^ 2)), 8),
   params_initial_values = c(NA, NA, NA, NA),
   vsvr_response = "CBFV.L",
-  initial_pressure_value = c(1),
-  silent = FALSE,
-  seed = 123
+  silent = TRUE,
+  seed = 123,
+  generate_response_predictions_cv = TRUE,
+  fn_count_treshold = 5
 )
-
-print(Sys.time() - start_time)
 
 ###############################################################################
 

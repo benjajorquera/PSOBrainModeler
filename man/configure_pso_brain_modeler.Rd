@@ -9,37 +9,61 @@ configure_pso_brain_modeler(
   bcv_folds = 5,
   bcv_validation_size = 0.2,
   pressure_signal_start = 3L,
-  pressure_signal_response_size = 40L,
+  pressure_signal_response_size = 70L,
   butter_filter_order = 2L,
   butter_filter_fs = 0.2,
   max_lag_number = 8,
-  vsvr_tolerance = 1
+  vsvr_tolerance = 1,
+  svm_cache_size = 100
 )
 }
 \arguments{
 \item{seed}{(Optional) Seed for random number generation. Defaults to 123.}
 
-\item{bcv_folds}{(Optional) Number of folds for blocked cross-validation. Defaults to 5.}
+\item{bcv_folds}{(Optional) Number of folds for blocked cross-validation.
+Defaults to 5.}
 
-\item{bcv_validation_size}{(Optional) Proportion of data for validation in blocked CV. Defaults to 0.2.}
+\item{bcv_validation_size}{(Optional) Proportion of data for validation in
+blocked CV. Defaults to 0.2.}
 
-\item{pressure_signal_start}{(Optional) Integer indicating the starting point for pressure signal. Defaults to 3L.}
+\item{pressure_signal_start}{(Optional) Integer indicating the starting point
+for pressure signal. Defaults to 3L.}
 
-\item{pressure_signal_response_size}{(Optional) Integer indicating the size of the response signal for pressure. Defaults to 40L.}
+\item{pressure_signal_response_size}{(Optional) Integer indicating the size
+of the response signal for pressure. Defaults to 70L.}
 
-\item{butter_filter_order}{(Optional) Integer indicating the order of the Butterworth filter. Defaults to 2L.}
+\item{butter_filter_order}{(Optional) Integer indicating the order of the
+Butterworth filter. Defaults to 2L.}
 
-\item{butter_filter_fs}{(Optional) Sampling frequency for the Butterworth filter. Defaults to 0.2.}
+\item{butter_filter_fs}{(Optional) Sampling frequency for the Butterworth
+filter. Defaults to 0.2.}
 
-\item{max_lag_number}{(Optional) Maximum number of lags to consider. Defaults to 8.}
+\item{max_lag_number}{(Optional) Maximum number of lags to consider. Defaults
+to 8.}
 
 \item{vsvr_tolerance}{(Optional) Tolerance level for VSVR. Defaults to 1.}
+
+\item{svm_cache_size}{(Optional) Size of the cache for SVM training. Defaults
+to 100.}
 }
 \value{
-A list containing the configuration with class "PSOBrainModelerConfig".
+Returns a list of configuration settings for the PSO brain modeler.
+ Each element of the list corresponds to a specific configuration option:
+  - `seed`: Seed for random number generation.
+  - `bcv_folds`: Number of folds for blocked cross-validation.
+  - `bcv_validation_size`: Proportion of data for validation in blocked
+      cross-validation.
+  - `pressure_signal_start`: Starting point for the pressure signal.
+  - `pressure_signal_response_size`: Size of the response signal for pressure.
+  - `butter_filter_order`: Order of the Butterworth filter.
+  - `butter_filter_fs`: Sampling frequency for the Butterworth filter.
+  - `max_lag_number`: Maximum number of lags to consider.
+  - `vsvr_tolerance`: Tolerance level for VSVR.
 }
 \description{
-This function sets the configuration for the PSO brain modeler.
+This function sets the configuration for the PSO brain modeler. It includes
+options for seed initialization, blocked cross-validation settings,
+Butterworth filter parameters, lag number, VSVR tolerance, and SVM cache size.
 }
 \examples{
 configure_pso_brain_modeler()

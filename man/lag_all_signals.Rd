@@ -12,15 +12,19 @@ lag_all_signals(data_frame = NULL, lags = 0)
 \item{lags}{Integer specifying the number of lags for each column.}
 }
 \value{
-A modified data frame with lagged columns and rows with NA values removed.
+A modified data frame with lagged columns. Rows with NA values
+resulting from the lagging process are removed.
 }
 \description{
 This function adds lagged columns for all normalized columns in a data frame.
-All columns to be lagged should be already normalized and have "_norm" at the end of their names.
+All columns to be lagged should be already normalized and have "_norm" at the
+end of their names.
 }
 \examples{
-df <- data.frame(A_norm = c(0, 0.2, 0.4, 0.6, 0.8, 1))
+df <- data.frame(time = 1:6, A_norm = c(0, 0.2, 0.4, 0.6, 0.8, 1),
+ B_norm = c(1, 0.8, 0.6, 0.4, 0.2, 0))
 lagged_df <- lag_all_signals(df, 2)
-print(lagged_df)
+# `lagged_df` will now include 'A_norm_1', 'A_norm_2', 'B_norm_1',
+# and 'B_norm_2' as lagged columns.
 
 }

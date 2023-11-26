@@ -44,6 +44,9 @@ Features include:
 - e1071
 - utils
 - pso
+- progress
+- tseries
+- magrittr
 
 ---
 

@@ -2,7 +2,7 @@
 % Please edit documentation in R/Helpers.R
 \name{generate_signal_response_predictions_helper}
 \alias{generate_signal_response_predictions_helper}
-\title{Helper function to generate signal response predictions}
+\title{Helper Function to Generate Signal Response Predictions}
 \usage{
 generate_signal_response_predictions_helper(
   data,
@@ -13,7 +13,8 @@ generate_signal_response_predictions_helper(
   cost,
   nu,
   gamma,
-  data_list
+  data_list,
+  included_model = NULL
 )
 }
 \arguments{
@@ -21,24 +22,43 @@ generate_signal_response_predictions_helper(
 
 \item{col_lags}{Numeric vector indicating the lags for the columns.}
 
-\item{response_lags}{Numeric vector indicating the response lags (default: NULL).}
+\item{response_lags}{Numeric vector indicating the response lags. Defaults
+to NULL.}
 
-\item{initial_column_values}{Numeric vector indicating initial values for columns.}
+\item{initial_column_values}{Numeric vector indicating initial values for
+columns.}
 
-\item{prediction_initial_value}{Numeric value indicating the initial prediction value.}
+\item{prediction_initial_value}{Numeric value indicating the initial
+prediction value.}
 
-\item{cost}{A numeric value for the cost parameter.}
+\item{cost}{Numeric value for the cost parameter in the SVR model.}
 
-\item{nu}{A numeric value for the nu parameter.}
+\item{nu}{Numeric value for the nu parameter in the SVR model.}
 
-\item{gamma}{A numeric value for the gamma parameter (default: NULL).}
+\item{gamma}{Numeric value for the gamma parameter in the SVR model.
+Defaults to NULL.}
 
-\item{data_list}{A list containing various data configurations}
+\item{data_list}{A list containing various data configurations and settings
+relevant to the SVR model and dataset.}
+
+\item{included_model}{(Optional) The pre-trained SVR model to be used.
+If NULL, a new model is trained.}
 }
 \value{
-Result from the generate_signal_response_predictions function.
+The result from the generate_signal_response_predictions function,
+ typically predictions of signal responses alongside any relevant model
+ parameters and statistics.
 }
 \description{
-Constructs parameters for the generate_signal_response_predictions function. This
-involves predicting signal responses based on the provided parameters and data.
+This function prepares parameters for the generate_signal_response_predictions
+function.
+It aims to predict signal responses based on the SVR model and the provided
+dataset, taking into account various parameters such as lags, initial values,
+and SVR model settings.
+}
+\examples{
+\dontrun{
+  generate_signal_response_predictions_helper(...)
+}
+
 }

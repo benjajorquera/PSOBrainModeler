@@ -4,29 +4,55 @@
 \alias{evaluate_signal_quality}
 \title{Signal Quality Evaluation}
 \usage{
-evaluate_signal_quality(signal, pressure_start_point = 3L, silent = FALSE)
+evaluate_signal_quality(signal, pressure_start_point = 3L, silent = TRUE)
 }
 \arguments{
 \item{signal}{A numeric vector representing the signal.}
 
-\item{pressure_start_point}{(Optional) The starting point of the pressure. Defaults to 3L.}
+\item{pressure_start_point}{(Optional) The starting point of the pressure.
+Defaults to 3L.}
 
-\item{silent}{(Optional) A logical for run the function silently (without printouts). Defaults to FALSE.}
+\item{silent}{(Optional) A logical for running the function silently
+(without printouts). Defaults to FALSE.}
 }
 \value{
-A numeric score indicating the quality of the signal.
+A list with a numeric score indicating the quality of the signal and
+ the result of the evaluation.
 }
 \description{
-Evaluates the quality of a provided signal based on specific criteria.
+Evaluates the quality of a provided signal based on specific criteria,
+including advanced tests complementing the basic filter. This function is
+designed to work with signals at a frequency of 2 Hz.
 }
 \details{
-The function applies both basic and advanced filters to evaluate the signal's quality.
-The basic filter checks for conditions related to peaks, minimums, variance, and range.
-The advanced filter performs checks on stabilization and drop rates.
+The function evaluates the signal's quality using a set of criteria,
+ starting with advanced tests before applying the basic filter:
+
+Advanced Criteria:
+1. Maximum Difference Test: Checks if the maximum distance between any two
+ consecutive points in the signal exceeds 0.55.
+ This test helps in identifying sudden spikes or drops in the signal,
+ indicating potential anomalies.
+2. Stationarity Test: Uses the Augmented Dickey-Fuller test to determine if
+ the signal is stationary.
+ A non-stationary signal (p-value >= 0.05) might indicate trends or seasonal
+ effects, which could affect the model's performance.
+
+Basic Filter Checks:
+1. Global minimum (peak) should occur between 3 and 9 seconds after the
+ pressure start point.
+2. The minimum peak of the signal should be between -0.2 and 0.5.
+3. Variance of the signal should be less than 0.002 between seconds 15 and 30
+ (stabilization tail).
+4. The maximum and minimum values of the entire signal should be between
+ -0.2 and 1.2 (exclusive).
+
+The function returns a score of 0 for any failed test and 1 if all tests are
+ passed.
 }
 \examples{
- sample_signal <- rnorm(40)
- start_point <- 5
- quality_score <- evaluate_signal_quality(sample_signal, start_point)
+sample_signal <- rnorm(40)
+start_point <- 5
+quality_score <- evaluate_signal_quality(sample_signal, start_point)
 
 }

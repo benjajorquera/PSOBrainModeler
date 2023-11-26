@@ -2,45 +2,81 @@
 % Please edit documentation in R/PSOModelObjectives.R
 \name{pso_model}
 \alias{pso_model}
-\title{PSO Model Function}
+\title{Particle Swarm Optimization (PSO) Model Function}
 \usage{
 pso_model(
   params,
-  model,
+  max_function_count = 1000,
   multi = FALSE,
   data_list,
+  model,
   silent = FALSE,
-  plot_response = TRUE
+  plot_response = TRUE,
+  initial_response_value = 1,
+  model_parameters,
+  bcv_folds = 5,
+  pso_env,
+  seed = 123,
+  progress_bar,
+  generate_response_predictions_cv = FALSE,
+  basic_filter_check_cv = TRUE,
+  fn_count_treshold = 30
 )
 }
 \arguments{
-\item{params}{A numeric vector of parameters.}
+\item{params}{Parameter list for the PSO model.}
 
-\item{model}{A character string specifying the model. Valid values are "FIR", "NFIR", "ARX", and "NARX".}
+\item{max_function_count}{Maximum number of function evaluations. Defaults
+to 1000.}
 
-\item{multi}{A logical indicating whether multi-response is used. Defaults to FALSE.}
+\item{multi}{Boolean flag to indicate if the model is multivariate. Defaults
+to FALSE.}
 
-\item{data_list}{A list containing various data configurations.}
+\item{data_list}{A list containing processed data relevant to the model.}
 
-\item{silent}{A logical for run the function silently (without printouts). Defaults to FALSE.}
+\item{model}{The model type to be optimized.}
 
-\item{plot_response}{(Optional) A logical to decide whether to plot the response signal. Defaults to TRUE.}
+\item{silent}{Flag to control the display of messages during execution.
+Defaults to FALSE.}
+
+\item{plot_response}{Flag to enable or disable plotting the response.
+Defaults to TRUE.}
+
+\item{initial_response_value}{Initial value for the response variable.
+Defaults to 1.}
+
+\item{model_parameters}{List of specific model parameters.}
+
+\item{bcv_folds}{Number of folds for blocked cross-validation. Defaults to 5.}
+
+\item{pso_env}{PSO environment configuration.}
+
+\item{seed}{Seed for random number generation. Defaults to 123.}
+
+\item{progress_bar}{Progress bar configuration for the optimization process.}
+
+\item{generate_response_predictions_cv}{Flag to generate response
+predictions. Defaults to FALSE.}
+
+\item{basic_filter_check_cv}{Flag to enable basic filtering of the data.
+Defaults to TRUE.}
+
+\item{fn_count_treshold}{Threshold for function count in optimization.
+Defaults to 30.}
 }
 \value{
-The result of the `pso_training_model`.
+The result of the PSO training model function, including any metrics,
+        model parameters, and performance indicators.
 }
 \description{
-This function performs the Particle Swarm Optimization (PSO) model based on the provided parameters and model.
-}
-\details{
-This function depends on the following internal package functions:
-- \code{\link{extract_and_round_pso_params}}: Extract and Round Parameters from PSO Optimization
-- \code{\link{pso_training_model}}: Model training function using PSO optimization
+Executes PSO modeling using provided parameters and configurations.
+This function is tailored for both univariate and multivariate models and
+offers options for silent operation, response plotting, and integrates
+various model parameters and PSO environment settings.
 }
 \examples{
 \dontrun{
- pso_model(params = c(cost = 1, nu = 0.5, lags = c(1)),
-   model = "FIR", multi = FALSE, data_list = list())
+  pso_model(params, data_list = my_data_list, model = "my_model")
 }
 
 }

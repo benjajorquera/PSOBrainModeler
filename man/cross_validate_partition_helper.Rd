@@ -2,34 +2,70 @@
 % Please edit documentation in R/Helpers.R
 \name{cross_validate_partition_helper}
 \alias{cross_validate_partition_helper}
-\title{Helper function for cross-validation of partitions}
+\title{Helper Function for Cross-Validation of Partitions}
 \usage{
 cross_validate_partition_helper(
   cost,
   nu,
-  gamma,
-  col_lags,
+  gamma = NULL,
+  combined_col_lags,
   data_list,
-  silent = FALSE
+  silent = FALSE,
+  bcv_folds = 5,
+  col_lags = NULL,
+  response_lags = NULL,
+  initial_column_values = NULL,
+  prediction_initial_value = NULL,
+  generate_response_predictions_cv = FALSE
 )
 }
 \arguments{
-\item{cost}{A numeric value for the cost parameter.}
+\item{cost}{Numeric value for the cost parameter in the SVR model.}
 
-\item{nu}{A numeric value for the nu parameter.}
+\item{nu}{Numeric value for the nu parameter in the SVR model.}
 
-\item{gamma}{A numeric value for the gamma parameter.}
+\item{gamma}{(Optional) Numeric value for the gamma parameter in the SVR
+model. Defaults to NULL.}
 
-\item{col_lags}{Numeric vector indicating the lags for the columns.}
+\item{combined_col_lags}{Numeric vector indicating the combined lags of the
+predictor and response columns.}
 
-\item{data_list}{A list containing various data configurations}
+\item{data_list}{A list containing various data configurations including data
+partitions, normalization names, and other settings.}
 
-\item{silent}{A logical for run the function silently (without printouts). Defaults to FALSE.}
+\item{silent}{Logical indicating whether the function should run silently.
+Defaults to FALSE.}
+
+\item{bcv_folds}{(Optional) Number of cross-validation folds. Defaults to 5.}
+
+\item{col_lags}{(Optional) Numeric or integer vector specifying the lags for
+each column.}
+
+\item{response_lags}{(Optional) Numeric or integer for the response variable
+lags.}
+
+\item{initial_column_values}{(Optional) Initial values for each column in the
+dataset.}
+
+\item{prediction_initial_value}{(Optional) Initial value used for prediction
+in the response signal generation.}
+
+\item{generate_response_predictions_cv}{(Optional) Logical flag to control
+the generation of response predictions. Defaults to FALSE.}
 }
 \value{
-Result from the cross_validate_partition function.
+The result from the cross_validate_partition function, typically a list
+ containing metrics like average correlation and mean squared error.
 }
 \description{
-This function constructs parameters for the cross_validate_partition function.
-It sets the configuration related to the SVR model, data partitions, and normalization.
+This function constructs and organizes parameters for the
+cross_validate_partition function.
+It sets the configuration related to the SVR model, data partitions,
+normalization, and additional parameters for cross-validation.
+}
+\examples{
+\dontrun{
+  cross_validate_partition_helper(...)
+}
+
 }

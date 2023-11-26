@@ -14,15 +14,18 @@ lag_normalized_signals(data_frame = NULL, lags = 0, df_col_names = NULL)
 \item{df_col_names}{Character vector containing names of columns to be lagged.}
 }
 \value{
-A modified data frame with lagged columns and rows with NA values removed.
+A modified data frame with lagged columns. Rows with NA values
+resulting from the lagging process are removed.
 }
 \description{
-This function adds lagged columns for specified normalized columns in a data frame.
-The columns to be lagged should be already normalized and have "_norm" at the end of their names.
+This function adds lagged columns for specified normalized columns in a
+data frame.
+The columns to be lagged should be already normalized and have "_norm" at
+the end of their names.
 }
 \examples{
-df <- data.frame(A_norm = c(0, 0.2, 0.4, 0.6, 0.8, 1))
+df <- data.frame(time = 1:6, A_norm = c(0, 0.2, 0.4, 0.6, 0.8, 1))
 lagged_df <- lag_normalized_signals(df, 2, c("A_norm"))
-print(lagged_df)
+# `lagged_df` will now include 'A_norm_1' and 'A_norm_2' as lagged columns.
 
 }

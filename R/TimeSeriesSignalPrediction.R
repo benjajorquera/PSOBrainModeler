@@ -1,40 +1,31 @@
 #' Time Series Signal Prediction Generator
 #'
-#' This function trains a Support Vector Regression (SVR) model with the provided data and then utilizes
-#' it to generate predictions for a response signal in the context of a time series setup.
-#' All character variables must end with "_norm"
+#' This function trains a Support Vector Regression (SVR) model with the
+#' provided data and then utilizes
+#' it to generate predictions for a response signal in the context of a time
+#' series setup. All character variables must end with "_norm".
 #'
 #' @param data A dataframe containing the training data for the SVR model.
-#'
-#' @param pressure_signal_df A dataframe that encapsulates the pressure signal. The signal
-#'                           should align with the prediction size. Each row represents a
-#'                           time step and contains the signal's value.
-#'
+#' @param pressure_signal_df A dataframe that encapsulates the pressure signal.
+#'  The signal should align with the prediction size. Each row represents a
+#'  time step and contains the signal's value.
 #' @param pressure_start An integer specifying the starting point of the pressure signal
 #'                       decrease. It marks the time step from which predictions should start.
-#'
 #' @param prediction_size A positive integer indicating the total number of predictions to
 #'                        be generated.
-#'
 #' @param column_names A character vector specifying the names of all the variables
 #'                     involved, both initial and predictive.
-#'
 #' @param initial_columns_lags An integer vector specifying the number of lags for each of
 #'                             the initial variables, aligned with `initial_column_names`.
-#'
 #' @param predicted_column_lags An integer indicating the number of lags for the predictive
 #'                              variable.
-#'
 #' @param initial_column_names A character vector that lists the names of the initial
 #'                             variables. These are the variables used to derive lagged
 #'                             values, but exclude the main predictive variable.
-#'
 #' @param initial_column_values A numeric vector that provides initial values corresponding
 #'                              to the `initial_column_names`.
-#'
 #' @param prediction_col_name A single character string specifying the name of the primary
 #'                            predictive variable.
-#'
 #' @param prediction_initial_value A numeric value indicating the initial value of the
 #'                                 predictive variable.
 #' @param predictor_cols Character vector of column names to include in the prediction set.
@@ -42,17 +33,21 @@
 #' @param nu A numeric value indicating the nu parameter of the SVR model.
 #' @param gamma A numeric value (optional) indicating the gamma parameter of the SVR model.
 #' @param tolerance Numeric. SVM tolerance for stopping criterion.
+#' @param svm_cache_size Numeric. The size of the cache for the SVM algorithm.
+#' @param included_model (Optional) An existing SVR model that can be included for the prediction.
+#'                        If NULL, a new model is trained. Defaults to NULL.
 #'
-#' @return A dataframe containing the predicted signal. Each row corresponds to a time step,
-#'         and the dataframe includes the predicted values from `pressure_start` up to
-#'         `prediction_size`.
+#' @return A list containing three elements: `predicted_values` - a dataframe with the predicted signal,
+#'         where each row corresponds to a time step from `pressure_start` up to `prediction_size`;
+#'         `warnings` - any warnings generated during the max iterations of the SVR model;
+#'         and `model` - the SVR model object used for prediction.
 #'
 #' @examples
 #' pressure_signal_df <- data.frame(feature1_norm = rnorm(50))
 #' prediction <- generate_signal_response_predictions(
 #'                     data = data.frame(feature1_norm = rnorm(100),
 #'                                       feature2_norm = rnorm(100),
-#'                                      feature1_norm_1 = rnorm(100),
+#'                                       feature1_norm_1 = rnorm(100),
 #'                                       feature2_norm_1 = rnorm(100)),
 #'                     pressure_signal_df = pressure_signal_df,
 #'                     column_names = c("feature1_norm", "feature2_norm"),
@@ -69,7 +64,7 @@
 #' @importFrom stats setNames predict
 #' @importFrom utils tail
 #' @export
-
+#'
 generate_signal_response_predictions <- function(data,
                                                  pressure_signal_df,
                                                  pressure_start = 3,
@@ -86,7 +81,8 @@ generate_signal_response_predictions <- function(data,
                                                  nu,
                                                  gamma = NULL,
                                                  tolerance,
-                                                 svm_cache_size = 100) {
+                                                 svm_cache_size = 100,
+                                                 included_model = NULL) {
   # Validations
   stopifnot(
     is.data.frame(data),
@@ -94,32 +90,31 @@ generate_signal_response_predictions <- function(data,
     length(initial_column_values) == length(initial_column_names)
   )
   
-  # Train model with all data
-  data_training <- generate_time_series_data(
-    input_df = data,
-    data_cols = column_names,
-    predictor_cols = NULL,
-    lagged_cols = predictor_cols,
-    lag_values = c(initial_columns_lags, predicted_column_lags),
-    is_training = TRUE,
-    vsvr_response = prediction_col_name
-  )
-  
-  # print("Data training signal prediction")
-  # print(head(data_training, 8))
-  
-  # Remove zero lags and corresponding column names if there are multiple lags.
-  
-  SVR_model <-
-    vsvr_model(
-      data = data_training,
-      response_var = prediction_col_name,
-      cost = cost,
-      nu = nu,
-      gamma = gamma,
-      tolerance = tolerance,
-      cache_size = svm_cache_size
+  if (is.null(included_model)) {
+    # Train model with all data
+    data_training <- generate_time_series_data(
+      input_df = data,
+      data_cols = column_names,
+      predictor_cols = NULL,
+      lagged_cols = predictor_cols,
+      lag_values = c(initial_columns_lags, predicted_column_lags),
+      is_training = TRUE,
+      vsvr_response = prediction_col_name
     )
+    
+    SVR_model <-
+      vsvr_model(
+        data = data_training,
+        response_var = prediction_col_name,
+        cost = cost,
+        nu = nu,
+        gamma = gamma,
+        tolerance = tolerance,
+        cache_size = svm_cache_size
+      )
+  } else {
+    SVR_model <- included_model
+  }
   
   # Create a dataframe for predicted values
   predicted_values <-
@@ -261,11 +256,6 @@ generate_signal_response_predictions <- function(data,
     # Add the new row to pressure_df_model and reset row names
     pressure_df_model <<- rbind(pressure_df_model, new_pressure)
     row.names(pressure_df_model) <<- NULL
-    
-    # if (nrow(pressure_df_model) == 70) {
-    #   print("Pressure df model for prediction")
-    #   print(head(pressure_df_model, 8))
-    # }
     
     # Perform prediction
     predictions_data_pressure <<-

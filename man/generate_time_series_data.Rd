@@ -17,41 +17,38 @@ generate_time_series_data(
 \arguments{
 \item{input_df}{Dataframe containing the raw data.}
 
-\item{data_cols}{Character vector of column names to include in the training set.}
+\item{data_cols}{Character vector of column names to include in the training
+set.}
 
-\item{predictor_cols}{Character vector of column names to include in the prediction set.}
+\item{predictor_cols}{Character vector of column names to include in the
+prediction set.}
 
-\item{lagged_cols}{Character vector specifying which columns should have lagged values.}
+\item{lagged_cols}{Character vector specifying which columns should have
+lagged values.}
 
-\item{lag_values}{Integer vector specifying the number of lags for each lagged column.
-Should be in the same order as 'lagged_cols'.}
+\item{lag_values}{Integer vector specifying the number of lags for each
+lagged column.
+                 Should be in the same order as 'lagged_cols'.}
 
-\item{is_training}{Boolean indicating whether the data is for training (TRUE) or prediction (FALSE).}
+\item{is_training}{Boolean indicating whether the data is for training (TRUE)
+or prediction (FALSE).}
 
-\item{vsvr_response}{Character. Response column name for the SVR model.}
+\item{vsvr_response}{Character representing the response column name for the
+SVR model.}
 }
 \value{
-Dataframe containing the specified columns and their lagged values.
+Dataframe containing the specified columns and their lagged values,
+ adjusted for training or prediction.
 }
 \description{
-This function constructs a dataset tailored for training or predicting with a time-series model.
-It selects specified columns and incorporates their lagged values.
+This function constructs a dataset tailored for training or predicting with
+a time-series model.
+It selects specified columns and incorporates their lagged values based on
+the training or prediction requirement.
 }
 \examples{
-
-my_df <- data.frame(feature1 = c(1:10), feature2 = c(1:10), feature3 = c(1:10),
-feature4 = c(1:10), feature1_1 = c(2:11), feature2_1 = c(2:11),
-feature3_1 = c(2:11), feature4_1 = c(2:11), feature1_2 = c(3:12),
-feature2_2 = c(3:12), feature3_2 = c(3:12), feature4_2 = c(3:12))
-
-# Generate training set
-training_data <- generate_time_series_data(input_df = my_df, data_cols = c("feature1", "feature2"),
- predictor_cols = NULL, lagged_cols = c("feature1", "feature2"), lag_values = c(2, 2),
- is_training = TRUE, vsvr_response = "feature2")
-
-# Generate prediction set
-prediction_data <- generate_time_series_data(input_df = my_df, data_cols = NULL,
- predictor_cols = c("feature3", "feature4"), lagged_cols = c("feature3", "feature4"),
- lag_values = c(2, 2), is_training = FALSE, vsvr_response = "feature3")
+\dontrun{
+  generate_time_series_data(...)
+}
 
 }

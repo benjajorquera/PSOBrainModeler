@@ -1,37 +1,51 @@
-#' Model training function using PSO optimization
+#' Particle Swarm Optimization (PSO) Training Model Function
 #'
-#' This function handles the training process for a model based on given parameters
-#' using Particle Swarm Optimization (PSO). It performs cross-validation, response
-#' predictions, and signal evaluation. The function returns an optimization value for
-#' minimization, calculated based on the average correlation, average error, and signal score.
+#' Conducts PSO training with a given set of parameters, data, and environmental
+#' settings.
+#' It includes functionality for progress tracking, data processing, response
+#' prediction generation,
+#' signal scoring, and optimization. This function is designed to handle various
+#' aspects of PSO training,
+#' including parameter tuning, cross-validation, and response evaluation.
 #'
-#' @param cost A numeric value for the cost parameter.
-#' @param nu A numeric value for the nu parameter.
-#' @param gamma (Optional) A numeric value for the gamma parameter. Defaults to NULL.
-#' @param col_lags Numeric vector indicating the lags for the columns.
-#' @param response_lags (Optional) Numeric vector indicating the response lags. Defaults to NULL.
-#' @param vsvr_response Name of the column representing the VSVR response.
-#' @param data_list A list containing various data configurations.
-#' @param silent (Optional) A logical for run the function silently (without printouts). Defaults to FALSE.
-#' @param plot_response (Optional) A logical to decide whether to plot the response signal. Defaults to TRUE.
+#' @param max_function_count Maximum number of function evaluations, defaults
+#'  to 1000.
+#' @param cost Cost parameter for the model.
+#' @param nu Nu parameter for the model.
+#' @param gamma Gamma parameter for the model, if applicable.
+#' @param col_lags Column lag values for the model.
+#' @param response_lags Response lag values for the model, if applicable.
+#' @param vsvr_response VSVR response name in the data.
+#' @param data_list List containing the data required for the model.
+#' @param silent Flag to control verbosity during the training process.
+#' @param plot_response Flag to enable or disable plotting the response.
+#' @param initial_column_values Initial column values for the model.
+#' @param prediction_initial_value Initial prediction value for the model.
+#' @param bcv_folds Number of folds for blocked cross-validation.
+#' @param pso_env PSO environment settings.
+#' @param seed Seed for random number generation.
+#' @param progress_bar Progress bar for visualization of the optimization
+#'  process.
+#' @param generate_response_predictions_cv Flag to generate response predictions.
+#' @param basic_filter_check_cv Flag to enable basic filtering of the data.
+#' @param fn_count_treshold Threshold for function count in optimization.
 #'
-#' @details
-#' The function conducts the following steps:
-#' 1. Cross-validation using the provided parameters.
-#' 2. Training with all the provided data.
-#' 3. Generate response predictions based on the training.
-#' 4. Evaluate the quality of the signal response.
+#' @return Depending on the stage and result of the optimization, it can return
+#'  different values, including early termination or the current optimization
+#'  score.
 #'
-#' This function depends on the following internal package functions:
-#' - \code{\link{cross_validate_partition_helper}}: Helper function for cross-validation of partitions
-#' - \code{\link{generate_time_series_data_helper}}: Helper function to generate time series data
-#' - \code{\link{generate_signal_response_predictions_helper}}: Helper function to generate signal response predictions
-#' - \code{\link{evaluate_signal_quality}}: Evaluate Signal Quality
-#'
-#' @return A numeric value that represents the optimization result for minimization.
+#' @examples
+#' \dontrun{
+#' result <- pso_training_model(cost = 0.5, nu = 0.1, col_lags = c(3),
+#'                             vsvr_response = "response",
+#'                             data_list = my_data_list, pso_env = my_pso_env,
+#'                             progress_bar = my_progress_bar)
+#' }
 #'
 #' @export
-pso_training_model <- function(cost,
+#'
+pso_training_model <- function(max_function_count = 1000,
+                               cost,
                                nu,
                                gamma = NULL,
                                col_lags,
@@ -44,14 +58,19 @@ pso_training_model <- function(cost,
                                prediction_initial_value = 1,
                                bcv_folds = 5,
                                pso_env,
-                               seed = 123) {
+                               seed = 123,
+                               progress_bar,
+                               generate_response_predictions_cv = FALSE,
+                               basic_filter_check_cv = TRUE,
+                               fn_count_treshold = 30) {
+  if (pso_env[["function_count"]] >= max_function_count)
+    return(10)
+  
   pso_env[["function_count"]] <- pso_env[["function_count"]] + 1
   
-  # print(pso_env[["function_count"]])
-  # print(pso_env[["function_count_without_improvement"]])
+  progress_bar$tick()
   
-  if (pso_env[["function_count"]] > 1000)
-    return(10)
+  time <- Sys.time()
   
   # Training with all data
   data_training <-
@@ -76,18 +95,21 @@ pso_training_model <- function(cost,
     )
   
   # Process response signal and score it
-  signal_score <-
-    evaluate_signal_quality(response_predictions$predicted_values[[vsvr_response]], silent = silent)
+  basic_filter <-
+    evaluate_signal_quality(response_predictions$predicted_values[[vsvr_response]],
+                            silent = silent)
   
-  if (signal_score != "TEST PASSED") {
+  if (basic_filter$result != "TEST PASSED" &&
+      basic_filter_check_cv) {
     new_data <- c(
-      test_result = signal_score,
+      test_result = basic_filter$result,
       warnings = response_predictions$warnings,
       list(support_vectors = response_predictions$model$tot.nSV),
-      list(signal_response = response_predictions$predicted_values[[vsvr_response]])
+      list(signal_response = response_predictions$predicted_values[[vsvr_response]]),
+      time = Sys.time() - time
     )
     pso_env[["data"]] <- c(pso_env[["data"]], list(new_data))
-    return(3)
+    return(5)
   }
   
   if (seed != 123) {
@@ -95,22 +117,27 @@ pso_training_model <- function(cost,
   }
   
   # Cross-validation
-  results <- cross_validate_partition_helper(
+  cv_results <- cross_validate_partition_helper(
     cost = cost,
     nu = nu,
     gamma = gamma,
-    col_lags = c(col_lags, response_lags),
+    combined_col_lags = c(col_lags, response_lags),
     data_list = data_list,
     silent = silent,
-    bcv_folds = bcv_folds
+    bcv_folds = bcv_folds,
+    col_lags = col_lags,
+    response_lags = response_lags,
+    initial_column_values = initial_column_values,
+    prediction_initial_value = prediction_initial_value,
+    generate_response_predictions_cv = generate_response_predictions_cv
   )
   
   if (seed != 123) {
     set.seed(seed)
   }
   
-  avg_cor <- results$avg_cor
-  avg_error <- results$avg_error
+  avg_cor <- cv_results$avg_cor
+  avg_error <- cv_results$avg_error
   
   # Return early if any of the results is NaN
   if (is.nan(avg_cor) ||
@@ -118,91 +145,66 @@ pso_training_model <- function(cost,
     new_data <- c(
       test_result = "CV FAILED",
       prediction_warnings = response_predictions$warnings,
-      cv_warnings = results$warnings,
+      cv_warnings = cv_results$warnings,
       list(support_vectors = response_predictions$model$tot.nSV),
-      list(signal_response = response_predictions$predicted_values[[vsvr_response]])
+      list(signal_response = response_predictions$predicted_values[[vsvr_response]]),
+      time = Sys.time() - time
     )
-    return (3)
+    return (5)
   }
   
-  optim_score <-
+  advanced_filter <-
     advanced_filter(response_predictions$predicted_values[[vsvr_response]])
   
-  if (avg_cor > pso_env[["max_cor"]])
-    pso_env[["max_cor"]] <- avg_cor
-  
-  if (signal_score == "TEST PASSED") {
-    fitness_signal_score <- 1
-  }
-  else {
-    fitness_signal_score <- 0
-  }
+  pso_env[["max_cor"]] <- max(pso_env[["max_cor"]], avg_cor)
   
   fitness <-
-    (3 - avg_cor + avg_error - (optim_score$score * 0.01) - fitness_signal_score)
-  if (fitness < pso_env[["best_fitness"]])
-    pso_env[["best_fitness"]] <- fitness
+    3 - avg_cor + avg_error - (advanced_filter$score * 0.01) - basic_filter$score
+  pso_env[["best_fitness"]] <-
+    min(pso_env[["best_fitness"]], fitness)
   
-  new_data <-
-    c(
-      avg_cor = avg_cor,
-      avg_error = avg_error,
-      na_counts = results$na_count,
-      cv_warnings = results$warnings,
-      score = optim_score$score,
-      advanced_score_results = optim_score$results,
-      response_signal = list(response_predictions$predicted_values[[vsvr_response]]),
-      fitness_score = fitness,
-      params = list(
-        c(
-          cost = cost,
-          nu =  nu,
-          gamma = gamma,
-          col_lags = col_lags,
-          response_lags = response_lags
-        )
-      ),
-      response_predictions_warnings = response_predictions$warnings,
-      support_vectors = response_predictions$model$tot.nSV
-    )
+  new_data <- list(
+    avg_cor = avg_cor,
+    avg_error = avg_error,
+    na_counts = cv_results$na_count,
+    cv_warnings = cv_results$warnings,
+    score = advanced_filter$score,
+    advanced_score_results = advanced_filter$results,
+    response_signal = response_predictions$predicted_values[[vsvr_response]],
+    fitness_score = fitness,
+    params = list(
+      cost = cost,
+      nu = nu,
+      gamma = gamma,
+      col_lags = col_lags,
+      response_lags = response_lags
+    ),
+    response_predictions_warnings = response_predictions$warnings,
+    support_vectors = response_predictions$model$tot.nSV,
+    cv_predictions = cv_results$cv_predictions,
+    time = Sys.time() - time
+  )
   pso_env[["data"]] <- c(pso_env[["data"]], list(new_data))
   
   if (plot_response) {
-    plot_response_signal(response_predictions$predicted_values[[vsvr_response]])
+    plot_vsvr_response_signal(response_predictions$predicted_values[[vsvr_response]])
   }
   
-  if (!silent) {
-    # Print optimization values
-    cat(
-      "AVG COR: ",
-      avg_cor,
-      "AVG MSE: ",
-      avg_error,
-      "Signal basic filter: ",
-      signal_score,
-      "Signal advance score: ",
-      optim_score$score,
-      "\n"
-    )
-  }
-  
-  #print(round(avg_cor, digits = 3))
-  #print(round(pso_env[["max_global_cor"]], digits = 3))
+  if (!silent)
+    display_pso_message(avg_cor,
+                        avg_error,
+                        basic_filter$score,
+                        advanced_filter$score)
   
   if (round(avg_cor, digits = 4) <= round(pso_env[["max_global_cor"]], digits = 4)) {
-    if (pso_env[["function_count_without_improvement"]] > 50) {
-      return(5)
-    }
     pso_env[["function_count_without_improvement"]] <-
-      pso_env[["function_count_without_improvement"]] + 1
-  }
-  else {
+      ifelse(pso_env[["function_count_without_improvement"]] > fn_count_treshold,
+             return(5), pso_env[["function_count_without_improvement"]] + 1)
+  } else {
     pso_env[["function_count_without_improvement"]] <- 0
+    pso_env[["max_global_cor"]] <-
+      max(pso_env[["max_global_cor"]], avg_cor)
   }
   
-  if (avg_cor > pso_env[["max_global_cor"]])
-    pso_env[["max_global_cor"]] <- avg_cor
-  
-  # Return optimization value for minimization
-  return(3 - avg_cor + avg_error - (optim_score$score * 0.01) - fitness_signal_score)
+  return(fitness)
 }

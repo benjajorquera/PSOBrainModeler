@@ -1,15 +1,14 @@
 #' Generate Data Partitions for Blocked K-fold Cross-Validation
 #'
 #' @param data Dataframe. The dataset to partition.
-#' @param num_blocks (Optional) Integer. The number of blocks to divide the dataset into. Defaults to 5.
-#' @param validation_size (Optional) Numeric (between 0 and 1). Proportion of data to be used
+#' @param num_blocks (Optional) Integer. The number of blocks to divide the
+#'  dataset into. Defaults to 5.
+#' @param validation_size (Optional) Numeric (between 0 and 1). Proportion of
+#'  data to be used
 #'  for validation in each partition. Defaults to 0.2.
 #'
-#' @return A list of partitions, each containing a training set and a validation set.
-#'
-#' @details
-#' The function employs several auxiliary validation functions to ensure inputs adhere to expected criteria:
-#' - \code{\link{validate_data}}: Ensures provided data is non-empty dataframe.
+#' @return A list of partitions, each containing a training set and a validation
+#'  set.
 #'
 #' @examples
 #' data <- data.frame(x = 1:100, y = 101:200)
@@ -21,16 +20,8 @@ blocked_cv <-
   function(data,
            num_blocks = 5,
            validation_size = 0.2) {
-    # Validation Checks
-    validate_data(data)
-    if (!is.numeric(num_blocks) ||
-        (num_blocks < 1) ||
-        (num_blocks != round(num_blocks)))
-      stop("'num_blocks' must be a positive integer.")
-    if (!is.numeric(validation_size) ||
-        validation_size <= 0 ||
-        validation_size >= 1)
-      stop("'validation_size' must be a number between 0 and 1.")
+    # Validation
+    stopifnot(is.data.frame(data))
     
     # Compute the validation length based on the total rows and desired size
     validation_length <- round(nrow(data) * validation_size)
@@ -50,7 +41,8 @@ blocked_cv <-
       # Extract validation data based on indices
       validation_data <- data[start_idx:end_idx,]
       
-      # The training data is the remaining data after excluding the validation data
+      # The training data is the remaining data after excluding the
+      # validation data
       training_data <- data[-(start_idx:end_idx),]
       
       list(training = training_data, validation = validation_data)
@@ -63,53 +55,72 @@ blocked_cv <-
 #' Cross-Validate Partition for SVR Model
 #'
 #' This function performs cross-validation on the given data partitions using a
-#' Support Vector Regression (SVR) model.
-#' It returns the average correlation and mean squared error over the partitions.
+#' Support Vector Regression (SVR) model. It returns the average correlation
+#' and mean squared error over the partitions.
 #'
 #' @param cost Numeric. The cost parameter for the SVR model.
 #' @param nu Numeric. The nu parameter for the SVR model.
-#' @param gamma (Optional) Numeric. The gamma parameter for the SVR model. Defaults to NULL.
-#' @param data_partitions List of dataframes. The data partitions to use for training and validation.
-#' @param bcv_folds (Optional) Numeric. Number of cross-validation folds. Defaults to 5.
+#' @param gamma (Optional) Numeric. The gamma parameter for the SVR model.
+#'  Defaults to NULL.
+#' @param data_partitions List of dataframes. The data partitions to use for
+#'  training and validation.
+#' @param bcv_folds (Optional) Numeric. Number of cross-validation folds.
+#'  Defaults to 5.
 #' @param signal_norm_names Character vector. Normalized signal column names.
-#' @param predictors_norm_names Character vector. Normalized predictor column names.
+#' @param predictors_norm_names Character vector. Normalized predictor column
+#'  names.
 #' @param lagged_cols Character vector. Names of lagged columns.
-#' @param col_lags Numeric vector. Number of lags for each column.
+#' @param combined_col_lags Numeric vector indicating the combined lags of the
+#'  predictor and response columns.
 #' @param vsvr_response Character. Response column name for the SVR model.
-#' @param vsvr_tolerance (Optional) Numeric. Tolerance parameter for the SVR model. Defaults to 1.
-#' @param silent (Optional) A logical for run the function silently (without printouts). Defaults to FALSE.
-#' @param training_list_name (Optional) Character. Name of the training data list element. Defaults to "training".
-#' @param validation_list_name (Optional) Character. Name of the validation data list element. Defaults to "validation".
+#' @param vsvr_tolerance (Optional) Numeric. Tolerance parameter for the SVR
+#'  model. Defaults to 1.
+#' @param silent (Optional) Logical. Determines if the function should run
+#'  silently. Defaults to FALSE.
+#' @param training_list_name (Optional) Character. Name of the training data
+#'  list element. Defaults to "training".
+#' @param validation_list_name (Optional) Character. Name of the validation
+#'  data list element. Defaults to "validation".
+#' @param svm_cache_size Numeric. Cache size for the SVR model. Defaults to 100.
+#' @param generate_response_predictions_cv Logical. Controls generation of
+#'  response predictions. Defaults to FALSE.
+#' @param col_lags (Optional) Numeric/Integer vector. Specifies column lags for
+#'  response prediction.
+#' @param response_lags (Optional) Numeric/Integer. Lags for the response
+#'  variable.
+#' @param initial_column_values (Optional) Numeric vector/list. Initial values
+#'  for each column.
+#' @param prediction_initial_value (Optional) Numeric. Initial value for
+#'  prediction.
+#' @param data_env_list (Optional) List. Additional data structures for
+#'  response prediction.
 #'
-#' @return A list containing the average correlation (`avg_cor`) and average mean squared error (`avg_error`).
-#'
-#' @details
-#' This function depends on the following internal package functions:
-#' - \code{\link{generate_time_series_data}}: Constructs a dataset for time-series modeling.
-#' - \code{\link{vsvr_model}}: Fits a Nu Support Vector Regression (SVR) model.
-#'
-#' \strong{Validations}:
-#' The function employs several auxiliary validation functions to ensure inputs adhere to expected criteria:
-#' - \code{\link{validate_pso_svr_params}}: Validates the parameters for the PSO and SVR.
-#' - \code{\link{validate_character_vector_list}}: Ensures provided vectors are non-empty character vectors.
-#' - \code{\link{validate_logical}}: Checks if an input is a logical value.
-#' - \code{\link{validate_data_partitions}}: Validates the data partitions for correct structure and content.
-#'
-#' It's essential to provide inputs meeting these validation criteria to ensure the function's correct operation.
+#' @return A list containing various metrics and information from the
+#'  cross-validation process:
+#' \itemize{
+#'   \item \code{avg_cor}: Average correlation across all folds.
+#'   \item \code{avg_error}: Average mean squared error across all folds.
+#'   \item \code{na_count}: Count of NA values encountered during computation.
+#'   \item \code{warnings}: Count of warnings generated by the SVR model.
+#'   \item \code{cv_predictions}: List of prediction-related data if
+#'    \code{generate_response_predictions_cv} is TRUE.
+#'   \item \code{time}: The time taken to execute the cross-validation process,
+#'    measured in seconds.
+#' }
 #'
 #' @examples
-#'
 #' data_partition_sample <- list(list(training = data.frame(feature1 = rnorm(20),
 #' feature2 = rnorm(20), feature1_1 = rnorm(20)), validation = data.frame(
 #' feature1 = rnorm(20), feature2 = rnorm(20), feature1_1 = rnorm(20))))
-#' cross_validate_partition(cost = 1, nu = 0.5, gamma = NULL, data_partitions = data_partition_sample,
+#' cross_validate_partition(cost = 1, nu = 0.5, gamma = NULL,
+#'  data_partitions = data_partition_sample,
 #' bcv_folds = 1, signal_norm_names = c("feature1", "feature2"),
-#' predictors_norm_names = c("feature1"), lagged_cols = c("feature1"), col_lags = c(1),
+#' predictors_norm_names = c("feature1"), lagged_cols = c("feature1"),
+#'  combined_col_lags = c(1),
 #' vsvr_response = "feature2", vsvr_tolerance = 1)
 #'
 #' @importFrom stats sd cor
 #' @importFrom utils modifyList
-#'
 #' @export
 #'
 cross_validate_partition <-
@@ -121,26 +132,20 @@ cross_validate_partition <-
            signal_norm_names,
            predictors_norm_names,
            lagged_cols,
-           col_lags,
+           combined_col_lags,
            vsvr_response,
            vsvr_tolerance = 1,
            silent = FALSE,
            training_list_name = "training",
            validation_list_name = "validation",
-           svm_cache_size = 100) {
-    # Validate params
-    validate_pso_svr_params(list(
-      cost = cost,
-      nu = nu,
-      gamma = gamma,
-      lags = col_lags
-    ))
-    validate_character_vector_list(list(signal_norm_names, predictors_norm_names, lagged_cols))
-    validate_logical(silent, "silent")
-    validate_data_partitions(data_partitions = data_partitions, blocks = bcv_folds)
-    
-    if (!is.numeric(vsvr_tolerance) || length(vsvr_tolerance) != 1)
-      stop("The 'vsvr_tolerance' argument must be a single integer.")
+           svm_cache_size = 100,
+           generate_response_predictions_cv = FALSE,
+           col_lags = NULL,
+           response_lags = NULL,
+           initial_column_values = NULL,
+           prediction_initial_value = NULL,
+           data_env_list = NULL) {
+    time <- Sys.time()
     
     cors <- numeric(bcv_folds)
     errors <- numeric(bcv_folds)
@@ -153,9 +158,11 @@ cross_validate_partition <-
       data_cols = signal_norm_names,
       predictor_cols = predictors_norm_names,
       lagged_cols = lagged_cols,
-      lag_values = col_lags,
+      lag_values = combined_col_lags,
       vsvr_response = vsvr_response
     )
+    
+    cv_predictions <- list()
     
     for (df_list in seq_len(bcv_folds)) {
       # Prepare data for validation
@@ -173,12 +180,6 @@ cross_validate_partition <-
                           common_args)
       data_partitions_training <-
         do.call(generate_time_series_data, args_training)
-      
-      # if (df_list == 1) {
-      #   print("Cross validation train and test data: ")
-      #   print(head(data_partitions_training, 8))
-      #   print(head(new_data_validation, 8))
-      # }
       
       # Train SVR model
       svr_model <-
@@ -202,13 +203,35 @@ cross_validate_partition <-
       if (stats::sd(predictions) == 0) {
         if (!silent) {
           message(
-            "STANDARD DEVIATION OF 'PREDICTIONS' IS ZERO: SVM TOLERANCE IS TOO HIGH FOR NUMBER OF LAGS USED"
+            "\nSTANDARD DEVIATION OF 'PREDICTIONS' IS ZERO: SVM TOLERANCE IS TOO HIGH FOR NUMBER OF LAGS USED"
           )
         }
         cors[df_list] <- NA
         errors[df_list] <- NA
         na_count <- na_count + 1
         next
+      }
+      
+      if (generate_response_predictions_cv) {
+        response_params <- list(
+          data = data_partitions_training,
+          col_lags = col_lags,
+          response_lags = response_lags,
+          initial_column_values = initial_column_values,
+          prediction_initial_value = prediction_initial_value,
+          cost = cost,
+          nu = nu,
+          gamma = gamma,
+          data_list = data_env_list,
+          included_model = svr_model,
+          vsvr_response = vsvr_response,
+          silent = silent
+        )
+        
+        response_data <-
+          generate_and_evaluate_response_cv(response_params)
+        cv_predictions <-
+          append(cv_predictions, list(response_data))
       }
       
       target_vals <-
@@ -220,10 +243,87 @@ cross_validate_partition <-
         sqrt(mean((target_vals - predictions) ^ 2))
     }
     
-    return(list(
-      avg_cor = mean(cors, na.rm = TRUE),
-      avg_error = mean(errors, na.rm = TRUE),
-      na_count = na_count,
-      warnings = svm_warnings
-    ))
+    return(
+      list(
+        avg_cor = mean(cors, na.rm = TRUE),
+        avg_error = mean(errors, na.rm = TRUE),
+        na_count = na_count,
+        warnings = svm_warnings,
+        cv_predictions = cv_predictions,
+        time = Sys.time() - time
+      )
+    )
   }
+
+#' Generate and Evaluate Response for Cross-Validation
+#'
+#' This function generates response predictions, evaluates signal quality, and
+#' applies an advanced filter as part of the cross-validation process in an SVR
+#' model. It is specifically designed to be used within the
+#' `cross_validate_partition` function.
+#'
+#' @param params A list containing all necessary parameters for generating and
+#'  evaluating the response.
+#' The list should include:
+#' \itemize{
+#'   \item \code{data}: The training data as a dataframe.
+#'   \item \code{col_lags}: Numeric or integer vector specifying the lags for
+#'    each column.
+#'   \item \code{response_lags}: Numeric or integer for the response variable
+#'    lags.
+#'   \item \code{initial_column_values}: Initial values for each column as a
+#'    numeric vector or list.
+#'   \item \code{prediction_initial_value}: Initial value for prediction.
+#'   \item \code{cost}: The cost parameter for the SVR model.
+#'   \item \code{nu}: The nu parameter for the SVR model.
+#'   \item \code{gamma}: The gamma parameter for the SVR model.
+#'   \item \code{data_list}: Additional data structures or context for the
+#'    response prediction.
+#'   \item \code{included_model}: The trained SVR model.
+#'   \item \code{vsvr_response}: The response column name for the SVR model.
+#'   \item \code{silent}: Logical flag to run the function silently.
+#' }
+#'
+#' @return A list containing the generated response signal, associated warnings,
+#'  support vectors count, basic filter score, and advanced score along with
+#'  its results.
+#'
+#' @examples
+#' \dontrun{
+#'   generate_and_evaluate_response_cv(...)
+#' }
+#'
+#' @export
+#'
+generate_and_evaluate_response_cv <- function(params) {
+  response_signal <- generate_signal_response_predictions_helper(
+    data = params$data,
+    col_lags = params$col_lags,
+    response_lags = params$response_lags,
+    initial_column_values = params$initial_column_values,
+    prediction_initial_value = params$prediction_initial_value,
+    cost = params$cost,
+    nu = params$nu,
+    gamma = params$gamma,
+    data_list = params$data_list,
+    included_model = params$included_model
+  )
+  
+  signal_score <-
+    evaluate_signal_quality(response_signal$predicted_values[[params$vsvr_response]],
+                            silent = params$silent)
+  
+  advanced_score <-
+    advanced_filter(response_signal$predicted_values[[params$vsvr_response]])
+  
+  response_data <- c(
+    response_signal = list(response_signal$predicted_values[[params$vsvr_response]]),
+    response_predictions_warnings = response_signal$warnings,
+    support_vectors = response_signal$model$tot.nSV,
+    basic_filter = signal_score,
+    advanced_score = advanced_score$score,
+    advanced_score_results = advanced_score$results
+  )
+  
+  return(response_data)
+}
