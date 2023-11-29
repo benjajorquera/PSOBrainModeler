@@ -27,8 +27,8 @@
 #' @param progress_bar Progress bar for visualization of the optimization
 #'  process.
 #' @param generate_response_predictions_cv Flag to generate response predictions.
-#' @param basic_filter_check_cv Flag to enable basic filtering of the data.
-#' @param fn_count_treshold Threshold for function count in optimization.
+#' @param basic_filter_check Flag to enable basic filtering of the data.
+#' @param fn_count_threshold Threshold for function count in optimization.
 #'
 #' @return Depending on the stage and result of the optimization, it can return
 #'  different values, including early termination or the current optimization
@@ -61,8 +61,8 @@ pso_training_model <- function(max_function_count = 1000,
                                seed = 123,
                                progress_bar,
                                generate_response_predictions_cv = FALSE,
-                               basic_filter_check_cv = TRUE,
-                               fn_count_treshold = 30) {
+                               basic_filter_check = TRUE,
+                               fn_count_threshold = 30) {
   if (pso_env[["function_count"]] >= max_function_count)
     return(10)
   
@@ -97,10 +97,10 @@ pso_training_model <- function(max_function_count = 1000,
   # Process response signal and score it
   basic_filter <-
     evaluate_signal_quality(response_predictions$predicted_values[[vsvr_response]],
-                            silent = silent)
+                            silent = silent, max_diff_threshold = data_list$response_max_diff_threshold)
   
   if (basic_filter$result != "TEST PASSED" &&
-      basic_filter_check_cv) {
+      basic_filter_check) {
     new_data <- c(
       test_result = basic_filter$result,
       warnings = response_predictions$warnings,
@@ -198,7 +198,7 @@ pso_training_model <- function(max_function_count = 1000,
   
   if (round(avg_cor, digits = 4) <= round(pso_env[["max_global_cor"]], digits = 4)) {
     pso_env[["function_count_without_improvement"]] <-
-      ifelse(pso_env[["function_count_without_improvement"]] > fn_count_treshold,
+      ifelse(pso_env[["function_count_without_improvement"]] > fn_count_threshold,
              return(5), pso_env[["function_count_without_improvement"]] + 1)
   } else {
     pso_env[["function_count_without_improvement"]] <- 0

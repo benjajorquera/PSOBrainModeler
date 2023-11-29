@@ -22,8 +22,8 @@ pso_training_model(
   seed = 123,
   progress_bar,
   generate_response_predictions_cv = FALSE,
-  basic_filter_check_cv = TRUE,
-  fn_count_treshold = 30
+  basic_filter_check = TRUE,
+  fn_count_threshold = 30
 )
 }
 \arguments{
@@ -63,9 +63,9 @@ process.}
 
 \item{generate_response_predictions_cv}{Flag to generate response predictions.}
 
-\item{basic_filter_check_cv}{Flag to enable basic filtering of the data.}
+\item{basic_filter_check}{Flag to enable basic filtering of the data.}
 
-\item{fn_count_treshold}{Threshold for function count in optimization.}
+\item{fn_count_threshold}{Threshold for function count in optimization.}
 }
 \value{
 Depending on the stage and result of the optimization, it can return

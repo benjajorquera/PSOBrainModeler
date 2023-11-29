@@ -14,7 +14,8 @@ configure_pso_brain_modeler(
   butter_filter_fs = 0.2,
   max_lag_number = 8,
   vsvr_tolerance = 1,
-  svm_cache_size = 100
+  svm_cache_size = 100,
+  response_max_diff_threshold = 0.55
 )
 }
 \arguments{
@@ -45,6 +46,9 @@ to 8.}
 
 \item{svm_cache_size}{(Optional) Size of the cache for SVM training. Defaults
 to 100.}
+
+\item{response_max_diff_threshold}{(Optional) A numeric value representing the
+response signal maximum difference threshold. Defaults to 0.55.}
 }
 \value{
 Returns a list of configuration settings for the PSO brain modeler.
@@ -59,6 +63,8 @@ Returns a list of configuration settings for the PSO brain modeler.
   - `butter_filter_fs`: Sampling frequency for the Butterworth filter.
   - `max_lag_number`: Maximum number of lags to consider.
   - `vsvr_tolerance`: Tolerance level for VSVR.
+  - `svm_cache_size`: Cache size for VSVR.
+  - `response_max_diff_threshold`: Max difference threshold for response signal.
 }
 \description{
 This function sets the configuration for the PSO brain modeler. It includes

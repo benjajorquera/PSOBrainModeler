@@ -5,29 +5,33 @@
 \title{Progress Bar Configuration}
 \usage{
 progressbar_config(
-  kernel_type = "linear",
-  is_test_mode = FALSE,
   lags_column = NULL,
-  lags_response = NULL
+  lags_response = NULL,
+  cost_size = 0,
+  nu_size = 0,
+  gamma_size = 0
 )
 }
 \arguments{
-\item{kernel_type}{A string indicating the type of kernel. Valid options
-are "linear" and "radial".}
-
-\item{is_test_mode}{A boolean indicating whether this is a test scenario.}
-
 \item{lags_column}{Numeric vector indicating the lags in column processing.}
 
 \item{lags_response}{Numeric vector indicating the lags in response time.}
+
+\item{cost_size}{Numeric value for the cost size parameter.}
+
+\item{nu_size}{Numeric value for the nu size parameter.}
+
+\item{gamma_size}{Numeric value for the gamma size parameter.}
 }
 \value{
 A configured progress bar object.
 }
 \description{
 Configures a progress bar for a process with adjustable parameters.
+This function allows customization of the progress bar by specifying
+lags in column processing, response times, and sizes for cost, nu, and gamma.
 }
 \examples{
-progressbar_config("linear", TRUE, c(1), c(2))
+progressbar_config(c(1), c(2), 0, 0, 0)
 
 }

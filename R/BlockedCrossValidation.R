@@ -76,7 +76,7 @@ blocked_cv <-
 #' @param vsvr_tolerance (Optional) Numeric. Tolerance parameter for the SVR
 #'  model. Defaults to 1.
 #' @param silent (Optional) Logical. Determines if the function should run
-#'  silently. Defaults to FALSE.
+#'  silently. Defaults to TRUE.
 #' @param training_list_name (Optional) Character. Name of the training data
 #'  list element. Defaults to "training".
 #' @param validation_list_name (Optional) Character. Name of the validation
@@ -135,7 +135,7 @@ cross_validate_partition <-
            combined_col_lags,
            vsvr_response,
            vsvr_tolerance = 1,
-           silent = FALSE,
+           silent = TRUE,
            training_list_name = "training",
            validation_list_name = "validation",
            svm_cache_size = 100,
@@ -311,7 +311,7 @@ generate_and_evaluate_response_cv <- function(params) {
   
   signal_score <-
     evaluate_signal_quality(response_signal$predicted_values[[params$vsvr_response]],
-                            silent = params$silent)
+                            silent = params$silent, max_diff_threshold = params$data_list$response_max_diff_threshold)
   
   advanced_score <-
     advanced_filter(response_signal$predicted_values[[params$vsvr_response]])

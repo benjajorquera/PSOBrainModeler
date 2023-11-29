@@ -10,7 +10,7 @@ cross_validate_partition_helper(
   gamma = NULL,
   combined_col_lags,
   data_list,
-  silent = FALSE,
+  silent = TRUE,
   bcv_folds = 5,
   col_lags = NULL,
   response_lags = NULL,
@@ -34,7 +34,7 @@ predictor and response columns.}
 partitions, normalization names, and other settings.}
 
 \item{silent}{Logical indicating whether the function should run silently.
-Defaults to FALSE.}
+Defaults to TRUE.}
 
 \item{bcv_folds}{(Optional) Number of cross-validation folds. Defaults to 5.}
 

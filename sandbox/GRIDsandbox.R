@@ -12,32 +12,29 @@ source("R/PSOHelpers.R")
 source("R/PSOModelObjectives.R")
 source("R/PSOModelOptimization.R")
 source("R/Helpers.R")
-source("R/Validators.R")
 source("R/GridSearchSVR.R")
+source("R/SignalHelpers.R")
 
-library(tseries)
 library(dplyr)
 
-mydata <- read.table("data-raw/Sujeto1.txt", header = TRUE)
+mydata <-
+  read.table("data-raw/testing/2Hz/Sujeto1.txt", header = TRUE)
 
 brain_modeler_config <-
   configure_pso_brain_modeler(vsvr_tolerance = 0.1)
 
-start_time <- Sys.time()
-
 grid_search <- svr_grid_search(
   config = brain_modeler_config,
-  data = mydata,
-  multi = FALSE,
-  signal_names = c("MABP", "CBFV.L"),
-  excluded_cols = c("Time", "CBFV.R", "etCO2"),
-  predictors_names = c("MABP"),
-  vsvr_response = "CBFV.L",
-  kernel = "radial",
-  test = TRUE,
-  col_lags = c(1),
-  response_lags = NULL,
-  extra_col_name = NULL
+  dataset = mydata,
+  kernel_type = 'radial',
+  is_multivariate = TRUE,
+  signal_names = c("MABP", "etCO2", "CBFV.L"),
+  predictor_names = c("MABP", "etCO2"),
+  response_var = "CBFV.L",
+  exclude_columns = c("Time", "CBFV.R"),
+  lags_column = c(1, 1),
+  lags_response = NULL,
+  is_test_mode = TRUE,
+  extra_column_name = "etCO2",
+  generate_response_predictions_cv = FALSE
 )
-
-print(Sys.time() - start_time)

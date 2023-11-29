@@ -10,7 +10,7 @@ pso_model(
   multi = FALSE,
   data_list,
   model,
-  silent = FALSE,
+  silent = TRUE,
   plot_response = TRUE,
   initial_response_value = 1,
   model_parameters,
@@ -19,8 +19,8 @@ pso_model(
   seed = 123,
   progress_bar,
   generate_response_predictions_cv = FALSE,
-  basic_filter_check_cv = TRUE,
-  fn_count_treshold = 30
+  basic_filter_check = TRUE,
+  fn_count_threshold = 30
 )
 }
 \arguments{
@@ -37,7 +37,7 @@ to FALSE.}
 \item{model}{The model type to be optimized.}
 
 \item{silent}{Flag to control the display of messages during execution.
-Defaults to FALSE.}
+Defaults to TRUE.}
 
 \item{plot_response}{Flag to enable or disable plotting the response.
 Defaults to TRUE.}
@@ -58,10 +58,10 @@ Defaults to 1.}
 \item{generate_response_predictions_cv}{Flag to generate response
 predictions. Defaults to FALSE.}
 
-\item{basic_filter_check_cv}{Flag to enable basic filtering of the data.
+\item{basic_filter_check}{Flag to enable basic filtering of the data.
 Defaults to TRUE.}
 
-\item{fn_count_treshold}{Threshold for function count in optimization.
+\item{fn_count_threshold}{Threshold for function count in optimization.
 Defaults to 30.}
 }
 \value{

@@ -16,7 +16,7 @@ cross_validate_partition(
   combined_col_lags,
   vsvr_response,
   vsvr_tolerance = 1,
-  silent = FALSE,
+  silent = TRUE,
   training_list_name = "training",
   validation_list_name = "validation",
   svm_cache_size = 100,
@@ -58,7 +58,7 @@ predictor and response columns.}
 model. Defaults to 1.}
 
 \item{silent}{(Optional) Logical. Determines if the function should run
-silently. Defaults to FALSE.}
+silently. Defaults to TRUE.}
 
 \item{training_list_name}{(Optional) Character. Name of the training data
 list element. Defaults to "training".}

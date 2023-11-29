@@ -4,7 +4,12 @@
 \alias{evaluate_signal_quality}
 \title{Signal Quality Evaluation}
 \usage{
-evaluate_signal_quality(signal, pressure_start_point = 3L, silent = TRUE)
+evaluate_signal_quality(
+  signal,
+  pressure_start_point = 3L,
+  silent = TRUE,
+  max_diff_threshold = 0.55
+)
 }
 \arguments{
 \item{signal}{A numeric vector representing the signal.}
@@ -12,12 +17,15 @@ evaluate_signal_quality(signal, pressure_start_point = 3L, silent = TRUE)
 \item{pressure_start_point}{(Optional) The starting point of the pressure.
 Defaults to 3L.}
 
-\item{silent}{(Optional) A logical for running the function silently
-(without printouts). Defaults to FALSE.}
+\item{silent}{(Optional) A logical indicating whether to run the function
+silently (without printouts). Defaults to TRUE.}
+
+\item{max_diff_threshold}{(Optional) A numeric value representing the
+maximum difference threshold. Defaults to 0.55.}
 }
 \value{
 A list with a numeric score indicating the quality of the signal and
- the result of the evaluation.
+  the result of the evaluation.
 }
 \description{
 Evaluates the quality of a provided signal based on specific criteria,
@@ -26,7 +34,8 @@ designed to work with signals at a frequency of 2 Hz.
 }
 \details{
 The function evaluates the signal's quality using a set of criteria,
- starting with advanced tests before applying the basic filter:
+  starting with advanced tests before applying the basic filter. The function
+  returns a score of 0 for any failed test and 1 if all tests are passed.
 
 Advanced Criteria:
 1. Maximum Difference Test: Checks if the maximum distance between any two

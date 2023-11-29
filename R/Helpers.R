@@ -14,7 +14,7 @@
 #' @param data_list A list containing various data configurations including data
 #'  partitions, normalization names, and other settings.
 #' @param silent Logical indicating whether the function should run silently.
-#'  Defaults to FALSE.
+#'  Defaults to TRUE.
 #' @param bcv_folds (Optional) Number of cross-validation folds. Defaults to 5.
 #' @param col_lags (Optional) Numeric or integer vector specifying the lags for
 #'  each column.
@@ -43,7 +43,7 @@ cross_validate_partition_helper <-
            gamma = NULL,
            combined_col_lags,
            data_list,
-           silent = FALSE,
+           silent = TRUE,
            bcv_folds = 5,
            col_lags = NULL,
            response_lags = NULL,

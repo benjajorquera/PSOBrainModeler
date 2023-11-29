@@ -23,7 +23,7 @@ grid_search_main_loop(
   should_plot_response = FALSE,
   progress_bar,
   generate_response_predictions_cv = FALSE,
-  basic_filter_check_cv = TRUE
+  basic_filter_check = TRUE
 )
 }
 \arguments{
@@ -75,7 +75,7 @@ process.}
 \item{generate_response_predictions_cv}{Logical flag indicating if response
 predictions should be generated, defaults to FALSE.}
 
-\item{basic_filter_check_cv}{Logical flag indicating if basic filters should
+\item{basic_filter_check}{Logical flag indicating if basic filters should
 be applied, defaults to TRUE.}
 }
 \value{

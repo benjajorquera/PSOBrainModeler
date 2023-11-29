@@ -13,7 +13,7 @@
 #' @param data_list A list containing processed data relevant to the model.
 #' @param model The model type to be optimized.
 #' @param silent Flag to control the display of messages during execution.
-#'  Defaults to FALSE.
+#'  Defaults to TRUE.
 #' @param plot_response Flag to enable or disable plotting the response.
 #'  Defaults to TRUE.
 #' @param initial_response_value Initial value for the response variable.
@@ -25,9 +25,9 @@
 #' @param progress_bar Progress bar configuration for the optimization process.
 #' @param generate_response_predictions_cv Flag to generate response
 #'  predictions. Defaults to FALSE.
-#' @param basic_filter_check_cv Flag to enable basic filtering of the data.
+#' @param basic_filter_check Flag to enable basic filtering of the data.
 #'  Defaults to TRUE.
-#' @param fn_count_treshold Threshold for function count in optimization.
+#' @param fn_count_threshold Threshold for function count in optimization.
 #'  Defaults to 30.
 #'
 #' @return The result of the PSO training model function, including any metrics,
@@ -46,7 +46,7 @@ pso_model <-
            multi = FALSE,
            data_list,
            model,
-           silent = FALSE,
+           silent = TRUE,
            plot_response = TRUE,
            initial_response_value = 1,
            model_parameters,
@@ -55,8 +55,8 @@ pso_model <-
            seed = 123,
            progress_bar,
            generate_response_predictions_cv = FALSE,
-           basic_filter_check_cv = TRUE,
-           fn_count_treshold = 30) {
+           basic_filter_check = TRUE,
+           fn_count_threshold = 30) {
     params_list <-
       extract_params_list(params = params,
                           model_parameters = model_parameters,
@@ -84,8 +84,8 @@ pso_model <-
       seed = seed,
       progress_bar = progress_bar,
       generate_response_predictions_cv = generate_response_predictions_cv,
-      basic_filter_check_cv = basic_filter_check_cv,
-      fn_count_treshold = fn_count_treshold
+      basic_filter_check = basic_filter_check,
+      fn_count_threshold = fn_count_threshold
     )
     
     return(pso_training_model_result)

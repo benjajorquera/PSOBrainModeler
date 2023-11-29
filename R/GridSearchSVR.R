@@ -33,7 +33,7 @@
 #'  silent mode, minimizing output. Defaults to TRUE.
 #' @param generate_response_predictions_cv Logical flag indicating if response
 #'  predictions should be generated. Defaults to FALSE.
-#' @param basic_filter_check_cv Logical flag indicating if a basic filter check
+#' @param basic_filter_check Logical flag indicating if a basic filter check
 #'  should be applied. Defaults to TRUE.
 #'
 #' @return A list containing the results of the grid search, potentially
@@ -62,7 +62,7 @@ svr_grid_search <- function(config,
                             is_test_mode = FALSE,
                             is_silent_mode = TRUE,
                             generate_response_predictions_cv = FALSE,
-                            basic_filter_check_cv = TRUE) {
+                            basic_filter_check = TRUE) {
   # Validate parameters
   stopifnot(is.list(config),
             is.data.frame(dataset),
@@ -100,7 +100,7 @@ svr_grid_search <- function(config,
       start_time = start_time,
       should_plot_response = should_plot_response,
       generate_response_predictions_cv = generate_response_predictions_cv,
-      basic_filter_check_cv = basic_filter_check_cv
+      basic_filter_check = basic_filter_check
     )
   )
 }
@@ -139,7 +139,7 @@ svr_grid_search <- function(config,
 #'  variable should be plotted, defaults to FALSE.
 #' @param generate_response_predictions_cv Logical flag indicating if response
 #'  predictions should be generated, defaults to FALSE.
-#' @param basic_filter_check_cv Logical flag indicating if basic filters should
+#' @param basic_filter_check Logical flag indicating if basic filters should
 #'  be applied, defaults to TRUE.
 #'
 #' @return A list containing the results of the grid search, time taken for the
@@ -172,7 +172,7 @@ main_grid_search <- function(data_env,
                              start_time = NULL,
                              should_plot_response = FALSE,
                              generate_response_predictions_cv = FALSE,
-                             basic_filter_check_cv = TRUE) {
+                             basic_filter_check = TRUE) {
   # Simple parameter validation
   stopifnot(is.list(data_env), is.list(data_env$data_partitions))
   
@@ -187,10 +187,11 @@ main_grid_search <- function(data_env,
     params_config(kernel_type = kernel_type, is_test_mode = is_test_mode)
   
   progress_bar <- progressbar_config(
-    kernel_type = kernel_type,
-    is_test_mode = is_test_mode,
     lags_column = lags_column,
-    lags_response = lags_response
+    lags_response = lags_response,
+    cost_size = length(params$cost),
+    nu_size = length(params$nu),
+    gamma_size = length(params$gamma)
   )
   
   main_loop_params <- list(
@@ -212,7 +213,7 @@ main_grid_search <- function(data_env,
     should_plot_response = should_plot_response,
     progress_bar = progress_bar,
     generate_response_predictions_cv = generate_response_predictions_cv,
-    basic_filter_check_cv = basic_filter_check_cv
+    basic_filter_check = basic_filter_check
   )
   
   results <- list()
@@ -231,8 +232,6 @@ main_grid_search <- function(data_env,
         )))
     }
   }
-  
-  progress_bar$close()
   
   return(
     list(
@@ -296,11 +295,11 @@ params_config <-
     } else {
       cost_values <-
         if (is_test_mode)
-          c(0.25, 4096)
+          c(0.5, 32, 2048)
       else
         c(0.25, 0.5, 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096)
       sigma_values <- 2 ^ seq(-2, if (is_test_mode)
-        - 2
+        0
         else
           10, 2)
       gamma_values <- 1 / (2 * sigma_values ^ 2)
@@ -313,36 +312,33 @@ params_config <-
 #' Progress Bar Configuration
 #'
 #' Configures a progress bar for a process with adjustable parameters.
-#' @param kernel_type A string indicating the type of kernel. Valid options
-#'  are "linear" and "radial".
-#' @param is_test_mode A boolean indicating whether this is a test scenario.
+#' This function allows customization of the progress bar by specifying
+#' lags in column processing, response times, and sizes for cost, nu, and gamma.
+#'
 #' @param lags_column Numeric vector indicating the lags in column processing.
 #' @param lags_response Numeric vector indicating the lags in response time.
+#' @param cost_size Numeric value for the cost size parameter.
+#' @param nu_size Numeric value for the nu size parameter.
+#' @param gamma_size Numeric value for the gamma size parameter.
 #' @return A configured progress bar object.
 #' @importFrom progress progress_bar
 #'
 #' @examples
-#' progressbar_config("linear", TRUE, c(1), c(2))
+#' progressbar_config(c(1), c(2), 0, 0, 0)
 #'
 #' @export
 progressbar_config <-
-  function(kernel_type = "linear",
-           is_test_mode = FALSE,
-           lags_column = NULL,
-           lags_response = NULL) {
+  function(lags_column = NULL,
+           lags_response = NULL,
+           cost_size = 0,
+           nu_size = 0,
+           gamma_size = 0) {
     # Validations
-    stopifnot(is.character(kernel_type), is.logical(is_test_mode))
+    stopifnot(is.numeric(lags_column))
     
-    # Calculate total steps
-    total_steps <- ifelse(is_test_mode, 12, 9 * 15)
-    if (is_test_mode) {
-      total_steps <-
-        ifelse(kernel_type == "radial", total_steps * 2, total_steps)
-    }
-    else {
-      total_steps <-
-        ifelse(kernel_type == "radial", total_steps * 8, total_steps)
-    }
+    total_steps <- cost_size * nu_size
+    total_steps <-
+      ifelse(gamma_size != 0, total_steps * gamma_size, total_steps)
     
     # Adjust total steps based on lags
     if (!is.null(lags_column)) {
@@ -403,7 +399,7 @@ progressbar_config <-
 #'  process.
 #' @param generate_response_predictions_cv Logical flag indicating if response
 #'  predictions should be generated, defaults to FALSE.
-#' @param basic_filter_check_cv Logical flag indicating if basic filters should
+#' @param basic_filter_check Logical flag indicating if basic filters should
 #'  be applied, defaults to TRUE.
 #'
 #' @return A list containing the results of each iteration of the grid search,
@@ -438,7 +434,7 @@ grid_search_main_loop <- function(data_env,
                                   should_plot_response = FALSE,
                                   progress_bar,
                                   generate_response_predictions_cv = FALSE,
-                                  basic_filter_check_cv = TRUE) {
+                                  basic_filter_check = TRUE) {
   # Validation
   stopifnot(is.list(data_env),
             is.list(model_params))
@@ -466,7 +462,7 @@ grid_search_main_loop <- function(data_env,
         should_plot_response = should_plot_response,
         is_silent_mode = is_silent_mode,
         generate_response_predictions_cv = generate_response_predictions_cv,
-        basic_filter_check_cv = basic_filter_check_cv
+        basic_filter_check = basic_filter_check
       )
       
       if (length(lags_column) == 1) {
@@ -613,7 +609,7 @@ display_grid_message <- function(cost, nu, gamma, lags) {
 #'  variable should be plotted, defaults to FALSE.
 #' @param generate_response_predictions_cv Logical flag indicating if response
 #'  predictions should be generated, defaults to FALSE.
-#' @param basic_filter_check_cv Logical flag indicating if basic filters should
+#' @param basic_filter_check Logical flag indicating if basic filters should
 #'  be applied, defaults to TRUE.
 #'
 #' @return A list containing the evaluation results, including signal quality
@@ -640,9 +636,12 @@ grid_signal_eval <-
            is_silent_mode = TRUE,
            should_plot_response = FALSE,
            generate_response_predictions_cv = FALSE,
-           basic_filter_check_cv = TRUE) {
+           basic_filter_check = TRUE) {
     # Simple parameter validations
     stopifnot(is.list(data_env), is.numeric(cost), is.numeric(nu))
+    
+    response_signal_time <- Sys.time()
+    overall_time <- Sys.time()
     
     # Signal prediction generation
     response_predictions <-
@@ -658,25 +657,30 @@ grid_signal_eval <-
         data_list = data_env
       )
     
+    response_signal_time <- Sys.time() - response_signal_time
+    
     results <- list()
     
     # Signal quality evaluation
     signal_score <-
       evaluate_signal_quality(response_predictions$predicted_values[[norm_response_var]],
-                              silent = is_silent_mode)
+                              silent = is_silent_mode, max_diff_threshold = data_env$response_max_diff_threshold)
     
     if (signal_score$result != "TEST PASSED" &&
-        basic_filter_check_cv) {
+        basic_filter_check) {
       return(append(results,
-                    list(
-                      c(
+                    list(c(
+                      list(
                         test_result = signal_score$result,
                         warnings = response_predictions$warnings,
-                        list(support_vectors = response_predictions$model$tot.nSV),
-                        list(signal_response = response_predictions$predicted_values[[norm_response_var]])
+                        support_vectors = response_predictions$model$tot.nSV,
+                        signal_response = response_predictions$predicted_values[[norm_response_var]],
+                        response_signal_time = response_signal_time
                       )
-                    )))
+                    ))))
     }
+    
+    cv_time <- Sys.time()
     
     # Cross-validation
     cv_result <- cross_validate_partition_helper(
@@ -690,23 +694,29 @@ grid_signal_eval <-
       response_lags = lag_response,
       initial_column_values = initial_column_values,
       prediction_initial_value = initial_prediction_value,
-      generate_response_predictions_cv = generate_response_predictions_cv
+      generate_response_predictions_cv = generate_response_predictions_cv,
+      silent = is_silent_mode
     )
+    
+    cv_time <- Sys.time() - cv_time
     
     if (is.nan(cv_result$avg_cor) ||
         is.nan(cv_result$avg_error)) {
       return(append(results,
-                    list(
-                      c(
+                    list(c(
+                      list(
                         test_result = "CV FAILED",
                         prediction_warnings = response_predictions$warnings,
                         cv_warnings = cv_result$warnings,
-                        list(support_vectors = response_predictions$model$tot.nSV),
-                        list(signal_response = response_predictions$predicted_values[[norm_response_var]])
+                        support_vectors = response_predictions$model$tot.nSV,
+                        signal_response = response_predictions$predicted_values[[norm_response_var]],
+                        cv_time = cv_time,
+                        response_signal_time = response_signal_time
                       )
-                    )))
+                    ))))
     }
     
+    overall_time <- Sys.time() - overall_time
     
     # Result compilation
     result_list <- list(
@@ -726,7 +736,10 @@ grid_signal_eval <-
       ),
       response_predictions_warnings = response_predictions$warnings,
       support_vectors = response_predictions$model$tot.nSV,
-      cv_predictions = cv_result$cv_predictions
+      cv_predictions = cv_result$cv_predictions,
+      response_signal_time = response_signal_time,
+      cv_time = cv_time,
+      overall_time = overall_time
     )
     results <- append(results, list(c(result_list)))
     

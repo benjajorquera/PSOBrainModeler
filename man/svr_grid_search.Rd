@@ -22,7 +22,7 @@ svr_grid_search(
   is_test_mode = FALSE,
   is_silent_mode = TRUE,
   generate_response_predictions_cv = FALSE,
-  basic_filter_check_cv = TRUE
+  basic_filter_check = TRUE
 )
 }
 \arguments{
@@ -72,7 +72,7 @@ silent mode, minimizing output. Defaults to TRUE.}
 \item{generate_response_predictions_cv}{Logical flag indicating if response
 predictions should be generated. Defaults to FALSE.}
 
-\item{basic_filter_check_cv}{Logical flag indicating if a basic filter check
+\item{basic_filter_check}{Logical flag indicating if a basic filter check
 should be applied. Defaults to TRUE.}
 }
 \value{

@@ -25,8 +25,8 @@ optimize_brain_model_with_PSO(
   initial_response_value = 1,
   seed = 123,
   generate_response_predictions_cv = FALSE,
-  basic_filter_check_cv = TRUE,
-  fn_count_treshold = 30
+  basic_filter_check = TRUE,
+  fn_count_threshold = 30
 )
 }
 \arguments{
@@ -87,10 +87,10 @@ the optimization process. Defaults to 1.}
 \item{generate_response_predictions_cv}{Logical flag to determine if response
 predictions should be generated. Defaults to FALSE.}
 
-\item{basic_filter_check_cv}{Logical flag indicating whether a basic filter
+\item{basic_filter_check}{Logical flag indicating whether a basic filter
 check is performed. Defaults to TRUE.}
 
-\item{fn_count_treshold}{Integer threshold for a specific function count
+\item{fn_count_threshold}{Integer threshold for a specific function count
 condition, affecting the optimization flow. Defaults to 30.}
 }
 \value{

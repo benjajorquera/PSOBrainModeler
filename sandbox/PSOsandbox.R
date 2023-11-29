@@ -45,7 +45,7 @@ result <- optimize_brain_model_with_PSO(
   silent = TRUE,
   seed = 123,
   generate_response_predictions_cv = TRUE,
-  fn_count_treshold = 5
+  fn_count_threshold = 5
 )
 
 ###############################################################################

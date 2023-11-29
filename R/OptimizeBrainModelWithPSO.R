@@ -42,9 +42,9 @@
 #'  123.
 #' @param generate_response_predictions_cv Logical flag to determine if response
 #'  predictions should be generated. Defaults to FALSE.
-#' @param basic_filter_check_cv Logical flag indicating whether a basic filter
+#' @param basic_filter_check Logical flag indicating whether a basic filter
 #'  check is performed. Defaults to TRUE.
-#' @param fn_count_treshold Integer threshold for a specific function count
+#' @param fn_count_threshold Integer threshold for a specific function count
 #'  condition, affecting the optimization flow. Defaults to 30.
 #'
 #' @return Returns a list containing two elements:
@@ -96,8 +96,8 @@ optimize_brain_model_with_PSO <- function(config,
                                           initial_response_value = 1,
                                           seed = 123,
                                           generate_response_predictions_cv = FALSE,
-                                          basic_filter_check_cv = TRUE,
-                                          fn_count_treshold = 30) {
+                                          basic_filter_check = TRUE,
+                                          fn_count_threshold = 30) {
   stopifnot(is.data.frame(data))
   
   data_env_list <- configure_data_env(
@@ -154,13 +154,13 @@ optimize_brain_model_with_PSO <- function(config,
     initial_response_value = initial_response_value,
     silent = silent,
     generate_response_predictions_cv = generate_response_predictions_cv,
-    basic_filter_check_cv = basic_filter_check_cv,
+    basic_filter_check = basic_filter_check,
     plot_response = plot_response,
     model_parameters = model_parameters,
     bcv_folds = config$bcv_folds,
     pso_env = pso_env,
     seed = seed,
-    fn_count_treshold = fn_count_treshold,
+    fn_count_threshold = fn_count_threshold,
     progress_bar = progress_bar,
     lower = params_lower_bounds,
     upper = params_upper_bounds,
