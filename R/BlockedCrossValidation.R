@@ -39,11 +39,11 @@ blocked_cv <-
         block * validation_length
       
       # Extract validation data based on indices
-      validation_data <- data[start_idx:end_idx,]
+      validation_data <- data[start_idx:end_idx, ]
       
       # The training data is the remaining data after excluding the
       # validation data
-      training_data <- data[-(start_idx:end_idx),]
+      training_data <- data[-(start_idx:end_idx), ]
       
       list(training = training_data, validation = validation_data)
     })
@@ -310,17 +310,26 @@ generate_and_evaluate_response_cv <- function(params) {
   )
   
   signal_score <-
-    evaluate_signal_quality(response_signal$predicted_values[[params$vsvr_response]],
-                            silent = params$silent, max_diff_threshold = params$data_list$response_max_diff_threshold)
+    evaluate_signal_quality(
+      response_signal$predicted_values[[params$vsvr_response]],
+      silent = params$silent,
+      max_diff_threshold = params$data_list$response_max_diff_threshold
+    )
   
-  advanced_score <-
-    advanced_filter(response_signal$predicted_values[[params$vsvr_response]])
+  if (signal_score$result == "TEST PASSED") {
+    advanced_score <-
+      advanced_filter(response_signal$predicted_values[[params$vsvr_response]])
+  }
+  else {
+    advanced_score <- list(score = 0, results = NULL)
+  }
+  
   
   response_data <- c(
     response_signal = list(response_signal$predicted_values[[params$vsvr_response]]),
     response_predictions_warnings = response_signal$warnings,
     support_vectors = response_signal$model$tot.nSV,
-    basic_filter = signal_score,
+    basic_filter = list(signal_score),
     advanced_score = advanced_score$score,
     advanced_score_results = advanced_score$results
   )

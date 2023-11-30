@@ -2,6 +2,4 @@
 ^renv\.lock$
 ^PSOBrainModeler\.Rproj$
 ^\.Rproj\.user$
-^data-raw$
-^sandbox$
-^documents$
+^docs$
