@@ -264,44 +264,20 @@ params_config <-
     stopifnot(is.character(kernel_type), is.logical(is_test_mode))
     
     if (is_test_mode) {
-      nu_values <- seq(0.5, 0.8, 0.1)
+      nu_values <- seq(0.4, 0.7, 0.1)
+      cost_values <- c(0.5, 4, 64, 128, 2048, 4096)
     } else {
       nu_values <- seq(0.1, 0.9, 0.1)
+      cost_values <- 2 ^ seq(-2, 14, 2)
     }
+
+    gamma_values <- NULL
     
-    if (kernel_type == "linear") {
-      cost_values <-
-        if (is_test_mode)
-          c(585.36, 2048.13, 3510.89)
-      else
-        c(
-          0.25,
-          292.8,
-          585.36,
-          877.91,
-          1170.46,
-          1463.02,
-          1755.57,
-          2048.13,
-          2340.68,
-          2633.23,
-          2925.79,
-          3218.34,
-          3510.89,
-          3803.45,
-          4096
-        )
-      gamma_values <- NULL
-    } else {
-      cost_values <-
-        if (is_test_mode)
-          c(0.5, 32, 2048)
-      else
-        c(0.25, 0.5, 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096)
-      sigma_values <- 2 ^ seq(-2, if (is_test_mode)
-        0
+    if (kernel_type == "radial") {
+      sigma_values <- 2 ^ seq(-4, if (is_test_mode)
+        2
         else
-          10, 2)
+          12, 1)
       gamma_values <- 1 / (2 * sigma_values ^ 2)
     }
     
@@ -663,8 +639,11 @@ grid_signal_eval <-
     
     # Signal quality evaluation
     signal_score <-
-      evaluate_signal_quality(response_predictions$predicted_values[[norm_response_var]],
-                              silent = is_silent_mode, max_diff_threshold = data_env$response_max_diff_threshold)
+      evaluate_signal_quality(
+        response_predictions$predicted_values[[norm_response_var]],
+        silent = is_silent_mode,
+        max_diff_threshold = data_env$response_max_diff_threshold
+      )
     
     if (signal_score$result != "TEST PASSED" &&
         basic_filter_check) {

@@ -31,7 +31,7 @@ extract_and_round_pso_params <-
     round_or_signif <-
       function(x,
                threshold = 1,
-               round_digits = 3,
+               round_digits = 2,
                signif_digits = 3) {
         if (x >= threshold) {
           round(x, digits = round_digits)
@@ -40,7 +40,7 @@ extract_and_round_pso_params <-
         }
       }
     
-    cost <- round_or_signif(params[1], round_digits = 2)
+    cost <- round_or_signif(params[1])
     nu <- round(params[2], digits = 3)
     lags_start <- if (has_gamma)
       4
@@ -53,6 +53,7 @@ extract_and_round_pso_params <-
     if (has_gamma) {
       gamma <-
         round_or_signif(params[3],
+                        round_digits = 3,
                         signif_digits = 5)
       params_list$gamma <- gamma
     }
