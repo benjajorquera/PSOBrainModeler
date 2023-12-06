@@ -76,10 +76,12 @@ predictive variable.}
 If NULL, a new model is trained. Defaults to NULL.}
 }
 \value{
-A list containing three elements: `predicted_values` - a dataframe with the predicted signal,
+A list containing five elements: `predicted_values` - a dataframe with the predicted signal,
         where each row corresponds to a time step from `pressure_start` up to `prediction_size`;
         `warnings` - any warnings generated during the max iterations of the SVR model;
-        and `model` - the SVR model object used for prediction.
+        `model` - the SVR model object used for prediction;
+        `predictions_all_data_cor` - a measure of the correlation between all predicted and actual values;
+        and `predictions_all_data_err` - an error metric for all predicted versus actual values.
 }
 \description{
 This function trains a Support Vector Regression (SVR) model with the

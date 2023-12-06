@@ -4,7 +4,13 @@
 \alias{extract_params_list}
 \title{Extract and Format Parameters List for PSO Modeling}
 \usage{
-extract_params_list(params, model_parameters, multi = FALSE)
+extract_params_list(
+  params,
+  model_parameters,
+  multi = FALSE,
+  round_accuracy = 2,
+  signif_accuracy = 3
+)
 }
 \arguments{
 \item{params}{A vector of parameters for PSO modeling.}
@@ -14,6 +20,12 @@ and number of lags.}
 
 \item{multi}{Logical indicating if the model is multivariate. Defaults to
 FALSE.}
+
+\item{round_accuracy}{Numeric value for rounding off the parameters.
+Specifies the number of decimal places for rounding.}
+
+\item{signif_accuracy}{Numeric value for significant figure accuracy.
+Defines the number of significant digits to retain.}
 }
 \value{
 A list of formatted parameters, including cost, nu,

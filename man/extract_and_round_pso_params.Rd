@@ -4,14 +4,28 @@
 \alias{extract_and_round_pso_params}
 \title{Extract and Round PSO Parameters}
 \usage{
-extract_and_round_pso_params(params, has_gamma = FALSE, n_lags = 1)
+extract_and_round_pso_params(
+  params,
+  has_gamma = FALSE,
+  n_lags = 1,
+  round_accuracy = 2,
+  signif_accuracy = 3
+)
 }
 \arguments{
 \item{params}{Numeric vector containing the parameters to be extracted.}
 
-\item{has_gamma}{Logical indicating whether the gamma parameter is present.}
+\item{has_gamma}{Logical indicating whether the gamma parameter is present.
+Set to TRUE to include gamma in the extraction.}
 
-\item{n_lags}{Integer specifying the number of lag parameters to extract.}
+\item{n_lags}{Integer specifying the number of lag parameters to extract.
+Determines the count of lagged values included.}
+
+\item{round_accuracy}{Numeric value for rounding off the parameters.
+Specifies the number of decimal places for rounding.}
+
+\item{signif_accuracy}{Numeric value for significant figure accuracy.
+Defines the number of significant digits to retain.}
 }
 \value{
 A list containing the extracted parameters:

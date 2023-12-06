@@ -103,7 +103,7 @@ A list containing various metrics and information from the
 \description{
 This function performs cross-validation on the given data partitions using a
 Support Vector Regression (SVR) model. It returns the average correlation
-and mean squared error over the partitions.
+and root mean squared error over the partitions.
 }
 \examples{
 data_partition_sample <- list(list(training = data.frame(feature1 = rnorm(20),

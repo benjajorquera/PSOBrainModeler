@@ -7,7 +7,13 @@
 #'
 #' @param params Numeric vector containing the parameters to be extracted.
 #' @param has_gamma Logical indicating whether the gamma parameter is present.
+#' Set to TRUE to include gamma in the extraction.
 #' @param n_lags Integer specifying the number of lag parameters to extract.
+#' Determines the count of lagged values included.
+#' @param round_accuracy Numeric value for rounding off the parameters.
+#' Specifies the number of decimal places for rounding.
+#' @param signif_accuracy Numeric value for significant figure accuracy.
+#' Defines the number of significant digits to retain.
 #'
 #' @return A list containing the extracted parameters:
 #'   - `cost`: The cost parameter, rounded or significant based on its value.
@@ -27,12 +33,14 @@
 extract_and_round_pso_params <-
   function(params,
            has_gamma = FALSE,
-           n_lags = 1) {
+           n_lags = 1,
+           round_accuracy = 2,
+           signif_accuracy = 3) {
     round_or_signif <-
       function(x,
                threshold = 1,
-               round_digits = 2,
-               signif_digits = 3) {
+               round_digits = round_accuracy,
+               signif_digits = signif_accuracy) {
         if (x >= threshold) {
           round(x, digits = round_digits)
         } else {
@@ -40,8 +48,11 @@ extract_and_round_pso_params <-
         }
       }
     
-    cost <- round_or_signif(params[1])
-    nu <- round(params[2], digits = 3)
+    cost <-
+      round_or_signif(params[1],
+                      round_digits = (round_accuracy - 1),
+                      signif_digits = round_accuracy)
+    nu <- round(params[2], digits = round_accuracy)
     lags_start <- if (has_gamma)
       4
     else
@@ -52,9 +63,7 @@ extract_and_round_pso_params <-
     
     if (has_gamma) {
       gamma <-
-        round_or_signif(params[3],
-                        round_digits = 3,
-                        signif_digits = 5)
+        round_or_signif(params[3])
       params_list$gamma <- gamma
     }
     
@@ -158,6 +167,10 @@ display_params_message <- function(params_list) {
 #'  and number of lags.
 #' @param multi Logical indicating if the model is multivariate. Defaults to
 #'  FALSE.
+#' @param round_accuracy Numeric value for rounding off the parameters.
+#' Specifies the number of decimal places for rounding.
+#' @param signif_accuracy Numeric value for significant figure accuracy.
+#' Defines the number of significant digits to retain.
 #'
 #' @return A list of formatted parameters, including cost, nu,
 #'  gamma (if applicable), response lags, and column lags.
@@ -170,11 +183,20 @@ display_params_message <- function(params_list) {
 #' @export
 #'
 extract_params_list <-
-  function(params, model_parameters, multi = FALSE) {
+  function(params,
+           model_parameters,
+           multi = FALSE,
+           round_accuracy = 2,
+           signif_accuracy = 3) {
     has_gamma <- length(params) == max(model_parameters$valid_lengths)
     params_list <-
-      extract_and_round_pso_params(params, has_gamma = has_gamma,
-                                   n_lags = model_parameters$n_lags)
+      extract_and_round_pso_params(
+        params,
+        has_gamma = has_gamma,
+        n_lags = model_parameters$n_lags,
+        round_accuracy = round_accuracy,
+        signif_accuracy = signif_accuracy
+      )
     
     col_lags <- params_list$lags[1]
     response_lags <-
@@ -238,7 +260,7 @@ display_pso_message <- function(cor, err, basic, advanced) {
   cat(
     "\nAVG COR: ",
     cor,
-    "AVG MSE: ",
+    "AVG RMSE: ",
     err,
     "Signal basic filter: ",
     basic,

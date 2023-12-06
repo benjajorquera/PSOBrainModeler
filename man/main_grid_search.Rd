@@ -69,7 +69,8 @@ be applied, defaults to TRUE.}
 }
 \value{
 A list containing the results of the grid search, time taken for the
- execution, and additional model parameters such as SVM tolerance and cache size.
+ execution, additional model parameters such as SVM tolerance and cache size,
+ maximum average correlation of final candidates, and number of final candidates.
 }
 \description{
 This function performs a comprehensive grid search over specified parameters

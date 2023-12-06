@@ -46,6 +46,12 @@
 #'  check is performed. Defaults to TRUE.
 #' @param fn_count_threshold Integer threshold for a specific function count
 #'  condition, affecting the optimization flow. Defaults to 30.
+#' @param fitness_accuracy Numeric value specifying fitness evaluation accuracy; default is 3.
+#' @param penalization_weight Numeric value for the weight in optimization penalization; default is 0.5.
+#' @param round_accuracy Numeric value for rounding off the parameters.
+#' Specifies the number of decimal places for rounding.
+#' @param signif_accuracy Numeric value for significant figure accuracy.
+#' Defines the number of significant digits to retain.
 #'
 #' @return Returns a list containing two elements:
 #'   - `psoptim_result`: The result from the psoptim optimization process.
@@ -97,8 +103,13 @@ optimize_brain_model_with_PSO <- function(config,
                                           seed = 123,
                                           generate_response_predictions_cv = FALSE,
                                           basic_filter_check = TRUE,
-                                          fn_count_threshold = 30) {
+                                          fn_count_threshold = 30,
+                                          fitness_accuracy = 3,
+                                          penalization_weight = 0.5,
+                                          round_accuracy = 2,
+                                          signif_accuracy = 3) {
   stopifnot(is.data.frame(data))
+  # TODO: Validate vector lengths
   
   data_env_list <- configure_data_env(
     config = config,
@@ -136,6 +147,9 @@ optimize_brain_model_with_PSO <- function(config,
   pso_env[["time"]] <- Sys.time()
   pso_env[["function_count_without_improvement"]] <- 0
   pso_env[["max_global_cor"]] <- -1
+  pso_env[["max_pred_time"]] <- 0
+  pso_env[["max_pred_cv_time"]] <- 0
+  pso_env[["candidates"]] <- 0
   
   progress_bar <- progress::progress_bar$new(
     format = "Progress: [:bar] :percent | Step :current/:total | Elapsed: :elapsed | Remaining: :eta | Rate :rate ops/sec",
@@ -161,6 +175,10 @@ optimize_brain_model_with_PSO <- function(config,
     pso_env = pso_env,
     seed = seed,
     fn_count_threshold = fn_count_threshold,
+    fitness_accuracy = fitness_accuracy,
+    penalization_weight = penalization_weight,
+    round_accuracy = round_accuracy,
+    signif_accuracy = signif_accuracy,
     progress_bar = progress_bar,
     lower = params_lower_bounds,
     upper = params_upper_bounds,

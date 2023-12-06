@@ -29,6 +29,12 @@
 #'  Defaults to TRUE.
 #' @param fn_count_threshold Threshold for function count in optimization.
 #'  Defaults to 30.
+#' @param fitness_accuracy Numeric value specifying fitness evaluation accuracy; default is 3.
+#' @param penalization_weight Numeric value for the weight in optimization penalization; default is 0.5.
+#' @param round_accuracy Numeric value for rounding off the parameters.
+#' Specifies the number of decimal places for rounding.
+#' @param signif_accuracy Numeric value for significant figure accuracy.
+#' Defines the number of significant digits to retain.
 #'
 #' @return The result of the PSO training model function, including any metrics,
 #'         model parameters, and performance indicators.
@@ -56,11 +62,19 @@ pso_model <-
            progress_bar,
            generate_response_predictions_cv = FALSE,
            basic_filter_check = TRUE,
-           fn_count_threshold = 30) {
+           fn_count_threshold = 30,
+           fitness_accuracy = 3,
+           penalization_weight = 0.5,
+           round_accuracy = 2,
+           signif_accuracy = 3) {
     params_list <-
-      extract_params_list(params = params,
-                          model_parameters = model_parameters,
-                          multi = multi)
+      extract_params_list(
+        params = params,
+        model_parameters = model_parameters,
+        multi = multi,
+        round_accuracy = round_accuracy,
+        signif_accuracy = signif_accuracy
+      )
     
     # Display message
     if (!silent && pso_env[["function_count"]] < max_function_count)
@@ -85,7 +99,9 @@ pso_model <-
       progress_bar = progress_bar,
       generate_response_predictions_cv = generate_response_predictions_cv,
       basic_filter_check = basic_filter_check,
-      fn_count_threshold = fn_count_threshold
+      fn_count_threshold = fn_count_threshold,
+      fitness_accuracy = fitness_accuracy,
+      penalization_weight = penalization_weight
     )
     
     return(pso_training_model_result)

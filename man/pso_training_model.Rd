@@ -23,7 +23,9 @@ pso_training_model(
   progress_bar,
   generate_response_predictions_cv = FALSE,
   basic_filter_check = TRUE,
-  fn_count_threshold = 30
+  fn_count_threshold = 30,
+  fitness_accuracy = 3,
+  penalization_weight = 0.5
 )
 }
 \arguments{
@@ -63,9 +65,13 @@ process.}
 
 \item{generate_response_predictions_cv}{Flag to generate response predictions.}
 
-\item{basic_filter_check}{Flag to enable basic filtering of the data.}
+\item{basic_filter_check}{Logical flag to enable basic filtering of the data; default is TRUE.}
 
-\item{fn_count_threshold}{Threshold for function count in optimization.}
+\item{fn_count_threshold}{Integer setting the function count threshold for optimization; default is 30.}
+
+\item{fitness_accuracy}{Numeric value specifying fitness evaluation accuracy; default is 3.}
+
+\item{penalization_weight}{Numeric value for the weight in optimization penalization; default is 0.5.}
 }
 \value{
 Depending on the stage and result of the optimization, it can return

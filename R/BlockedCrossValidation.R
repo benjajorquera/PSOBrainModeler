@@ -39,11 +39,11 @@ blocked_cv <-
         block * validation_length
       
       # Extract validation data based on indices
-      validation_data <- data[start_idx:end_idx, ]
+      validation_data <- data[start_idx:end_idx,]
       
       # The training data is the remaining data after excluding the
       # validation data
-      training_data <- data[-(start_idx:end_idx), ]
+      training_data <- data[-(start_idx:end_idx),]
       
       list(training = training_data, validation = validation_data)
     })
@@ -56,7 +56,7 @@ blocked_cv <-
 #'
 #' This function performs cross-validation on the given data partitions using a
 #' Support Vector Regression (SVR) model. It returns the average correlation
-#' and mean squared error over the partitions.
+#' and root mean squared error over the partitions.
 #'
 #' @param cost Numeric. The cost parameter for the SVR model.
 #' @param nu Numeric. The nu parameter for the SVR model.
@@ -237,10 +237,9 @@ cross_validate_partition <-
       target_vals <-
         data_partitions[[df_list]][[validation_list_name]][[vsvr_response]]
       
-      # Compute and save correlation and MSE
+      # Compute and save correlation and RMSE
       cors[df_list] <- stats::cor(predictions, target_vals)
-      errors[df_list] <-
-        sqrt(mean((target_vals - predictions) ^ 2))
+      errors[df_list] <- sqrt(mean((target_vals - predictions) ^ 2))
     }
     
     return(

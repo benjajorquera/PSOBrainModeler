@@ -20,7 +20,11 @@ pso_model(
   progress_bar,
   generate_response_predictions_cv = FALSE,
   basic_filter_check = TRUE,
-  fn_count_threshold = 30
+  fn_count_threshold = 30,
+  fitness_accuracy = 3,
+  penalization_weight = 0.5,
+  round_accuracy = 2,
+  signif_accuracy = 3
 )
 }
 \arguments{
@@ -63,6 +67,16 @@ Defaults to TRUE.}
 
 \item{fn_count_threshold}{Threshold for function count in optimization.
 Defaults to 30.}
+
+\item{fitness_accuracy}{Numeric value specifying fitness evaluation accuracy; default is 3.}
+
+\item{penalization_weight}{Numeric value for the weight in optimization penalization; default is 0.5.}
+
+\item{round_accuracy}{Numeric value for rounding off the parameters.
+Specifies the number of decimal places for rounding.}
+
+\item{signif_accuracy}{Numeric value for significant figure accuracy.
+Defines the number of significant digits to retain.}
 }
 \value{
 The result of the PSO training model function, including any metrics,

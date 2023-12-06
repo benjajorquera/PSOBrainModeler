@@ -64,7 +64,9 @@ evaluate_signal_quality <-
     
     if (max_diff(signal) > max_diff_threshold) {
       if (!silent) {
-        message("\nRESPONSE SIGNAL FAILED BASIC FILTER: MAXIMUM DIFFERENCE GREATER THAN 0.55")
+        message(
+          "\nRESPONSE SIGNAL FAILED BASIC FILTER: MAXIMUM DIFFERENCE GREATER THAN THRESHOLD"
+        )
       }
       return(list(result = "TEST 1 FAILED", score = 0))
     }
@@ -241,6 +243,9 @@ advanced_filter <-
     if (!silent) {
       message("\nLEAVING ADVANCED FILTER")
     }
+    
+    if (score < -10)
+      score <- -10
     
     return(list(score = score, results = penalization_results))
   }

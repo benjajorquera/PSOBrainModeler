@@ -143,7 +143,8 @@ svr_grid_search <- function(config,
 #'  be applied, defaults to TRUE.
 #'
 #' @return A list containing the results of the grid search, time taken for the
-#'  execution, and additional model parameters such as SVM tolerance and cache size.
+#'  execution, additional model parameters such as SVM tolerance and cache size,
+#'  maximum average correlation of final candidates, and number of final candidates.
 #'
 #' @examples
 #' \dontrun{
@@ -233,12 +234,23 @@ main_grid_search <- function(data_env,
     }
   }
   
+  max_cor <- -1
+  candidates <- 0
+  for (i in 1:length(results)) {
+    if (length(results[[i]]) == 14) {
+      candidates <- candidates + 1
+      max_cor <- max(max_cor, results[[i]]$avg_cor)
+    }
+  }
+  
   return(
     list(
       results = results,
       time = (Sys.time() - start_time),
       svm_tolerance = data_env$VSVR_TOL,
-      svm_cache_size = data_env$svm_cache_size
+      svm_cache_size = data_env$svm_cache_size,
+      max_cor = max_cor,
+      candidates = candidates
     )
   )
 }
@@ -268,9 +280,9 @@ params_config <-
       cost_values <- c(0.5, 4, 64, 128, 2048, 4096)
     } else {
       nu_values <- seq(0.1, 0.9, 0.1)
-      cost_values <- 2 ^ seq(-2, 14, 2)
+      cost_values <- 2 ^ seq(-2, 14, 1)
     }
-
+    
     gamma_values <- NULL
     
     if (kernel_type == "radial") {
