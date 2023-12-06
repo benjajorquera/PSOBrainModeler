@@ -68,6 +68,8 @@ svr_grid_search <- function(config,
             is.data.frame(dataset),
             is.character(kernel_type))
   
+  # TODO: Vectors length validation
+  
   start_time <- Sys.time()
   
   # Configure data environment
@@ -272,6 +274,8 @@ main_grid_search <- function(data_env,
 params_config <-
   function(kernel_type = "linear",
            is_test_mode = FALSE) {
+    # TODO: Custom input params
+    
     # Parameter validation
     stopifnot(is.character(kernel_type), is.logical(is_test_mode))
     
