@@ -21,9 +21,10 @@ grid_search_main_loop(
   validation_list_name = "validation",
   is_silent_mode = TRUE,
   should_plot_response = FALSE,
-  progress_bar,
+  progress_bar = NULL,
   generate_response_predictions_cv = FALSE,
-  basic_filter_check = TRUE
+  basic_filter_check = TRUE,
+  show_progress_bar = FALSE
 )
 }
 \arguments{
@@ -77,6 +78,8 @@ predictions should be generated, defaults to FALSE.}
 
 \item{basic_filter_check}{Logical flag indicating if basic filters should
 be applied, defaults to TRUE.}
+
+\item{show_progress_bar}{Disables progress bar. Defaults to FALSE.}
 }
 \value{
 A list containing the results of each iteration of the grid search,

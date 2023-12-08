@@ -32,9 +32,10 @@
 #' @param fitness_accuracy Numeric value specifying fitness evaluation accuracy; default is 3.
 #' @param penalization_weight Numeric value for the weight in optimization penalization; default is 0.5.
 #' @param round_accuracy Numeric value for rounding off the parameters.
-#' Specifies the number of decimal places for rounding.
+#'  Specifies the number of decimal places for rounding.
 #' @param signif_accuracy Numeric value for significant figure accuracy.
-#' Defines the number of significant digits to retain.
+#'  Defines the number of significant digits to retain.
+#' @param show_progress_bar Disables progress bar. Defaults to FALSE.
 #'
 #' @return The result of the PSO training model function, including any metrics,
 #'         model parameters, and performance indicators.
@@ -59,14 +60,15 @@ pso_model <-
            bcv_folds = 5,
            pso_env,
            seed = 123,
-           progress_bar,
+           progress_bar = NULL,
            generate_response_predictions_cv = FALSE,
            basic_filter_check = TRUE,
            fn_count_threshold = 30,
            fitness_accuracy = 3,
            penalization_weight = 0.5,
            round_accuracy = 2,
-           signif_accuracy = 3) {
+           signif_accuracy = 3,
+           show_progress_bar = FALSE) {
     params_list <-
       extract_params_list(
         params = params,
@@ -101,7 +103,8 @@ pso_model <-
       basic_filter_check = basic_filter_check,
       fn_count_threshold = fn_count_threshold,
       fitness_accuracy = fitness_accuracy,
-      penalization_weight = penalization_weight
+      penalization_weight = penalization_weight,
+      show_progress_bar = show_progress_bar
     )
     
     return(pso_training_model_result)

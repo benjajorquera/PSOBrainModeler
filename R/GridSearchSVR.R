@@ -35,6 +35,7 @@
 #'  predictions should be generated. Defaults to FALSE.
 #' @param basic_filter_check Logical flag indicating if a basic filter check
 #'  should be applied. Defaults to TRUE.
+#' @param show_progress_bar Disables progress bar. Defaults to FALSE.
 #'
 #' @return A list containing the results of the grid search, potentially
 #'  including the best model parameters, performance metrics, and any generated response predictions.
@@ -62,7 +63,8 @@ svr_grid_search <- function(config,
                             is_test_mode = FALSE,
                             is_silent_mode = TRUE,
                             generate_response_predictions_cv = FALSE,
-                            basic_filter_check = TRUE) {
+                            basic_filter_check = TRUE,
+                            show_progress_bar = FALSE) {
   # Validate parameters
   stopifnot(is.list(config),
             is.data.frame(dataset),
@@ -102,7 +104,8 @@ svr_grid_search <- function(config,
       start_time = start_time,
       should_plot_response = should_plot_response,
       generate_response_predictions_cv = generate_response_predictions_cv,
-      basic_filter_check = basic_filter_check
+      basic_filter_check = basic_filter_check,
+      show_progress_bar = show_progress_bar
     )
   )
 }
@@ -143,6 +146,7 @@ svr_grid_search <- function(config,
 #'  predictions should be generated, defaults to FALSE.
 #' @param basic_filter_check Logical flag indicating if basic filters should
 #'  be applied, defaults to TRUE.
+#' @param show_progress_bar Disables progress bar. Defaults to FALSE.
 #'
 #' @return A list containing the results of the grid search, time taken for the
 #'  execution, additional model parameters such as SVM tolerance and cache size,
@@ -175,7 +179,8 @@ main_grid_search <- function(data_env,
                              start_time = NULL,
                              should_plot_response = FALSE,
                              generate_response_predictions_cv = FALSE,
-                             basic_filter_check = TRUE) {
+                             basic_filter_check = TRUE,
+                             show_progress_bar = FALSE) {
   # Simple parameter validation
   stopifnot(is.list(data_env), is.list(data_env$data_partitions))
   
@@ -189,13 +194,17 @@ main_grid_search <- function(data_env,
   params <-
     params_config(kernel_type = kernel_type, is_test_mode = is_test_mode)
   
-  progress_bar <- progressbar_config(
-    lags_column = lags_column,
-    lags_response = lags_response,
-    cost_size = length(params$cost),
-    nu_size = length(params$nu),
-    gamma_size = length(params$gamma)
-  )
+  progress_bar <- NULL
+  
+  if (show_progress_bar) {
+    progress_bar <- progressbar_config(
+      lags_column = lags_column,
+      lags_response = lags_response,
+      cost_size = length(params$cost),
+      nu_size = length(params$nu),
+      gamma_size = length(params$gamma)
+    )
+  }
   
   main_loop_params <- list(
     data_env = data_env,
@@ -216,7 +225,8 @@ main_grid_search <- function(data_env,
     should_plot_response = should_plot_response,
     progress_bar = progress_bar,
     generate_response_predictions_cv = generate_response_predictions_cv,
-    basic_filter_check = basic_filter_check
+    basic_filter_check = basic_filter_check,
+    show_progress_bar = show_progress_bar
   )
   
   results <- list()
@@ -393,6 +403,7 @@ progressbar_config <-
 #'  predictions should be generated, defaults to FALSE.
 #' @param basic_filter_check Logical flag indicating if basic filters should
 #'  be applied, defaults to TRUE.
+#' @param show_progress_bar Disables progress bar. Defaults to FALSE.
 #'
 #' @return A list containing the results of each iteration of the grid search,
 #'  including model performance metrics and potentially the generated response
@@ -424,9 +435,10 @@ grid_search_main_loop <- function(data_env,
                                   validation_list_name = 'validation',
                                   is_silent_mode = TRUE,
                                   should_plot_response = FALSE,
-                                  progress_bar,
+                                  progress_bar = NULL,
                                   generate_response_predictions_cv = FALSE,
-                                  basic_filter_check = TRUE) {
+                                  basic_filter_check = TRUE,
+                                  show_progress_bar = FALSE) {
   # Validation
   stopifnot(is.list(data_env),
             is.list(model_params))
@@ -461,18 +473,28 @@ grid_search_main_loop <- function(data_env,
         for (i in 1:lags_column[1]) {
           grid_eval_params$grid_col_lags <- c(i)
           results <-
-            append(results,
-                   grid_eval(grid_eval_params,
-                             progress_bar = progress_bar))
+            append(
+              results,
+              grid_eval(
+                grid_eval_params,
+                progress_bar = progress_bar,
+                show_progress_bar = show_progress_bar
+              )
+            )
         }
       } else {
         for (i in 1:lags_column[1]) {
           for (j in 0:lags_column[2]) {
             grid_eval_params$grid_col_lags <- c(i, j)
             results <-
-              append(results,
-                     grid_eval(grid_eval_params,
-                               progress_bar = progress_bar))
+              append(
+                results,
+                grid_eval(
+                  grid_eval_params,
+                  progress_bar = progress_bar,
+                  show_progress_bar = show_progress_bar
+                )
+              )
           }
         }
       }
@@ -493,6 +515,8 @@ grid_search_main_loop <- function(data_env,
 #'
 #' @param params A list containing the parameters for the grid evaluation.
 #' @param progress_bar A progress bar object for tracking progress. Optional.
+#' @param show_progress_bar Disables progress bar. Defaults to FALSE.
+#'
 #' @examples
 #' \dontrun{
 #'   grid_eval(params, progress_bar)
@@ -502,7 +526,8 @@ grid_search_main_loop <- function(data_env,
 #'
 grid_eval <-
   function(params,
-           progress_bar = NULL) {
+           progress_bar = NULL,
+           show_progress_bar = FALSE) {
     # Validate main parameters
     stopifnot(is.list(params))
     
@@ -526,7 +551,7 @@ grid_eval <-
         params$lag_response <- lag_response
         results <-
           append(results, do.call(grid_signal_eval, params))
-        if (!is.null(progress_bar))
+        if (!is.null(progress_bar) && show_progress_bar)
           progress_bar$tick()
       }
     } else {
@@ -537,7 +562,7 @@ grid_eval <-
                              params$grid_col_lags)
       }
       results <- do.call(grid_signal_eval, params)
-      if (!is.null(progress_bar))
+      if (!is.null(progress_bar) && show_progress_bar)
         progress_bar$tick()
     }
     

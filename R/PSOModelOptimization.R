@@ -31,6 +31,7 @@
 #' @param fn_count_threshold Integer setting the function count threshold for optimization; default is 30.
 #' @param fitness_accuracy Numeric value specifying fitness evaluation accuracy; default is 3.
 #' @param penalization_weight Numeric value for the weight in optimization penalization; default is 0.5.
+#' @param show_progress_bar Disables progress bar. Defaults to FALSE.
 #'
 #' @return Depending on the stage and result of the optimization, it can return
 #'  different values, including early termination or the current optimization
@@ -61,18 +62,23 @@ pso_training_model <- function(max_function_count = 1000,
                                bcv_folds = 5,
                                pso_env,
                                seed = 123,
-                               progress_bar,
+                               progress_bar = NULL,
                                generate_response_predictions_cv = FALSE,
                                basic_filter_check = TRUE,
                                fn_count_threshold = 30,
                                fitness_accuracy = 3,
-                               penalization_weight = 0.5) {
+                               penalization_weight = 0.5,
+                               show_progress_bar = FALSE) {
   # TODO: MODULARIZE
   if (pso_env[["function_count"]] >= max_function_count)
     return(5)
   
   pso_env[["function_count"]] <- pso_env[["function_count"]] + 1
-  progress_bar$tick()
+  
+  if (show_progress_bar && !is.null(progress_bar)) {
+    progress_bar$tick()
+  }
+  
   time <- Sys.time()
   
   # Training with all data
@@ -104,9 +110,6 @@ pso_training_model <- function(max_function_count = 1000,
       silent = silent,
       max_diff_threshold = data_list$response_max_diff_threshold
     )
-  advanced_filter <-
-    advanced_filter(response_predictions$predicted_values[[vsvr_response]],
-                    silent = silent)
   
   # Calculate normalized predicted time for fitness function
   prediction_time <- Sys.time() - time
@@ -130,27 +133,17 @@ pso_training_model <- function(max_function_count = 1000,
   )
   
   fitness_filter <- basic_filter$score
-  fitness_adv_score <- advanced_filter$score * 0.1
   
   # Handle local solution
   if (is.null(fitness_cor) || fitness_cor == "FAILED")
     return(round(3 + fitness_norm_pred_time, fitness_accuracy))
-  else{
+  else if (fitness_filter != 1) {
     if (round(fitness_cor, fitness_accuracy) <= pso_env[["max_global_cor"]]) {
       if (pso_env[["function_count_without_improvement"]] > fn_count_threshold) {
         fitness_stats <- fitness_err - fitness_cor
-        if (fitness_stats < 0) {
-          fitness_stats <- fitness_stats * (1 - penalization_weight)
-        }
-        else {
-          fitness_stats <- fitness_stats * (1 + penalization_weight)
-        }
         partial_fitness_score <-
-          round(
-            fitness_stats - fitness_filter - fitness_adv_score + (fitness_norm_pred_time *
-                                                                    (1 + penalization_weight)),
-            fitness_accuracy
-          )
+          round(fitness_stats  + (fitness_norm_pred_time * (1 + penalization_weight)),
+                fitness_accuracy)
         new_data <- c(new_data, c(fn_count_threshold = TRUE))
         new_data <-
           c(new_data,
@@ -183,6 +176,11 @@ pso_training_model <- function(max_function_count = 1000,
     
     return(fitness_partial_result)
   }
+  
+  advanced_filter <-
+    advanced_filter(response_predictions$predicted_values[[vsvr_response]],
+                    silent = silent)
+  fitness_adv_score <- advanced_filter$score * 0.1
   
   cv_time <- Sys.time()
   

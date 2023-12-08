@@ -17,14 +17,15 @@ pso_model(
   bcv_folds = 5,
   pso_env,
   seed = 123,
-  progress_bar,
+  progress_bar = NULL,
   generate_response_predictions_cv = FALSE,
   basic_filter_check = TRUE,
   fn_count_threshold = 30,
   fitness_accuracy = 3,
   penalization_weight = 0.5,
   round_accuracy = 2,
-  signif_accuracy = 3
+  signif_accuracy = 3,
+  show_progress_bar = FALSE
 )
 }
 \arguments{
@@ -77,6 +78,8 @@ Specifies the number of decimal places for rounding.}
 
 \item{signif_accuracy}{Numeric value for significant figure accuracy.
 Defines the number of significant digits to retain.}
+
+\item{show_progress_bar}{Disables progress bar. Defaults to FALSE.}
 }
 \value{
 The result of the PSO training model function, including any metrics,

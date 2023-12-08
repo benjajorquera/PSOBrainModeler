@@ -20,12 +20,13 @@ pso_training_model(
   bcv_folds = 5,
   pso_env,
   seed = 123,
-  progress_bar,
+  progress_bar = NULL,
   generate_response_predictions_cv = FALSE,
   basic_filter_check = TRUE,
   fn_count_threshold = 30,
   fitness_accuracy = 3,
-  penalization_weight = 0.5
+  penalization_weight = 0.5,
+  show_progress_bar = FALSE
 )
 }
 \arguments{
@@ -72,6 +73,8 @@ process.}
 \item{fitness_accuracy}{Numeric value specifying fitness evaluation accuracy; default is 3.}
 
 \item{penalization_weight}{Numeric value for the weight in optimization penalization; default is 0.5.}
+
+\item{show_progress_bar}{Disables progress bar. Defaults to FALSE.}
 }
 \value{
 Depending on the stage and result of the optimization, it can return

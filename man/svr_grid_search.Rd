@@ -22,7 +22,8 @@ svr_grid_search(
   is_test_mode = FALSE,
   is_silent_mode = TRUE,
   generate_response_predictions_cv = FALSE,
-  basic_filter_check = TRUE
+  basic_filter_check = TRUE,
+  show_progress_bar = FALSE
 )
 }
 \arguments{
@@ -74,6 +75,8 @@ predictions should be generated. Defaults to FALSE.}
 
 \item{basic_filter_check}{Logical flag indicating if a basic filter check
 should be applied. Defaults to TRUE.}
+
+\item{show_progress_bar}{Disables progress bar. Defaults to FALSE.}
 }
 \value{
 A list containing the results of the grid search, potentially

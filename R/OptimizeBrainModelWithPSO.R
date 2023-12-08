@@ -52,6 +52,7 @@
 #' Specifies the number of decimal places for rounding.
 #' @param signif_accuracy Numeric value for significant figure accuracy.
 #' Defines the number of significant digits to retain.
+#' @param show_progress_bar Disables progress bar. Defaults to FALSE.
 #'
 #' @return Returns a list containing two elements:
 #'   - `psoptim_result`: The result from the psoptim optimization process.
@@ -107,7 +108,8 @@ optimize_brain_model_with_PSO <- function(config,
                                           fitness_accuracy = 3,
                                           penalization_weight = 0.5,
                                           round_accuracy = 2,
-                                          signif_accuracy = 3) {
+                                          signif_accuracy = 3,
+                                          show_progress_bar = FALSE) {
   stopifnot(is.data.frame(data))
   # TODO: Validate vector lengths
   
@@ -151,12 +153,17 @@ optimize_brain_model_with_PSO <- function(config,
   pso_env[["max_pred_cv_time"]] <- 0
   pso_env[["candidates"]] <- 0
   
-  progress_bar <- progress::progress_bar$new(
-    format = "Progress: [:bar] :percent | Step :current/:total | Elapsed: :elapsed | Remaining: :eta | Rate :rate ops/sec",
-    total = max_function_count,
-    clear = FALSE,
-    width = 100
-  )
+  # TODO: Maximum time condition
+  progress_bar <- NULL
+  
+  if (show_progress_bar) {
+    progress_bar <- progress::progress_bar$new(
+      format = "Progress: [:bar] :percent | Step :current/:total | Elapsed: :elapsed | Remaining: :eta | Rate :rate ops/sec",
+      total = max_function_count,
+      clear = FALSE,
+      width = 100
+    )
+  }
   
   psoptim_result <- pso::psoptim(
     par = params_initial_values,
@@ -180,13 +187,16 @@ optimize_brain_model_with_PSO <- function(config,
     round_accuracy = round_accuracy,
     signif_accuracy = signif_accuracy,
     progress_bar = progress_bar,
+    show_progress_bar = show_progress_bar,
     lower = params_lower_bounds,
     upper = params_upper_bounds,
     control = psoptim_config
   )
   
-  while (!progress_bar$finished) {
-    progress_bar$tick()
+  if (!is.null(progress_bar)) {
+    while (!progress_bar$finished && show_progress_bar) {
+      progress_bar$tick()
+    }
   }
   
   pso_env[["time"]] <- Sys.time() - pso_env[["time"]]

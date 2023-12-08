@@ -4,12 +4,14 @@
 \alias{grid_eval}
 \title{Evaluate a grid of parameters}
 \usage{
-grid_eval(params, progress_bar = NULL)
+grid_eval(params, progress_bar = NULL, show_progress_bar = FALSE)
 }
 \arguments{
 \item{params}{A list containing the parameters for the grid evaluation.}
 
 \item{progress_bar}{A progress bar object for tracking progress. Optional.}
+
+\item{show_progress_bar}{Disables progress bar. Defaults to FALSE.}
 }
 \description{
 This function evaluates a grid of parameters for signal processing. It
