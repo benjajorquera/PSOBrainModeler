@@ -28,10 +28,14 @@ optimize_brain_model_with_PSO(
   basic_filter_check = TRUE,
   fn_count_threshold = 30,
   fitness_accuracy = 3,
-  penalization_weight = 0.5,
   round_accuracy = 2,
   signif_accuracy = 3,
-  show_progress_bar = FALSE
+  show_progress_bar = FALSE,
+  minimum_candidates = 10,
+  fn_start_threshold = 100,
+  cv_folds_ratio = 0.2,
+  time_on_fitness = FALSE,
+  penalization_weight = 0.5
 )
 }
 \arguments{
@@ -100,8 +104,6 @@ condition, affecting the optimization flow. Defaults to 30.}
 
 \item{fitness_accuracy}{Numeric value specifying fitness evaluation accuracy; default is 3.}
 
-\item{penalization_weight}{Numeric value for the weight in optimization penalization; default is 0.5.}
-
 \item{round_accuracy}{Numeric value for rounding off the parameters.
 Specifies the number of decimal places for rounding.}
 
@@ -109,6 +111,16 @@ Specifies the number of decimal places for rounding.}
 Defines the number of significant digits to retain.}
 
 \item{show_progress_bar}{Disables progress bar. Defaults to FALSE.}
+
+\item{minimum_candidates}{Sets the lower limit for candidate consideration.}
+
+\item{fn_start_threshold}{Determines the function's starting point if there are no candidates.}
+
+\item{cv_folds_ratio}{Specifies the proportion of data used for cross-validation.}
+
+\item{time_on_fitness}{Apply time to the objective function.}
+
+\item{penalization_weight}{Numeric value for the weight in optimization penalization.}
 }
 \value{
 Returns a list containing two elements:

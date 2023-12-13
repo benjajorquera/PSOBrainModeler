@@ -11,7 +11,6 @@ pso_training_model(
   gamma = NULL,
   col_lags,
   response_lags = NULL,
-  vsvr_response,
   data_list,
   silent = TRUE,
   plot_response = FALSE,
@@ -21,12 +20,16 @@ pso_training_model(
   pso_env,
   seed = 123,
   progress_bar = NULL,
-  generate_response_predictions_cv = FALSE,
+  generate_response_predictions_cv = TRUE,
   basic_filter_check = TRUE,
   fn_count_threshold = 30,
   fitness_accuracy = 3,
-  penalization_weight = 0.5,
-  show_progress_bar = FALSE
+  show_progress_bar = FALSE,
+  minimum_candidates = 10,
+  fn_start_threshold = 100,
+  cv_folds_ratio = 0.2,
+  time_on_fitness = FALSE,
+  penalization_weight = 0.5
 )
 }
 \arguments{
@@ -42,8 +45,6 @@ to 1000.}
 \item{col_lags}{Column lag values for the model.}
 
 \item{response_lags}{Response lag values for the model, if applicable.}
-
-\item{vsvr_response}{VSVR response name in the data.}
 
 \item{data_list}{List containing the data required for the model.}
 
@@ -66,15 +67,23 @@ process.}
 
 \item{generate_response_predictions_cv}{Flag to generate response predictions.}
 
-\item{basic_filter_check}{Logical flag to enable basic filtering of the data; default is TRUE.}
+\item{basic_filter_check}{Logical flag to enable basic filtering of the data.}
 
-\item{fn_count_threshold}{Integer setting the function count threshold for optimization; default is 30.}
+\item{fn_count_threshold}{Integer setting the function count threshold for optimization.}
 
-\item{fitness_accuracy}{Numeric value specifying fitness evaluation accuracy; default is 3.}
+\item{fitness_accuracy}{Numeric value specifying fitness evaluation accuracy.}
 
-\item{penalization_weight}{Numeric value for the weight in optimization penalization; default is 0.5.}
+\item{show_progress_bar}{Disables the progress bar display.}
 
-\item{show_progress_bar}{Disables progress bar. Defaults to FALSE.}
+\item{minimum_candidates}{Sets the lower limit for candidate consideration.}
+
+\item{fn_start_threshold}{Determines the function's starting point if there are no candidates.}
+
+\item{cv_folds_ratio}{Specifies the proportion of data used for cross-validation.}
+
+\item{time_on_fitness}{Apply time to the objective function.}
+
+\item{penalization_weight}{Numeric value for the weight in optimization penalization.}
 }
 \value{
 Depending on the stage and result of the optimization, it can return
@@ -93,7 +102,6 @@ including parameter tuning, cross-validation, and response evaluation.
 \examples{
 \dontrun{
 result <- pso_training_model(cost = 0.5, nu = 0.1, col_lags = c(3),
-                            vsvr_response = "response",
                             data_list = my_data_list, pso_env = my_pso_env,
                             progress_bar = my_progress_bar)
 }

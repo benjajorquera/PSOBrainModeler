@@ -47,12 +47,16 @@
 #' @param fn_count_threshold Integer threshold for a specific function count
 #'  condition, affecting the optimization flow. Defaults to 30.
 #' @param fitness_accuracy Numeric value specifying fitness evaluation accuracy; default is 3.
-#' @param penalization_weight Numeric value for the weight in optimization penalization; default is 0.5.
 #' @param round_accuracy Numeric value for rounding off the parameters.
 #' Specifies the number of decimal places for rounding.
 #' @param signif_accuracy Numeric value for significant figure accuracy.
 #' Defines the number of significant digits to retain.
 #' @param show_progress_bar Disables progress bar. Defaults to FALSE.
+#' @param minimum_candidates Sets the lower limit for candidate consideration.
+#' @param fn_start_threshold Determines the function's starting point if there are no candidates.
+#' @param cv_folds_ratio Specifies the proportion of data used for cross-validation.
+#' @param time_on_fitness Apply time to the objective function.
+#' @param penalization_weight Numeric value for the weight in optimization penalization.
 #'
 #' @return Returns a list containing two elements:
 #'   - `psoptim_result`: The result from the psoptim optimization process.
@@ -106,12 +110,19 @@ optimize_brain_model_with_PSO <- function(config,
                                           basic_filter_check = TRUE,
                                           fn_count_threshold = 30,
                                           fitness_accuracy = 3,
-                                          penalization_weight = 0.5,
                                           round_accuracy = 2,
                                           signif_accuracy = 3,
-                                          show_progress_bar = FALSE) {
+                                          show_progress_bar = FALSE,
+                                          minimum_candidates = 10,
+                                          fn_start_threshold = 100,
+                                          cv_folds_ratio = 0.2,
+                                          time_on_fitness = FALSE,
+                                          penalization_weight = 0.5) {
   stopifnot(is.data.frame(data))
   # TODO: Validate vector lengths
+  # TODO: Fix some function documentations
+  # TODO: Add extra information messages
+  # TODO: Fix static values with parameters
   
   data_env_list <- configure_data_env(
     config = config,
@@ -125,12 +136,13 @@ optimize_brain_model_with_PSO <- function(config,
     initial_prediction_values = initial_pressure_value
   )
   
-  if (psoptim_config$maxf < max_function_count) {
-    max_function_count <- psoptim_config$maxf
-  }
-  
-  if (psoptim_config$maxit * psoptim_config$s < max_function_count) {
-    max_function_count <- psoptim_config$maxit * psoptim_config$s
+  if (show_progress_bar) {
+    if (psoptim_config$maxf < max_function_count) {
+      max_function_count <- psoptim_config$maxf
+    }
+    if (psoptim_config$maxit * psoptim_config$s < max_function_count) {
+      max_function_count <- psoptim_config$maxit * psoptim_config$s
+    }
   }
   
   if (!silent)
@@ -143,15 +155,15 @@ optimize_brain_model_with_PSO <- function(config,
   pso_env <- new.env()
   
   pso_env[["data"]] <- list()
-  pso_env[["max_cor"]] <- -1
+  pso_env[["max_global_cor"]] <- -1
   pso_env[["best_fitness"]] <- 5
   pso_env[["function_count"]] <- 0
   pso_env[["time"]] <- Sys.time()
   pso_env[["function_count_without_improvement"]] <- 0
-  pso_env[["max_global_cor"]] <- -1
-  pso_env[["max_pred_time"]] <- 0
   pso_env[["max_pred_cv_time"]] <- 0
   pso_env[["candidates"]] <- 0
+  pso_env[["max_pred_time"]] <- 0
+  pso_env[["tolanrace"]] <- config$vsvr_tolerance
   
   # TODO: Maximum time condition
   progress_bar <- NULL
@@ -183,11 +195,15 @@ optimize_brain_model_with_PSO <- function(config,
     seed = seed,
     fn_count_threshold = fn_count_threshold,
     fitness_accuracy = fitness_accuracy,
-    penalization_weight = penalization_weight,
     round_accuracy = round_accuracy,
     signif_accuracy = signif_accuracy,
     progress_bar = progress_bar,
     show_progress_bar = show_progress_bar,
+    minimum_candidates = minimum_candidates,
+    fn_start_threshold = fn_start_threshold,
+    cv_folds_ratio = cv_folds_ratio,
+    time_on_fitness = time_on_fitness,
+    penalization_weight = penalization_weight,
     lower = params_lower_bounds,
     upper = params_upper_bounds,
     control = psoptim_config

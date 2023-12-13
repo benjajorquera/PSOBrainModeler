@@ -40,9 +40,7 @@
 #' @return A list containing five elements: `predicted_values` - a dataframe with the predicted signal,
 #'         where each row corresponds to a time step from `pressure_start` up to `prediction_size`;
 #'         `warnings` - any warnings generated during the max iterations of the SVR model;
-#'         `model` - the SVR model object used for prediction;
-#'         `predictions_all_data_cor` - a measure of the correlation between all predicted and actual values;
-#'         and `predictions_all_data_err` - an error metric for all predicted versus actual values.
+#'         and `support vectors` - number of support vectores form the SVR model object used for prediction;
 #'
 #' @examples
 #' pressure_signal_df <- data.frame(feature1_norm = rnorm(50))
@@ -92,9 +90,6 @@ generate_signal_response_predictions <- function(data,
     length(initial_column_values) == length(initial_column_names)
   )
   
-  predictions_all_data_cor <- NULL
-  predictions_all_data_err <- NULL
-  
   if (is.null(included_model)) {
     # Train model with all data
     data_training <- generate_time_series_data(
@@ -104,18 +99,6 @@ generate_signal_response_predictions <- function(data,
       lagged_cols = predictor_cols,
       lag_values = c(initial_columns_lags, predicted_column_lags),
       is_training = TRUE,
-      vsvr_response = prediction_col_name
-    )
-    
-    # TODO: Remove duplicated code from this two function parameters
-    
-    data_validation <- generate_time_series_data(
-      input_df = data,
-      data_cols = column_names,
-      predictor_cols = predictor_cols,
-      lagged_cols = predictor_cols,
-      lag_values = c(initial_columns_lags, predicted_column_lags),
-      is_training = FALSE,
       vsvr_response = prediction_col_name
     )
     
@@ -129,22 +112,6 @@ generate_signal_response_predictions <- function(data,
         tolerance = tolerance,
         cache_size = svm_cache_size
       )
-    
-    target_vals <- data[[prediction_col_name]]
-    
-    predictions_all_data <-
-      predict(SVR_model$svm_model, data_validation)
-    if (stats::sd(predictions_all_data) == 0) {
-      predictions_all_data_cor <- "FAILED"
-      predictions_all_data_err <- "FAILED"
-    }
-    else {
-      predictions_all_data_cor <-
-        stats::cor(predictions_all_data, target_vals)
-      
-      predictions_all_data_err <-
-        sqrt(mean((target_vals - predictions_all_data) ^ 2))
-    }
   } else {
     SVR_model <- included_model
   }
@@ -308,11 +275,9 @@ generate_signal_response_predictions <- function(data,
   
   return(
     list(
-      predicted_values = predicted_values,
+      predicted_values = predicted_values[[prediction_col_name]],
       warnings = SVR_model$max_iterations_warnings,
-      model = SVR_model$svm_model,
-      predictions_all_data_cor = predictions_all_data_cor,
-      predictions_all_data_err = predictions_all_data_err
+      support_vectors = SVR_model$svm_model$tot.nSV
     )
   )
 }

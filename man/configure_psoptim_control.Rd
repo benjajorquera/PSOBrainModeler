@@ -7,20 +7,22 @@
 configure_psoptim_control(...)
 }
 \arguments{
-\item{...}{Optional parameters to override the default settings. These include:
-- `maxit`: Maximum number of iterations. Default is 125.
-- `s`: Swarm size. Default is 8.
-- `w`: Inertia weight. Default is 1.
-- `c.p`: Personal acceleration coefficient. Default is 2.
-- `c.g`: Global acceleration coefficient. Default is 5.
-- `vectorize`: Boolean indicating if vectorized calculations should be used.
-    Default is TRUE.
-- `reltol`: Relative tolerance. Default is 0.5.
-- `hybrid`: Type of hybrid algorithm to use. Default is "improved".
-- `hybrid.control`: Control parameters for the hybrid algorithm. Defaults
-    to `list(maxit = 10)`.
-- `maxit.stagnate`: Maximum iterations for stagnation. Default is 110.
-- `maxf`: Maximum number of function evaluations. Default is 1000.}
+\item{...}{Optional parameters to override the default settings. Some are:
+  - `maxit`: Maximum number of iterations. Default is 125.
+  - `s`: Swarm size. Default is 8.
+  - `w`: Inertia weight. Default is 1.
+  - `c.p`: Personal acceleration coefficient. Default is 2.
+  - `c.g`: Global acceleration coefficient. Default is 5.
+  - `vectorize`: Boolean indicating if vectorized calculations should be used.
+      Default is TRUE.
+  - `reltol`: Relative tolerance. Default is 0.5.
+  - `hybrid`: Type of hybrid algorithm to use. Default is "improved".
+  - `hybrid.control`: Control parameters for the hybrid algorithm. Defaults
+      to `list(maxit = 10)`.
+  - `maxit.stagnate`: Maximum iterations for stagnation. Default is 110.
+  - `maxf`: Maximum number of function evaluations. Default is 1000.
+
+  The complete list of this parameters can be found in the psoptim documentation of the pso package.}
 }
 \value{
 A list of control parameters for PSO optimization, combining the

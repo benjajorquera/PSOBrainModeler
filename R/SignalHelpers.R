@@ -1,25 +1,32 @@
-#' Calculate the Maximum Difference Between Consecutive Points in a Vector
+#' Calculate the Discrete First and Second Derivatives of a Numeric Vector
 #'
-#' This function computes the maximum absolute difference between consecutive
-#' points in a numeric vector. It is useful for identifying the largest change
-#' between any two adjacent values in the vector.
+#' This function computes the discrete first and second derivatives of a numeric vector.
+#' The discrete first derivative is defined as the difference between consecutive points,
+#' providing a measure of the instantaneous rate of change. The discrete second derivative
+#' is the difference of the first derivative values, offering a measure of the acceleration
+#' or the rate at which the rate of change itself is changing, indicative of the vector's
+#' concavity or convexity.
 #'
-#' @param vec A numeric vector.
+#' @param vec A numeric vector representing a discrete function over an ordered domain.
 #'
-#' @return The maximum absolute difference between consecutive points in the
-#'  vector.
+#' @return A list containing the discrete first and second derivatives of the vector.
+#' The first element, 'first', contains the differences representing the first derivative.
+#' The second element, 'second', contains the differences of the first derivative,
+#' representing the second derivative.
 #'
 #' @examples
 #' vec <- c(1, 2, 4, 7, 11)
-#' max_diff_value <- max_diff(vec)
-#' # `max_diff_value` will be the largest difference between adjacent values
-#' # in `vec`.
+#' derivatives <- calculate_discrete_derivatives(vec)
+#' # `derivatives$first` contains the discrete first derivative of `vec`.
+#' # `derivatives$second` contains the discrete second derivative of `vec`.
 #'
 #' @export
-max_diff <- function(vec) {
-  diffs <-
-    diff(vec)  # Calculate the differences between consecutive points
-  return(max(abs(diffs), na.rm = TRUE))  # Return the maximum difference in absolute value
+calculate_discrete_derivatives <- function(vec) {
+  first_derivative <-
+    diff(vec)  # Calculate the discrete first derivative
+  second_derivative <-
+    diff(first_derivative)  # Calculate the discrete second derivative
+  return(list(first = first_derivative, second = second_derivative))  # Return both derivatives
 }
 
 #' Plot VSVR Response Signal

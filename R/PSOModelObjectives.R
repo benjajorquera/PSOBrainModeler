@@ -30,12 +30,16 @@
 #' @param fn_count_threshold Threshold for function count in optimization.
 #'  Defaults to 30.
 #' @param fitness_accuracy Numeric value specifying fitness evaluation accuracy; default is 3.
-#' @param penalization_weight Numeric value for the weight in optimization penalization; default is 0.5.
 #' @param round_accuracy Numeric value for rounding off the parameters.
 #'  Specifies the number of decimal places for rounding.
 #' @param signif_accuracy Numeric value for significant figure accuracy.
 #'  Defines the number of significant digits to retain.
 #' @param show_progress_bar Disables progress bar. Defaults to FALSE.
+#' @param minimum_candidates Sets the lower limit for candidate consideration.
+#' @param fn_start_threshold Determines the function's starting point if there are no candidates.
+#' @param cv_folds_ratio Specifies the proportion of data used for cross-validation.
+#' @param time_on_fitness Apply time to the objective function.
+#' @param penalization_weight Numeric value for the weight in optimization penalization.
 #'
 #' @return The result of the PSO training model function, including any metrics,
 #'         model parameters, and performance indicators.
@@ -65,10 +69,14 @@ pso_model <-
            basic_filter_check = TRUE,
            fn_count_threshold = 30,
            fitness_accuracy = 3,
-           penalization_weight = 0.5,
            round_accuracy = 2,
            signif_accuracy = 3,
-           show_progress_bar = FALSE) {
+           show_progress_bar = FALSE,
+           minimum_candidates = 10,
+           fn_start_threshold = 100,
+           cv_folds_ratio = 0.2,
+           time_on_fitness = FALSE,
+           penalization_weight = 0.5) {
     params_list <-
       extract_params_list(
         params = params,
@@ -89,7 +97,6 @@ pso_model <-
       gamma = params_list$gamma,
       col_lags = params_list$col_lags,
       response_lags = params_list$response_lags,
-      vsvr_response = data_list$NORM_VSVR_RESPONSE,
       data_list = data_list,
       silent = silent,
       plot_response = plot_response,
@@ -103,8 +110,12 @@ pso_model <-
       basic_filter_check = basic_filter_check,
       fn_count_threshold = fn_count_threshold,
       fitness_accuracy = fitness_accuracy,
-      penalization_weight = penalization_weight,
-      show_progress_bar = show_progress_bar
+      show_progress_bar = show_progress_bar,
+      minimum_candidates = minimum_candidates,
+      fn_start_threshold = fn_start_threshold,
+      cv_folds_ratio = cv_folds_ratio,
+      time_on_fitness = time_on_fitness,
+      penalization_weight = penalization_weight
     )
     
     return(pso_training_model_result)

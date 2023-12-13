@@ -25,7 +25,6 @@ The list should include:
   \item \code{data_list}: Additional data structures or context for the
    response prediction.
   \item \code{included_model}: The trained SVR model.
-  \item \code{vsvr_response}: The response column name for the SVR model.
   \item \code{silent}: Logical flag to run the function silently.
 }}
 }

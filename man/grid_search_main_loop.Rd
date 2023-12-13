@@ -9,7 +9,6 @@ grid_search_main_loop(
   processed_data,
   data_partitions,
   bcv_folds = 5,
-  norm_response_var,
   lags_column = c(8),
   initial_column_values = c(1),
   lags_response = NULL,
@@ -37,8 +36,6 @@ for the grid search.}
 
 \item{bcv_folds}{Integer specifying the number of folds for cross-validation,
 defaults to 5.}
-
-\item{norm_response_var}{Normalized response variable used in the model.}
 
 \item{lags_column}{Integer or vector specifying the number of lags for the
 columns, defaults to c(8).}

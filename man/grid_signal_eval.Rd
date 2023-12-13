@@ -8,7 +8,6 @@ grid_signal_eval(
   data_env,
   processed_data,
   bcv_folds = 5,
-  norm_response_var,
   initial_column_values = c(1),
   grid_col_lags,
   lag_response = NULL,
@@ -29,8 +28,6 @@ signal processing.}
 \item{processed_data}{Preprocessed data used for generating predictions.}
 
 \item{bcv_folds}{Number of folds for cross-validation, defaults to 5.}
-
-\item{norm_response_var}{Normalized response variable used in the evaluation.}
 
 \item{initial_column_values}{Numeric or vector providing initial values for
 columns in the dataset, defaults to c(1).}

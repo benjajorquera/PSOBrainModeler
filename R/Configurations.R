@@ -22,8 +22,6 @@
 #' @param vsvr_tolerance (Optional) Tolerance level for VSVR. Defaults to 1.
 #' @param svm_cache_size (Optional) Size of the cache for SVM training. Defaults
 #'  to 100.
-#' @param response_max_diff_threshold (Optional) A numeric value representing the
-#'   response signal maximum difference threshold. Defaults to 0.55.
 #'
 #' @return Returns a list of configuration settings for the PSO brain modeler.
 #'  Each element of the list corresponds to a specific configuration option:
@@ -38,7 +36,6 @@
 #'   - `max_lag_number`: Maximum number of lags to consider.
 #'   - `vsvr_tolerance`: Tolerance level for VSVR.
 #'   - `svm_cache_size`: Cache size for VSVR.
-#'   - `response_max_diff_threshold`: Max difference threshold for response signal.
 #'
 #' @examples
 #' configure_pso_brain_modeler()
@@ -54,8 +51,7 @@ configure_pso_brain_modeler <- function(seed = 123,
                                         butter_filter_fs = 0.2,
                                         max_lag_number = 8,
                                         vsvr_tolerance = 1,
-                                        svm_cache_size = 100,
-                                        response_max_diff_threshold = 0.55) {
+                                        svm_cache_size = 100) {
   options <- list(
     seed = seed,
     bcv_folds = bcv_folds,
@@ -66,8 +62,7 @@ configure_pso_brain_modeler <- function(seed = 123,
     butter_filter_fs = butter_filter_fs,
     max_lag_number = max_lag_number,
     vsvr_tolerance = vsvr_tolerance,
-    svm_cache_size = svm_cache_size,
-    response_max_diff_threshold = response_max_diff_threshold
+    svm_cache_size = svm_cache_size
   )
   
   return(options)
@@ -170,8 +165,7 @@ configure_data_env <-
         NORM_VSVR_RESPONSE = norm_names(vsvr_response),
         VSVR_TOL = config$vsvr_tolerance,
         INITIAL_PREDICTION_VALUES = initial_prediction_values,
-        svm_cache_size = config$svm_cache_size,
-        response_max_diff_threshold = config$response_max_diff_threshold
+        svm_cache_size = config$svm_cache_size
       )
     )
   }
@@ -183,7 +177,7 @@ configure_data_env <-
 #' by providing default values and allowing customization through user-specified
 #' arguments.
 #'
-#' @param ... Optional parameters to override the default settings. These include:
+#' @param ... Optional parameters to override the default settings. Some are:
 #'   - `maxit`: Maximum number of iterations. Default is 125.
 #'   - `s`: Swarm size. Default is 8.
 #'   - `w`: Inertia weight. Default is 1.
@@ -197,6 +191,8 @@ configure_data_env <-
 #'       to `list(maxit = 10)`.
 #'   - `maxit.stagnate`: Maximum iterations for stagnation. Default is 110.
 #'   - `maxf`: Maximum number of function evaluations. Default is 1000.
+#'
+#'   The complete list of this parameters can be found in the psoptim documentation of the pso package.
 #'
 #' @return A list of control parameters for PSO optimization, combining the
 #'  default settings with any user-specified overrides.
@@ -213,7 +209,7 @@ configure_data_env <-
 configure_psoptim_control <- function(...) {
   # Define default values
   default_args <- list(
-    maxit = 125,
+    maxit = 150,
     # Maximum number of iterations
     s = 8,
     # Swarm size
@@ -231,9 +227,9 @@ configure_psoptim_control <- function(...) {
     # Type of hybrid algorithm
     hybrid.control = list(maxit = 10),
     # Control parameters for the hybrid algorithm
-    maxit.stagnate = 110,
+    maxit.stagnate = 100,
     # Maximum iterations for stagnation
-    maxf = 1000
+    maxf = 1200
     # Maximum number of function evaluations
   )
   

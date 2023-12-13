@@ -21,7 +21,7 @@ svr_grid_search(
   should_plot_response = FALSE,
   is_test_mode = FALSE,
   is_silent_mode = TRUE,
-  generate_response_predictions_cv = FALSE,
+  generate_response_predictions_cv = TRUE,
   basic_filter_check = TRUE,
   show_progress_bar = FALSE
 )
@@ -71,7 +71,7 @@ Defaults to FALSE.}
 silent mode, minimizing output. Defaults to TRUE.}
 
 \item{generate_response_predictions_cv}{Logical flag indicating if response
-predictions should be generated. Defaults to FALSE.}
+predictions should be generated. Defaults to TRUE.}
 
 \item{basic_filter_check}{Logical flag indicating if a basic filter check
 should be applied. Defaults to TRUE.}

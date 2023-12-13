@@ -106,6 +106,9 @@ blocked_cv <-
 #'    \code{generate_response_predictions_cv} is TRUE.
 #'   \item \code{time}: The time taken to execute the cross-validation process,
 #'    measured in seconds.
+#'   \item \code{all_cors}: Correlations of each fold
+#'   \item \code{all_erros}: Errors of each fold
+#'   \item \code{cv_basic_filter_check}: Number of signals passed the filter
 #' }
 #'
 #' @examples
@@ -163,6 +166,8 @@ cross_validate_partition <-
     )
     
     cv_predictions <- list()
+    
+    cv_basic_filter_check <- 0
     
     for (df_list in seq_len(bcv_folds)) {
       # Prepare data for validation
@@ -224,7 +229,6 @@ cross_validate_partition <-
           gamma = gamma,
           data_list = data_env_list,
           included_model = svr_model,
-          vsvr_response = vsvr_response,
           silent = silent
         )
         
@@ -232,6 +236,10 @@ cross_validate_partition <-
           generate_and_evaluate_response_cv(response_params)
         cv_predictions <-
           append(cv_predictions, list(response_data))
+        
+        if (response_data[["basic_filter"]][["result"]] == "TEST PASSED") {
+          cv_basic_filter_check <- cv_basic_filter_check + 1
+        }
       }
       
       target_vals <-
@@ -249,7 +257,10 @@ cross_validate_partition <-
         na_count = na_count,
         warnings = svm_warnings,
         cv_predictions = cv_predictions,
-        time = Sys.time() - time
+        time = Sys.time() - time,
+        all_cor = cors,
+        all_error = errors,
+        cv_basic_filter_check = cv_basic_filter_check
       )
     )
   }
@@ -279,7 +290,6 @@ cross_validate_partition <-
 #'   \item \code{data_list}: Additional data structures or context for the
 #'    response prediction.
 #'   \item \code{included_model}: The trained SVR model.
-#'   \item \code{vsvr_response}: The response column name for the SVR model.
 #'   \item \code{silent}: Logical flag to run the function silently.
 #' }
 #'
@@ -310,22 +320,20 @@ generate_and_evaluate_response_cv <- function(params) {
   
   signal_score <-
     evaluate_signal_quality(
-      response_signal$predicted_values[[params$vsvr_response]],
-      silent = params$silent,
-      max_diff_threshold = params$data_list$response_max_diff_threshold
+      response_signal$predicted_values,
+      silent = params$silent
     )
   
   if (signal_score$result == "TEST PASSED") {
     advanced_score <-
-      advanced_filter(response_signal$predicted_values[[params$vsvr_response]])
+      advanced_filter(response_signal$predicted_values)
   }
   else {
-    advanced_score <- list(score = 0, results = NULL)
+    advanced_score <- list(score = NULL, results = NULL)
   }
   
-  
   response_data <- c(
-    response_signal = list(response_signal$predicted_values[[params$vsvr_response]]),
+    response_signal = list(response_signal$predicted_values),
     response_predictions_warnings = response_signal$warnings,
     support_vectors = response_signal$model$tot.nSV,
     basic_filter = list(signal_score),

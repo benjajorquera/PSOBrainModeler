@@ -98,6 +98,9 @@ A list containing various metrics and information from the
    \code{generate_response_predictions_cv} is TRUE.
   \item \code{time}: The time taken to execute the cross-validation process,
    measured in seconds.
+  \item \code{all_cors}: Correlations of each fold
+  \item \code{all_erros}: Errors of each fold
+  \item \code{cv_basic_filter_check}: Number of signals passed the filter
 }
 }
 \description{

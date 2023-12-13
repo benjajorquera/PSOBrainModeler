@@ -10,35 +10,35 @@
 #'   Defaults to 3L.
 #' @param silent (Optional) A logical indicating whether to run the function
 #'   silently (without printouts). Defaults to TRUE.
-#' @param max_diff_threshold (Optional) A numeric value representing the
-#'   maximum difference threshold. Defaults to 0.55.
+#' @param first_derivative_threshold (Optional) A numeric value representing the
+#'   maximum allowed value for the first derivative. Defaults to 0.55.
+#' @param second_derivative_threshold (Optional) A numeric value representing the
+#'   maximum allowed value for the second derivative. Defaults to 0.30.
 #'
 #' @return A list with a numeric score indicating the quality of the signal and
 #'   the result of the evaluation.
 #'
 #' @details
 #' The function evaluates the signal's quality using a set of criteria,
-#'   starting with advanced tests before applying the basic filter. The function
-#'   returns a score of 0 for any failed test and 1 if all tests are passed.
+#'   starting with advanced tests before applying the basic filter. The advanced
+#'   tests involve checking the first and second discrete derivatives of the signal
+#'   against their respective thresholds. These tests help identify sudden spikes
+#'   or drastic changes in the signal's trend, indicating potential anomalies.
 #'
 #' Advanced Criteria:
-#' 1. Maximum Difference Test: Checks if the maximum distance between any two
-#'  consecutive points in the signal exceeds 0.55.
-#'  This test helps in identifying sudden spikes or drops in the signal,
-#'  indicating potential anomalies.
-#' 2. Stationarity Test: Uses the Augmented Dickey-Fuller test to determine if
-#'  the signal is stationary.
-#'  A non-stationary signal (p-value >= 0.05) might indicate trends or seasonal
-#'  effects, which could affect the model's performance.
+#' 1. First Derivative Test: Checks if the maximum absolute value of the first
+#'    discrete derivative of the signal exceeds the first_derivative_threshold.
+#' 2. Second Derivative Test: Checks if the maximum absolute value of the second
+#'    discrete derivative of the signal exceeds the second_derivative_threshold.
 #'
 #' Basic Filter Checks:
 #' 1. Global minimum (peak) should occur between 3 and 9 seconds after the
-#'  pressure start point.
+#'    pressure start point.
 #' 2. The minimum peak of the signal should be between -0.2 and 0.5.
 #' 3. Variance of the signal should be less than 0.002 between seconds 15 and 30
-#'  (stabilization tail).
+#'    (stabilization tail).
 #' 4. The maximum and minimum values of the entire signal should be between
-#'  -0.2 and 1.2 (exclusive).
+#'    -0.2 and 1.2 (exclusive).
 #'
 #' The function returns a score of 0 for any failed test and 1 if all tests are
 #'  passed.
@@ -50,7 +50,6 @@
 #'
 #' @importFrom stats var
 #' @importFrom utils head
-#' @importFrom tseries adf.test
 #'
 #' @export
 #'
@@ -58,36 +57,29 @@ evaluate_signal_quality <-
   function(signal,
            pressure_start_point = 3L,
            silent = TRUE,
-           max_diff_threshold = 0.55) {
+           first_derivative_threshold = 0.52,
+           second_derivative_threshold = 0.48) {
     # Ensure that the signal and pressure_start_point are numeric
     stopifnot(is.numeric(signal))
     
-    if (max_diff(signal) > max_diff_threshold) {
+    # Calculate the discrete derivatives of the signal
+    derivatives <- calculate_discrete_derivatives(signal)
+    
+    # Evaluate the first derivative against the threshold
+    if (max(abs(derivatives$first)) > first_derivative_threshold * 1.15) {
       if (!silent) {
-        message(
-          "\nRESPONSE SIGNAL FAILED BASIC FILTER: MAXIMUM DIFFERENCE GREATER THAN THRESHOLD"
-        )
+        message("\nRESPONSE SIGNAL FAILED: FIRST DERIVATIVE GREATER THAN THRESHOLD")
       }
       return(list(result = "TEST 1 FAILED", score = 0))
     }
     
-    suppressWarnings({
-      signal_test <- tseries::adf.test(signal, alternative = "stationary")
-    })
-    
-    if (!is.nan(signal_test$p.value)) {
-      if (signal_test$p.value >= 0.05) {
-        if (!silent) {
-          message("\nRESPONSE SIGNAL FAILED BASIC FILTER: STATIONARY TEST FAILED")
-        }
-        return(list(result = "TEST 2 FAILED", score = 0))
-      }
-    }
-    else {
+    # Evaluate the second derivative against the threshold
+    if (!is.null(derivatives$second) &&
+        max(abs(derivatives$second)) > second_derivative_threshold * 1.15) {
       if (!silent) {
-        message("\nRESPONSE SIGNAL FAILED BASIC FILTER: STATIONARY TEST ERROR")
+        message("\nRESPONSE SIGNAL FAILED: SECOND DERIVATIVE GREATER THAN THRESHOLD")
       }
-      return(list(result = "TEST 3 FAILED", score = 0))
+      return(list(result = "TEST 2 FAILED", score = 0))
     }
     
     # Constants
@@ -115,7 +107,7 @@ evaluate_signal_quality <-
       if (!silent) {
         message("\nRESPONSE SIGNAL FAILED BASIC FILTER: INCORRECT MIN PEAK VALUE")
       }
-      return(list(result = "TEST 4 FAILED", score = 0))
+      return(list(result = "TEST 3 FAILED", score = 0))
     }
     
     if (signal_range[1] <= MIN_PEAK_VALUE ||
@@ -123,14 +115,19 @@ evaluate_signal_quality <-
       if (!silent) {
         message("\nRESPONSE SIGNAL FAILED BASIC FILTER: INCORRECT GLOBAL MAX AND MIN VALUES")
       }
-      return(list(result = "TEST 5 FAILED", score = 0))
+      return(list(result = "TEST 4 FAILED", score = 0))
     }
     
     if (stats::var(stabilization_range) > VARIANCE_THRESHOLD) {
       if (!silent) {
         message("\nRESPONSE SIGNAL FAILED BASIC FILTER: INCORRECT STABILIZATION VARIANCE VALUE")
       }
-      return(list(result = "TEST 6 FAILED", score = 0))
+      return(list(result = "TEST 5 FAILED", score = 0))
+    }
+    
+    # If tests are passed
+    if (!silent) {
+      message("\nRESPONSE SIGNAL PASSED QUALITY CHECK")
     }
     
     return(list(result = "TEST PASSED", score = 1))

@@ -15,7 +15,6 @@
 #' @param gamma Gamma parameter for the model, if applicable.
 #' @param col_lags Column lag values for the model.
 #' @param response_lags Response lag values for the model, if applicable.
-#' @param vsvr_response VSVR response name in the data.
 #' @param data_list List containing the data required for the model.
 #' @param silent Flag to control verbosity during the training process.
 #' @param plot_response Flag to enable or disable plotting the response.
@@ -27,11 +26,15 @@
 #' @param progress_bar Progress bar for visualization of the optimization
 #'  process.
 #' @param generate_response_predictions_cv Flag to generate response predictions.
-#' @param basic_filter_check Logical flag to enable basic filtering of the data; default is TRUE.
-#' @param fn_count_threshold Integer setting the function count threshold for optimization; default is 30.
-#' @param fitness_accuracy Numeric value specifying fitness evaluation accuracy; default is 3.
-#' @param penalization_weight Numeric value for the weight in optimization penalization; default is 0.5.
-#' @param show_progress_bar Disables progress bar. Defaults to FALSE.
+#' @param basic_filter_check Logical flag to enable basic filtering of the data.
+#' @param fn_count_threshold Integer setting the function count threshold for optimization.
+#' @param fitness_accuracy Numeric value specifying fitness evaluation accuracy.
+#' @param show_progress_bar Disables the progress bar display.
+#' @param minimum_candidates Sets the lower limit for candidate consideration.
+#' @param fn_start_threshold Determines the function's starting point if there are no candidates.
+#' @param cv_folds_ratio Specifies the proportion of data used for cross-validation.
+#' @param time_on_fitness Apply time to the objective function.
+#' @param penalization_weight Numeric value for the weight in optimization penalization.
 #'
 #' @return Depending on the stage and result of the optimization, it can return
 #'  different values, including early termination or the current optimization
@@ -40,7 +43,6 @@
 #' @examples
 #' \dontrun{
 #' result <- pso_training_model(cost = 0.5, nu = 0.1, col_lags = c(3),
-#'                             vsvr_response = "response",
 #'                             data_list = my_data_list, pso_env = my_pso_env,
 #'                             progress_bar = my_progress_bar)
 #' }
@@ -53,7 +55,6 @@ pso_training_model <- function(max_function_count = 1000,
                                gamma = NULL,
                                col_lags,
                                response_lags = NULL,
-                               vsvr_response,
                                data_list,
                                silent = TRUE,
                                plot_response = FALSE,
@@ -63,15 +64,27 @@ pso_training_model <- function(max_function_count = 1000,
                                pso_env,
                                seed = 123,
                                progress_bar = NULL,
-                               generate_response_predictions_cv = FALSE,
+                               generate_response_predictions_cv = TRUE,
                                basic_filter_check = TRUE,
                                fn_count_threshold = 30,
                                fitness_accuracy = 3,
-                               penalization_weight = 0.5,
-                               show_progress_bar = FALSE) {
+                               show_progress_bar = FALSE,
+                               minimum_candidates = 10,
+                               fn_start_threshold = 100,
+                               cv_folds_ratio = 0.2,
+                               time_on_fitness = FALSE,
+                               penalization_weight = 0.5) {
   # TODO: MODULARIZE
-  if (pso_env[["function_count"]] >= max_function_count)
+  
+  if (pso_env[["function_count"]] >= max_function_count &&
+      pso_env[["candidates"]] > minimum_candidates) {
     return(5)
+  }
+  
+  if (pso_env[["function_count"]] > fn_start_threshold &&
+      pso_env[["candidates"]] < minimum_candidates) {
+    basic_filter_check <- FALSE
+  }
   
   pso_env[["function_count"]] <- pso_env[["function_count"]] + 1
   
@@ -103,84 +116,39 @@ pso_training_model <- function(max_function_count = 1000,
       data_list = data_list
     )
   
-  # Process response signal and score it
+  # Process response signal
   basic_filter <-
-    evaluate_signal_quality(
-      response_predictions$predicted_values[[vsvr_response]],
-      silent = silent,
-      max_diff_threshold = data_list$response_max_diff_threshold
-    )
+    evaluate_signal_quality(response_predictions$predicted_values,
+                            silent = silent)
   
-  # Calculate normalized predicted time for fitness function
   prediction_time <- Sys.time() - time
+  
+  new_data <- c(
+    test_result = basic_filter$result,
+    response_predictions_results = list(response_predictions),
+    prediction_time = list(prediction_time),
+    basic_filter_check = basic_filter_check
+  )
+  
   fitness_prediction_time <- as.numeric(prediction_time)
   pso_env[["max_pred_time"]] <-
     max(pso_env[["max_pred_time"]], fitness_prediction_time)
   fitness_norm_pred_time <-
     fitness_prediction_time / pso_env[["max_pred_time"]]
   
-  fitness_cor <- response_predictions$predictions_all_data_cor
-  fitness_err <- response_predictions$predictions_all_data_err
-  
-  new_data <- c(
-    test_result = basic_filter$result,
-    warnings = response_predictions$warnings,
-    list(support_vectors = response_predictions$model$tot.nSV),
-    list(signal_response = response_predictions$predicted_values[[vsvr_response]]),
-    prediction_time = prediction_time,
-    predictions_cor = fitness_cor,
-    predictions_err = fitness_err
-  )
-  
-  fitness_filter <- basic_filter$score
-  
-  # Handle local solution
-  if (is.null(fitness_cor) || fitness_cor == "FAILED")
-    return(round(3 + fitness_norm_pred_time, fitness_accuracy))
-  else if (fitness_filter != 1) {
-    if (round(fitness_cor, fitness_accuracy) <= pso_env[["max_global_cor"]]) {
-      if (pso_env[["function_count_without_improvement"]] > fn_count_threshold) {
-        fitness_stats <- fitness_err - fitness_cor
-        partial_fitness_score <-
-          round(fitness_stats  + (fitness_norm_pred_time * (1 + penalization_weight)),
-                fitness_accuracy)
-        new_data <- c(new_data, c(fn_count_threshold = TRUE))
-        new_data <-
-          c(new_data,
-            c(partial_fitness_score = partial_fitness_score))
-        pso_env[["data"]] <- c(pso_env[["data"]], list(new_data))
-        return(partial_fitness_score)
-      }
-      else {
-        pso_env[["function_count_without_improvement"]] <-
-          pso_env[["function_count_without_improvement"]] + 1
-      }
-    } else {
-      pso_env[["function_count_without_improvement"]] <- 0
-      pso_env[["max_global_cor"]] <-
-        round(fitness_cor, fitness_accuracy)
-    }
-  }
-  
   # Evaluate predicted signal
-  if (basic_filter$result != "TEST PASSED" &&
-      basic_filter_check) {
-    fitness_partial_result <-
-      round(fitness_err - fitness_cor + fitness_norm_pred_time,
-            fitness_accuracy)
-    
+  if (basic_filter$result != "TEST PASSED" && basic_filter_check) {
+    fitness_partial_result <- 3
+    if (time_on_fitness) {
+      fitness_partial_result <-
+        fitness_partial_result + (fitness_norm_pred_time * (1  + penalization_weight))
+    }
     new_data <-
       c(new_data,
         c(fitness_partial_result = fitness_partial_result))
     pso_env[["data"]] <- c(pso_env[["data"]], list(new_data))
-    
     return(fitness_partial_result)
   }
-  
-  advanced_filter <-
-    advanced_filter(response_predictions$predicted_values[[vsvr_response]],
-                    silent = silent)
-  fitness_adv_score <- advanced_filter$score * 0.1
   
   cv_time <- Sys.time()
   
@@ -208,8 +176,20 @@ pso_training_model <- function(max_function_count = 1000,
     set.seed(seed)
   }
   
-  avg_cor <- cv_results$avg_cor
-  avg_error <- cv_results$avg_error
+  fitness_avg_cor <- cv_results$avg_cor
+  fitness_avg_error <- cv_results$avg_error
+  fitness_filter <- basic_filter$score
+  
+  advanced_filter <-
+    advanced_filter(response_predictions$predicted_values,
+                    silent = silent)
+  
+  if (fitness_filter == 1) {
+    fitness_adv_score <- advanced_filter$score * 0.1
+  }
+  else {
+    fitness_adv_score <- 0
+  }
   
   # Calculate normalized prediction and cross-validation time for fitness function
   cv_time <- Sys.time() - cv_time
@@ -221,72 +201,112 @@ pso_training_model <- function(max_function_count = 1000,
     fitness_pred_cv_time / pso_env[["max_pred_cv_time"]]
   
   # Return early if any of the results is NaN
-  if (is.nan(avg_cor) ||
-      is.nan(avg_error)) {
-    fitness_partial_score <-
-      round(3 + fitness_norm_pred_cv_time, fitness_accuracy)
+  if (is.nan(fitness_avg_cor) ||
+      is.nan(fitness_avg_error)) {
     new_data <- c(
       test_result = "CV FAILED",
-      prediction_warnings = response_predictions$warnings,
-      cv_warnings = cv_results$warnings,
-      list(support_vectors = response_predictions$model$tot.nSV),
-      list(signal_response = response_predictions$predicted_values[[vsvr_response]]),
-      cv_time = cv_time,
-      prediction_time = prediction_time,
-      fitness_partial_score = fitness_partial_score
+      response_predictions_results = list(response_predictions),
+      cv_results = list(cv_results),
+      cv_time = list(cv_time),
+      prediction_time = list(prediction_time),
+      basic_filter_check = basic_filter_check
     )
-    return (fitness_partial_score)
+    fitness_partial_result <- 5
+    if (time_on_fitness) {
+      fitness_partial_result <-
+        fitness_partial_result + fitness_norm_pred_cv_time
+    }
+    new_data <-
+      c(new_data,
+        c(fitness_partial_result = fitness_partial_result))
+    pso_env[["data"]] <- c(pso_env[["data"]], list(new_data))
+    return(fitness_partial_result)
+    
   }
   
+  # Handle local solution
+  if (round(fitness_avg_cor, fitness_accuracy) <= pso_env[["max_global_cor"]]) {
+    if (pso_env[["function_count_without_improvement"]] > fn_count_threshold) {
+      if (!(pso_env[["candidates"]] < minimum_candidates &&
+            fitness_filter == 1)) {
+        new_data <- c(new_data, c(fn_count_threshold = TRUE))
+        fitness_partial_result <- 3
+        if (time_on_fitness) {
+          fitness_partial_result <-
+            fitness_partial_result + fitness_norm_pred_cv_time
+        }
+        new_data <-
+          c(new_data,
+            c(fitness_partial_result = fitness_partial_result))
+        pso_env[["data"]] <- c(pso_env[["data"]], list(new_data))
+        return(fitness_partial_result)
+      }
+      else {
+        pso_env[["function_count_without_improvement"]] <- 0
+      }
+    }
+    else {
+      pso_env[["function_count_without_improvement"]] <-
+        pso_env[["function_count_without_improvement"]] + 1
+    }
+  } else {
+    pso_env[["function_count_without_improvement"]] <- 0
+    pso_env[["max_global_cor"]] <-
+      round(fitness_avg_cor, fitness_accuracy)
+  }
+  
+  
+  fitness_cv_filter <-
+    (cv_folds_ratio * cv_results$cv_basic_filter_check)
+  
   # Calculate normalized fitness function
-  fitness <-
-    avg_error - avg_cor - fitness_filter - fitness_adv_score + fitness_norm_pred_cv_time
+  fitness <- (
+    fitness_avg_error - fitness_avg_cor  - fitness_filter - fitness_adv_score - fitness_cv_filter + fitness_norm_pred_cv_time
+  )
+  
   fitness <- round(fitness, fitness_accuracy)
   
-  pso_env[["max_cor"]] <- max(pso_env[["max_cor"]], avg_cor)
   pso_env[["best_fitness"]] <-
     min(pso_env[["best_fitness"]], fitness)
   
-  new_data <- list(
-    avg_cor = avg_cor,
-    avg_error = avg_error,
-    na_counts = cv_results$na_count,
-    cv_warnings = cv_results$warnings,
-    score = advanced_filter$score,
-    advanced_score_results = advanced_filter$results,
-    response_signal = response_predictions$predicted_values[[vsvr_response]],
+  new_data <- c(
+    advanced_score_results = list(advanced_filter),
+    response_predictions_results = list(response_predictions),
     fitness_score = fitness,
+    basic_filter = list(basic_filter),
     params = list(
-      cost = cost,
-      nu = nu,
-      gamma = gamma,
-      col_lags = col_lags,
-      response_lags = response_lags
+      c(
+        cost = cost,
+        nu = nu,
+        gamma = gamma,
+        col_lags = col_lags,
+        response_lags = response_lags
+      )
     ),
-    response_predictions_warnings = response_predictions$warnings,
-    support_vectors = response_predictions$model$tot.nSV,
-    response_predictions_cor = response_predictions$predictions_all_data_cor,
-    response_predictions_err = response_predictions$predictions_all_data_err,
-    cv_predictions = cv_results$cv_predictions,
-    prediction_time = prediction_time,
-    cv_time = cv_time,
-    overall_time = Sys.time() - time
+    cv_results = list(cv_results),
+    prediction_time = list(prediction_time),
+    cv_time = list(cv_time),
+    overall_time = list(Sys.time() - time),
+    basic_filter_check = basic_filter_check
   )
+  
   pso_env[["data"]] <- c(pso_env[["data"]], list(new_data))
   
   if (plot_response) {
-    plot_vsvr_response_signal(response_predictions$predicted_values[[vsvr_response]])
+    plot_vsvr_response_signal(response_predictions$predicted_values)
   }
   
   if (!silent)
     display_pso_message(
-      round(avg_cor, fitness_accuracy),
-      round(avg_error, fitness_accuracy),
-      basic_filter$score,
-      round(advanced_filter$score, fitness_accuracy)
+      round(fitness_avg_cor, fitness_accuracy),
+      round(fitness_avg_error, fitness_accuracy),
+      fitness_filter,
+      round(fitness_adv_score, fitness_accuracy)
     )
   
-  pso_env[["candidates"]] <- pso_env[["candidates"]] + 1
+  if (fitness_filter == 1) {
+    pso_env[["candidates"]] <- pso_env[["candidates"]] + 1
+  }
   
   return(fitness)
 }

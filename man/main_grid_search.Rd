@@ -8,7 +8,6 @@ main_grid_search(
   data_env,
   bcv_folds = 5,
   processed_data,
-  norm_response_var,
   kernel_type = "linear",
   lags_column = c(8),
   initial_column_values = c(1),
@@ -32,8 +31,6 @@ defaults to 5.}
 
 \item{processed_data}{Dataframe of processed data set to be used in the
 model.}
-
-\item{norm_response_var}{Normalized response variable used in the model.}
 
 \item{kernel_type}{Character string indicating the type of kernel to use,
 default is "linear".}
