@@ -7,7 +7,6 @@
 configure_pso_brain_modeler(
   seed = 123,
   bcv_folds = 5,
-  bcv_validation_size = 0.2,
   pressure_signal_start = 3L,
   pressure_signal_response_size = 70L,
   butter_filter_order = 2L,
@@ -22,9 +21,6 @@ configure_pso_brain_modeler(
 
 \item{bcv_folds}{(Optional) Number of folds for blocked cross-validation.
 Defaults to 5.}
-
-\item{bcv_validation_size}{(Optional) Proportion of data for validation in
-blocked CV. Defaults to 0.2.}
 
 \item{pressure_signal_start}{(Optional) Integer indicating the starting point
 for pressure signal. Defaults to 3L.}
@@ -51,8 +47,6 @@ Returns a list of configuration settings for the PSO brain modeler.
  Each element of the list corresponds to a specific configuration option:
   - `seed`: Seed for random number generation.
   - `bcv_folds`: Number of folds for blocked cross-validation.
-  - `bcv_validation_size`: Proportion of data for validation in blocked
-      cross-validation.
   - `pressure_signal_start`: Starting point for the pressure signal.
   - `pressure_signal_response_size`: Size of the response signal for pressure.
   - `butter_filter_order`: Order of the Butterworth filter.

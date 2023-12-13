@@ -54,7 +54,6 @@
 #' @param show_progress_bar Disables progress bar. Defaults to FALSE.
 #' @param minimum_candidates Sets the lower limit for candidate consideration.
 #' @param fn_start_threshold Determines the function's starting point if there are no candidates.
-#' @param cv_folds_ratio Specifies the proportion of data used for cross-validation.
 #' @param time_on_fitness Apply time to the objective function.
 #' @param penalization_weight Numeric value for the weight in optimization penalization.
 #'
@@ -115,7 +114,6 @@ optimize_brain_model_with_PSO <- function(config,
                                           show_progress_bar = FALSE,
                                           minimum_candidates = 10,
                                           fn_start_threshold = 100,
-                                          cv_folds_ratio = 0.2,
                                           time_on_fitness = FALSE,
                                           penalization_weight = 0.5) {
   stopifnot(is.data.frame(data))
@@ -201,7 +199,7 @@ optimize_brain_model_with_PSO <- function(config,
     show_progress_bar = show_progress_bar,
     minimum_candidates = minimum_candidates,
     fn_start_threshold = fn_start_threshold,
-    cv_folds_ratio = cv_folds_ratio,
+    cv_folds_ratio = config$bcv_validation_size,
     time_on_fitness = time_on_fitness,
     penalization_weight = penalization_weight,
     lower = params_lower_bounds,

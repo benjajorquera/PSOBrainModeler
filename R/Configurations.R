@@ -7,8 +7,6 @@
 #' @param seed (Optional) Seed for random number generation. Defaults to 123.
 #' @param bcv_folds (Optional) Number of folds for blocked cross-validation.
 #'  Defaults to 5.
-#' @param bcv_validation_size (Optional) Proportion of data for validation in
-#'  blocked CV. Defaults to 0.2.
 #' @param pressure_signal_start (Optional) Integer indicating the starting point
 #'  for pressure signal. Defaults to 3L.
 #' @param pressure_signal_response_size (Optional) Integer indicating the size
@@ -27,8 +25,6 @@
 #'  Each element of the list corresponds to a specific configuration option:
 #'   - `seed`: Seed for random number generation.
 #'   - `bcv_folds`: Number of folds for blocked cross-validation.
-#'   - `bcv_validation_size`: Proportion of data for validation in blocked
-#'       cross-validation.
 #'   - `pressure_signal_start`: Starting point for the pressure signal.
 #'   - `pressure_signal_response_size`: Size of the response signal for pressure.
 #'   - `butter_filter_order`: Order of the Butterworth filter.
@@ -44,7 +40,6 @@
 #'
 configure_pso_brain_modeler <- function(seed = 123,
                                         bcv_folds = 5,
-                                        bcv_validation_size = 0.2,
                                         pressure_signal_start = 3L,
                                         pressure_signal_response_size = 70L,
                                         butter_filter_order = 2L,
@@ -52,6 +47,9 @@ configure_pso_brain_modeler <- function(seed = 123,
                                         max_lag_number = 8,
                                         vsvr_tolerance = 1,
                                         svm_cache_size = 100) {
+  
+  bcv_validation_size <- 1/bcv_folds
+  
   options <- list(
     seed = seed,
     bcv_folds = bcv_folds,

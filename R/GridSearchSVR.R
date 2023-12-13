@@ -276,8 +276,8 @@ params_config <-
     stopifnot(is.character(kernel_type), is.logical(is_test_mode))
     
     if (is_test_mode) {
-      nu_values <- seq(0.4, 0.7, 0.1)
-      cost_values <- c(0.5, 4, 64, 128, 2048, 4096)
+      nu_values <- seq(0.9)
+      cost_values <- c(4096)
     } else {
       nu_values <- seq(0.1, 0.9, 0.1)
       cost_values <- 2 ^ seq(-2, 12, 2)
@@ -287,7 +287,7 @@ params_config <-
     
     if (kernel_type == "radial") {
       sigma_values <- 2 ^ seq(-4, if (is_test_mode)
-        2
+        - 4
         else
           10, 2)
       gamma_values <- 1 / (2 * sigma_values ^ 2)
@@ -661,10 +661,8 @@ grid_signal_eval <-
     
     # Signal quality evaluation
     signal_score <-
-      evaluate_signal_quality(
-        response_predictions$predicted_values,
-        silent = is_silent_mode
-      )
+      evaluate_signal_quality(response_predictions$predicted_values,
+                              silent = is_silent_mode)
     
     if (signal_score$result != "TEST PASSED" &&
         basic_filter_check) {

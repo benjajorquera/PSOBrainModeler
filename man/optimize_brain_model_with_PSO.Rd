@@ -33,7 +33,6 @@ optimize_brain_model_with_PSO(
   show_progress_bar = FALSE,
   minimum_candidates = 10,
   fn_start_threshold = 100,
-  cv_folds_ratio = 0.2,
   time_on_fitness = FALSE,
   penalization_weight = 0.5
 )
@@ -115,8 +114,6 @@ Defines the number of significant digits to retain.}
 \item{minimum_candidates}{Sets the lower limit for candidate consideration.}
 
 \item{fn_start_threshold}{Determines the function's starting point if there are no candidates.}
-
-\item{cv_folds_ratio}{Specifies the proportion of data used for cross-validation.}
 
 \item{time_on_fitness}{Apply time to the objective function.}
 
