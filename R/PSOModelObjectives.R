@@ -24,7 +24,7 @@
 #' @param seed Seed for random number generation. Defaults to 123.
 #' @param progress_bar Progress bar configuration for the optimization process.
 #' @param generate_response_predictions_cv Flag to generate response
-#'  predictions. Defaults to FALSE.
+#'  predictions. Defaults to TRUE.
 #' @param basic_filter_check Flag to enable basic filtering of the data.
 #'  Defaults to TRUE.
 #' @param fn_count_threshold Threshold for function count in optimization.
@@ -65,7 +65,7 @@ pso_model <-
            pso_env,
            seed = 123,
            progress_bar = NULL,
-           generate_response_predictions_cv = FALSE,
+           generate_response_predictions_cv = TRUE,
            basic_filter_check = TRUE,
            fn_count_threshold = 30,
            fitness_accuracy = 3,

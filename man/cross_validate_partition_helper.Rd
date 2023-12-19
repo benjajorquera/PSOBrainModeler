@@ -16,7 +16,7 @@ cross_validate_partition_helper(
   response_lags = NULL,
   initial_column_values = NULL,
   prediction_initial_value = NULL,
-  generate_response_predictions_cv = FALSE
+  generate_response_predictions_cv = TRUE
 )
 }
 \arguments{
@@ -51,7 +51,7 @@ dataset.}
 in the response signal generation.}
 
 \item{generate_response_predictions_cv}{(Optional) Logical flag to control
-the generation of response predictions. Defaults to FALSE.}
+the generation of response predictions. Defaults to TRUE.}
 }
 \value{
 The result from the cross_validate_partition function, typically a list

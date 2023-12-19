@@ -1,6 +1,6 @@
 # PSOBrainModeler
 
-![version](https://img.shields.io/badge/version-0.5.1-blue.svg)
+![version](https://img.shields.io/badge/version-0.5.2-blue.svg)
 
 Particle Swarm Optimization-Based Hyperparameter Tuning for Support Vector Regression Models in Cerebral Autoregulation Analysis
 

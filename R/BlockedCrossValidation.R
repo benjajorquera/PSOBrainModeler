@@ -83,7 +83,7 @@ blocked_cv <-
 #'  data list element. Defaults to "validation".
 #' @param svm_cache_size Numeric. Cache size for the SVR model. Defaults to 100.
 #' @param generate_response_predictions_cv Logical. Controls generation of
-#'  response predictions. Defaults to FALSE.
+#'  response predictions. Defaults to TRUE.
 #' @param col_lags (Optional) Numeric/Integer vector. Specifies column lags for
 #'  response prediction.
 #' @param response_lags (Optional) Numeric/Integer. Lags for the response
@@ -116,11 +116,12 @@ blocked_cv <-
 #' feature2 = rnorm(20), feature1_1 = rnorm(20)), validation = data.frame(
 #' feature1 = rnorm(20), feature2 = rnorm(20), feature1_1 = rnorm(20))))
 #' cross_validate_partition(cost = 1, nu = 0.5, gamma = NULL,
-#'  data_partitions = data_partition_sample,
-#' bcv_folds = 1, signal_norm_names = c("feature1", "feature2"),
-#' predictors_norm_names = c("feature1"), lagged_cols = c("feature1"),
-#'  combined_col_lags = c(1),
-#' vsvr_response = "feature2", vsvr_tolerance = 1)
+#'   data_partitions = data_partition_sample,
+#'   bcv_folds = 1, signal_norm_names = c("feature1", "feature2"),
+#'   predictors_norm_names = c("feature1"), lagged_cols = c("feature1"),
+#'   combined_col_lags = c(1),
+#'   vsvr_response = "feature2", vsvr_tolerance = 1,
+#'   generate_response_predictions_cv = FALSE)
 #'
 #' @importFrom stats sd cor
 #' @importFrom utils modifyList
@@ -142,7 +143,7 @@ cross_validate_partition <-
            training_list_name = "training",
            validation_list_name = "validation",
            svm_cache_size = 100,
-           generate_response_predictions_cv = FALSE,
+           generate_response_predictions_cv = TRUE,
            col_lags = NULL,
            response_lags = NULL,
            initial_column_values = NULL,

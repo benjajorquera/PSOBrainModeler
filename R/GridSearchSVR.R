@@ -142,7 +142,7 @@ svr_grid_search <- function(config,
 #' @param should_plot_response Logical flag indicating whether the response
 #'  variable should be plotted, defaults to FALSE.
 #' @param generate_response_predictions_cv Logical flag indicating if response
-#'  predictions should be generated, defaults to FALSE.
+#'  predictions should be generated, defaults to TRUE.
 #' @param basic_filter_check Logical flag indicating if basic filters should
 #'  be applied, defaults to TRUE.
 #' @param show_progress_bar Disables progress bar. Defaults to FALSE.
@@ -176,7 +176,7 @@ main_grid_search <- function(data_env,
                              is_silent_mode = TRUE,
                              start_time = NULL,
                              should_plot_response = FALSE,
-                             generate_response_predictions_cv = FALSE,
+                             generate_response_predictions_cv = TRUE,
                              basic_filter_check = TRUE,
                              show_progress_bar = FALSE) {
   # Simple parameter validation
@@ -385,7 +385,7 @@ progressbar_config <-
 #' @param progress_bar Progress bar object configured for the grid search
 #'  process.
 #' @param generate_response_predictions_cv Logical flag indicating if response
-#'  predictions should be generated, defaults to FALSE.
+#'  predictions should be generated, defaults to TRUE.
 #' @param basic_filter_check Logical flag indicating if basic filters should
 #'  be applied, defaults to TRUE.
 #' @param show_progress_bar Disables progress bar. Defaults to FALSE.
@@ -420,7 +420,7 @@ grid_search_main_loop <- function(data_env,
                                   is_silent_mode = TRUE,
                                   should_plot_response = FALSE,
                                   progress_bar = NULL,
-                                  generate_response_predictions_cv = FALSE,
+                                  generate_response_predictions_cv = TRUE,
                                   basic_filter_check = TRUE,
                                   show_progress_bar = FALSE) {
   # Validation
@@ -607,7 +607,7 @@ display_grid_message <- function(cost, nu, gamma, lags) {
 #' @param should_plot_response Logical flag indicating whether the response
 #'  variable should be plotted, defaults to FALSE.
 #' @param generate_response_predictions_cv Logical flag indicating if response
-#'  predictions should be generated, defaults to FALSE.
+#'  predictions should be generated, defaults to TRUE.
 #' @param basic_filter_check Logical flag indicating if basic filters should
 #'  be applied, defaults to TRUE.
 #'
@@ -633,7 +633,7 @@ grid_signal_eval <-
            gamma = NULL,
            is_silent_mode = TRUE,
            should_plot_response = FALSE,
-           generate_response_predictions_cv = FALSE,
+           generate_response_predictions_cv = TRUE,
            basic_filter_check = TRUE) {
     # Simple parameter validations
     stopifnot(is.list(data_env), is.numeric(cost), is.numeric(nu))

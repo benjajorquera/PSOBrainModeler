@@ -41,7 +41,7 @@
 #' @param seed (Optional) Seed value for random number generation. Defaults to
 #'  123.
 #' @param generate_response_predictions_cv Logical flag to determine if response
-#'  predictions should be generated. Defaults to FALSE.
+#'  predictions should be generated. Defaults to TRUE.
 #' @param basic_filter_check Logical flag indicating whether a basic filter
 #'  check is performed. Defaults to TRUE.
 #' @param fn_count_threshold Integer threshold for a specific function count
@@ -105,7 +105,7 @@ optimize_brain_model_with_PSO <- function(config,
                                           initial_pressure_value = c(1),
                                           initial_response_value = 1,
                                           seed = 123,
-                                          generate_response_predictions_cv = FALSE,
+                                          generate_response_predictions_cv = TRUE,
                                           basic_filter_check = TRUE,
                                           fn_count_threshold = 30,
                                           fitness_accuracy = 3,

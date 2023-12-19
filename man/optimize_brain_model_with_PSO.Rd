@@ -24,7 +24,7 @@ optimize_brain_model_with_PSO(
   initial_pressure_value = c(1),
   initial_response_value = 1,
   seed = 123,
-  generate_response_predictions_cv = FALSE,
+  generate_response_predictions_cv = TRUE,
   basic_filter_check = TRUE,
   fn_count_threshold = 30,
   fitness_accuracy = 3,
@@ -93,7 +93,7 @@ the optimization process. Defaults to 1.}
 123.}
 
 \item{generate_response_predictions_cv}{Logical flag to determine if response
-predictions should be generated. Defaults to FALSE.}
+predictions should be generated. Defaults to TRUE.}
 
 \item{basic_filter_check}{Logical flag indicating whether a basic filter
 check is performed. Defaults to TRUE.}

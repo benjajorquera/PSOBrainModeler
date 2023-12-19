@@ -18,7 +18,7 @@ pso_model(
   pso_env,
   seed = 123,
   progress_bar = NULL,
-  generate_response_predictions_cv = FALSE,
+  generate_response_predictions_cv = TRUE,
   basic_filter_check = TRUE,
   fn_count_threshold = 30,
   fitness_accuracy = 3,
@@ -65,7 +65,7 @@ Defaults to 1.}
 \item{progress_bar}{Progress bar configuration for the optimization process.}
 
 \item{generate_response_predictions_cv}{Flag to generate response
-predictions. Defaults to FALSE.}
+predictions. Defaults to TRUE.}
 
 \item{basic_filter_check}{Flag to enable basic filtering of the data.
 Defaults to TRUE.}

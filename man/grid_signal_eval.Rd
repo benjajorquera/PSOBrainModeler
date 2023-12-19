@@ -17,7 +17,7 @@ grid_signal_eval(
   gamma = NULL,
   is_silent_mode = TRUE,
   should_plot_response = FALSE,
-  generate_response_predictions_cv = FALSE,
+  generate_response_predictions_cv = TRUE,
   basic_filter_check = TRUE
 )
 }
@@ -54,7 +54,7 @@ in silent mode, suppressing messages and output, defaults to TRUE.}
 variable should be plotted, defaults to FALSE.}
 
 \item{generate_response_predictions_cv}{Logical flag indicating if response
-predictions should be generated, defaults to FALSE.}
+predictions should be generated, defaults to TRUE.}
 
 \item{basic_filter_check}{Logical flag indicating if basic filters should
 be applied, defaults to TRUE.}

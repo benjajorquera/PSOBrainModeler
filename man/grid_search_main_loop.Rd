@@ -21,7 +21,7 @@ grid_search_main_loop(
   is_silent_mode = TRUE,
   should_plot_response = FALSE,
   progress_bar = NULL,
-  generate_response_predictions_cv = FALSE,
+  generate_response_predictions_cv = TRUE,
   basic_filter_check = TRUE,
   show_progress_bar = FALSE
 )
@@ -71,7 +71,7 @@ variable should be plotted, defaults to FALSE.}
 process.}
 
 \item{generate_response_predictions_cv}{Logical flag indicating if response
-predictions should be generated, defaults to FALSE.}
+predictions should be generated, defaults to TRUE.}
 
 \item{basic_filter_check}{Logical flag indicating if basic filters should
 be applied, defaults to TRUE.}

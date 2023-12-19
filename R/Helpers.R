@@ -25,7 +25,7 @@
 #' @param prediction_initial_value (Optional) Initial value used for prediction
 #'  in the response signal generation.
 #' @param generate_response_predictions_cv (Optional) Logical flag to control
-#'  the generation of response predictions. Defaults to FALSE.
+#'  the generation of response predictions. Defaults to TRUE.
 #'
 #' @return The result from the cross_validate_partition function, typically a list
 #'  containing metrics like average correlation and mean squared error.
@@ -49,7 +49,7 @@ cross_validate_partition_helper <-
            response_lags = NULL,
            initial_column_values = NULL,
            prediction_initial_value = NULL,
-           generate_response_predictions_cv = FALSE) {
+           generate_response_predictions_cv = TRUE) {
     params_list <- list(
       cost = cost,
       nu = nu,
