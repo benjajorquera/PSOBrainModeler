@@ -2,7 +2,7 @@
 
 ![version](https://img.shields.io/badge/version-0.5.2-blue.svg)
 
-Particle Swarm Optimization-Based Hyperparameter Tuning for Support Vector Regression Models in Cerebral Autoregulation Analysis
+Particle Swarm Optimization-Based and Grid Search Hyperparameter Tuning for Automatic Support Vector Regression Models in Cerebral Autoregulation Analysis
 
 ---
 
@@ -11,15 +11,15 @@ Particle Swarm Optimization-Based Hyperparameter Tuning for Support Vector Regre
 This package offers a comprehensive toolkit for the analysis and modeling of biological signal data specific to individual patients. It facilitates the training of Support Vector Regression (SVR) models to represent and predict cerebral autoregulation phenomena. 
 
 Features include:
-- Utilizing blocked k-fold cross-validation for training.
-- Hyperparameter optimization through Particle Swarm Optimization (PSO).
-- Generation of various models including:
+- Utilizing k-fold cross-validation for training.
+- Hyperparameter optimization through Particle Swarm Optimization (PSO) and Grid Search.
+- Generation of various models trained with the following learning structures (both univariate and multivariate modeling):
   - Finite Impulse Response (FIR)
   - Nonlinear Finite Impulse Response (NFIR)
   - AutoRegressive with eXogenous inputs (ARX)
   - Nonlinear AutoRegressive with eXogenous inputs (NARX)
-- Both univariate and multivariate modeling.
-- A scoring filter to evaluate the quality of the autoregulation response, especially when a patient is subjected to simulated pressure changes.
+- An extended scoring filter to evaluate the quality of the autoregulation response when a patient is subjected to simulated pressure changes.
+- Automatic selection for the autoregulation response.
 
 ---
 
